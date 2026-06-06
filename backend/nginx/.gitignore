@@ -1,0 +1,18 @@
+# Node modules
+node_modules/
+npm-debug.log
+
+# Environment variables (NEVER PUSH THESE)
+.env
+*.env
+
+# Docker data volumes (if they accidentally map locally)
+mongodb_data/
+postgresql_data/
+redis_data/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+dist/

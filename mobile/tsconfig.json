@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "strict": true,
+    "noImplicitAny": false,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "react": ["./types/react"],
+      "react-native": ["./types/react-native"],
+      "react-redux": ["./types/react-redux"],
+      "@reduxjs/toolkit": ["./types/reduxjs-toolkit"],
+      "@react-navigation/native": ["./types/react-navigation-native"],
+      "@react-navigation/native-stack": ["./types/react-navigation-native-stack"],
+      "@react-navigation/bottom-tabs": ["./types/react-navigation-bottom-tabs"],
+      "axios": ["./types/axios"],
+      "expo-secure-store": ["./types/expo-secure-store"],
+      "expo-image-picker": ["./types/expo-image-picker"],
+      "@expo/vector-icons": ["./types/expo-vector-icons"],
+      "react-native-safe-area-context": ["./types/react-native-safe-area-context"]
+    }
+  },
+  "include": ["App.tsx", "src/**/*.ts", "src/**/*.tsx", "types/**/*.d.ts"]
+}

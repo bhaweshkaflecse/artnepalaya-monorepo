@@ -1,0 +1,93 @@
+services:
+  # == REVERSE PROXY ==
+  proxy:
+    image: nginx:alpine
+    container_name: art_nginx_proxy
+    ports:
+      - "80:80"
+      - "443:443" # For SSL configuration later
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - admin
+    networks:
+      - artnepalaya-net
+    restart: unless-stopped
+
+  # == BACKEND ==
+  backend:
+    build:
+      context: .
+    container_name: art_backend
+    env_file:
+      - .env
+    depends_on:
+      mongodb:
+        condition: service_started
+      postgresql:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - artnepalaya-net
+    restart: unless-stopped
+
+  # == ADMIN PANEL ==
+  admin:
+    build:
+      context: ../artnepalaya-admin
+    container_name: art_admin
+    networks:
+      - artnepalaya-net
+    restart: unless-stopped
+
+  # == DATABASES (PORTS EXPOSED FOR LOCAL DEV) ==
+  mongodb:
+    image: mongo:7.0
+    container_name: art_mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+      - "27017:27017" # Added this so your Node app can connect!
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - artnepalaya-net
+    restart: unless-stopped
+
+  postgresql:
+    image: postgres:16-alpine
+    container_name: art_postgresql
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432" # Added this for consistency and future testing
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    networks:
+      - artnepalaya-net
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: art_redis
+    ports:
+      - "6380:6379" # Mapped to 6380 to prevent Windows host collisions
+    volumes:
+      - redis_data:/data
+    networks:
+      - artnepalaya-net
+    restart: unless-stopped
+
+networks:
+  artnepalaya-net:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  postgresql_data:
+  redis_data:
