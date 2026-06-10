@@ -1,5 +1,5 @@
 // src/store/slices/appSlice.ts
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as SecureStore from 'expo-secure-store';
 import { configService, AuthMediaItem } from '../../services/config.service';
 
@@ -20,7 +20,25 @@ const initialState: AppState = {
 export const loadAppState = createAsyncThunk('app/loadAppState', async (_, { rejectWithValue }) => {
   try {
     const value = await SecureStore.getItemAsync('hasCompletedOnboarding');
-    return value === 'true';
+    const accessToken = await SecureStore.getItemAsync('accessToken');
+    const refreshToken = await SecureStore.getItemAsync('refreshToken');
+    const userDataStr = await SecureStore.getItemAsync('userData');
+
+    let userData = null;
+    if (userDataStr) {
+      try {
+        userData = JSON.parse(userDataStr);
+      } catch {
+        userData = null;
+      }
+    }
+
+    return {
+      hasCompletedOnboarding: value === 'true',
+      accessToken: accessToken || null,
+      refreshToken: refreshToken || null,
+      userData,
+    };
   } catch (error: any) {
     return rejectWithValue('Failed to load app state');
   }
@@ -45,9 +63,11 @@ const appSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loadAppState.fulfilled, (state, action: PayloadAction<boolean>) => {
-        state.hasCompletedOnboarding = action.payload;
+      .addCase(loadAppState.fulfilled, (state, action) => {
+        state.hasCompletedOnboarding = action.payload.hasCompletedOnboarding;
         state.isAppReady = true;
+        // Auth state restoration is handled via the returned payload
+        // The App component will dispatch setCredentials if tokens are found
       })
       .addCase(loadAppState.rejected, (state) => {
         state.isAppReady = true;
