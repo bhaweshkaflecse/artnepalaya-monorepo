@@ -4,9 +4,9 @@ import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
 
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://artnepalaya.com', 'https://admin.artnepalaya.com'] 
-    : ['http://localhost:5173', 'http://192.168.1.100'],
+  origin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+    : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-Id']

@@ -18,7 +18,9 @@ export const SignUpScreen = () => {
   const navigation = useNavigation();
 
   const handleGoogleSignUp = () => {
-    // TODO: Implement Google OAuth sign-up flow
+    // Google OAuth uses the same flow for sign-up and sign-in.
+    // Navigate to Login which already handles the full Google auth flow.
+    navigation.navigate('Login');
   };
 
   const handleSkip = () => {

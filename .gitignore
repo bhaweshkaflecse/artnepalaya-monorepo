@@ -1,10 +1,16 @@
 node_modules/
-.env
-.env.local
-.env.development
-.env.production
 .DS_Store
 dist/
 build/
 *.log
 .expo/
+
+# Environment files (contain secrets)
+.env
+.env.local
+*.env.local
+
+# Keep example and template env files checked in
+!.env.example
+!.env.development
+!.env.production

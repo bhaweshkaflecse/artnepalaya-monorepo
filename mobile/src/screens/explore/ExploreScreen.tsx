@@ -133,15 +133,17 @@ export const ExploreScreen = () => {
   const filteredPosts = posts.filter((post) => {
     const matchesCategory =
       activeCategory === 'All' ||
-      post.tags?.some((tag) =>
-        tag.name.toLowerCase().includes(activeCategory.toLowerCase())
-      );
+      post.tags?.some((tag: any) => {
+        const tagName = typeof tag === 'string' ? tag : tag.name;
+        return tagName?.toLowerCase().includes(activeCategory.toLowerCase());
+      });
     const matchesSearch =
       !searchQuery ||
       post.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.tags?.some((tag) =>
-        tag.name.toLowerCase().includes(searchQuery.toLowerCase())
-      ) ||
+      post.tags?.some((tag: any) => {
+        const tagName = typeof tag === 'string' ? tag : tag.name;
+        return tagName?.toLowerCase().includes(searchQuery.toLowerCase());
+      }) ||
       post.authorId?.username?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });

@@ -20,7 +20,7 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
-const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://api.artnepalaya.com/api/v1' : 'http://localhost:80/api/v1');
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const api = axios.create({
   baseURL: BASE_URL,

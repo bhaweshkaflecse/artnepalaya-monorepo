@@ -4,3 +4,8 @@ node_modules/
 .DS_Store
 dist/
 logs/
+
+# Keep env template files
+!.env.example
+!.env.development
+!.env.production
