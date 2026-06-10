@@ -9,6 +9,7 @@ import postRoutes from './modules/posts/post.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
 import configRoutes from './modules/admin/config.routes.js';
 import reportRoutes from './modules/reports/report.routes.js';
+import tagRoutes from './modules/tags/tag.routes.js';
 // ... import other modules (tags, notifications, etc.) as needed
 import notificationRoutes from './modules/notifications/notification.routes.js';
 import communityRoutes from './modules/community/community.routes.js';
@@ -38,6 +39,7 @@ app.use('/api/v1/posts', postRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/config', configRoutes);
 app.use('/api/v1/reports', reportRoutes);
+app.use('/api/v1/tags', tagRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/community', communityRoutes);
 
