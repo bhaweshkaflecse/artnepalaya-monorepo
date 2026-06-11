@@ -236,10 +236,10 @@ function generatePosts(artists, galleries) {
   const posts = [];
   const authors = [...artists, ...galleries];
   const VIDEO_URLS = [
-    'https://res.cloudinary.com/demo/video/upload/v1/samples/sea-turtle.mp4',
-    'https://res.cloudinary.com/demo/video/upload/v1698730753/samples/elephants.mp4',
-    'https://res.cloudinary.com/demo/video/upload/v1698730753/samples/cld-sample-video.mp4'
-  ];
+ 'https://res.cloudinary.com/demo/video/upload/v1/samples/sea-turtle.mp4',
+ 'https://res.cloudinary.com/demo/video/upload/v1698730753/samples/elephants.mp4',
+ 'https://res.cloudinary.com/demo/video/upload/v1698730753/samples/cld-sample-video.mp4'
+];
   let captionIndex = 0;
 
   for (let i = 0; i < 110; i++) {
@@ -505,12 +505,12 @@ async function seedAll() {
         $set: {
           key: 'auth_background_media',
           value: [
-            { url: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1080', type: 'image' },
-            { url: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=1080', type: 'image' },
-            { url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=1080', type: 'image' },
-            { url: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=1080', type: 'image' },
-            { url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1080', type: 'image' }
-          ],
+  { url: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1080', type: 'image' },
+  { url: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=1080', type: 'image' },
+  { url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=1080', type: 'image' },
+  { url: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=1080', type: 'image' },
+  { url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1080', type: 'image' }
+],
           updatedBy: adminUser._id
         }
       },

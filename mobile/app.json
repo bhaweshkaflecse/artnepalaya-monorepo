@@ -2,11 +2,11 @@
   "expo": {
     "name": "artnepalaya-mobile",
     "slug": "artnepalaya-mobile",
+    "scheme": "artnepalaya",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "artnepalaya",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -18,12 +18,13 @@
     "ios": {
       "supportsTablet": true
     },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
-    },
+"android": {
+  "package": "com.artnepalaya.mobile",
+  "adaptiveIcon": {
+    "foregroundImage": "./assets/adaptive-icon.png",
+    "backgroundColor": "#ffffff"
+  }
+},
     "web": {
       "favicon": "./assets/favicon.png"
     },

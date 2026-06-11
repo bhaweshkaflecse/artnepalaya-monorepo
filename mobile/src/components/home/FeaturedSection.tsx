@@ -20,7 +20,7 @@ export const FeaturedSection: React.FC<FeaturedProps> = ({ posts, loading }) => 
       <View style={styles.container}>
         <View style={styles.header}>
           <Feather name="award" size={16} color={darkColors.accent} />
-          <Text style={styles.title}>Featured by Artnepalaya</Text>
+          <Text style={styles.title}>Featured Posts</Text>
         </View>
         <FeaturedSkeleton />
       </View>
@@ -33,7 +33,7 @@ export const FeaturedSection: React.FC<FeaturedProps> = ({ posts, loading }) => 
     <View style={styles.container}>
       <View style={styles.header}>
         <Feather name="award" size={16} color={darkColors.accent} />
-        <Text style={styles.title}>Featured by Artnepalaya</Text>
+        <Text style={styles.title}>Featured Posts</Text>
       </View>
       <ScrollView
         horizontal
