@@ -18,6 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
+import { getPrimaryImageUrl } from '../../utils/media';
 
 const CATEGORIES = ['All', 'Painting', 'Digital Art', 'Thangka', 'Sculpture', 'Illustration', 'Photography'];
 
@@ -133,23 +134,21 @@ export const ExploreScreen = () => {
   const filteredPosts = posts.filter((post) => {
     const matchesCategory =
       activeCategory === 'All' ||
-      post.tags?.some((tag: any) => {
-        const tagName = typeof tag === 'string' ? tag : tag.name;
-        return tagName?.toLowerCase().includes(activeCategory.toLowerCase());
+      post.tags?.some((tag: string) => {
+        return tag?.toLowerCase().includes(activeCategory.toLowerCase());
       });
     const matchesSearch =
       !searchQuery ||
-      post.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.tags?.some((tag: any) => {
-        const tagName = typeof tag === 'string' ? tag : tag.name;
-        return tagName?.toLowerCase().includes(searchQuery.toLowerCase());
+      post.caption?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.tags?.some((tag: string) => {
+        return tag?.toLowerCase().includes(searchQuery.toLowerCase());
       }) ||
       post.authorId?.username?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   const renderItem = ({ item, index }: { item: Post; index: number }) => {
-    const imageUrl = item.media?.[0]?.url;
+    const imageUrl = getPrimaryImageUrl(item.media);
     const height = index % 2 === 0 ? 220 : 160;
 
     return (

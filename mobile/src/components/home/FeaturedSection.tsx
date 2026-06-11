@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, Image, StyleSheet } from 'react-native';
 import { darkColors } from '../../theme/colors';
 import { Post } from '../../services/post.service';
+import { getPrimaryImageUrl } from '../../utils/media';
 import { Feather } from '@expo/vector-icons';
 import { FeaturedSkeleton } from '../common/SkeletonLoader';
 
@@ -38,7 +39,7 @@ export const FeaturedSection: React.FC<FeaturedProps> = ({ posts, loading }) => 
       >
         {posts.map((post) => (
           <View key={post._id} style={styles.featuredCard}>
-            <Image source={{ uri: post.media[0]?.url }} style={styles.image} />
+            <Image source={{ uri: getPrimaryImageUrl(post.media) }} style={styles.image} />
             <View style={styles.overlay}>
               <Text style={styles.artist} numberOfLines={1}>
                 {post.authorId.username}

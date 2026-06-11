@@ -3,17 +3,25 @@ import { api } from './api';
 export interface UserSnippet {
   _id: string;
   username: string;
-  fullName: string;
   avatarUrl?: string;
+  role?: string;
+}
+
+export interface PostMedia {
+  url: string;
+  providerId: string;
+  type: 'image' | 'video';
 }
 
 export interface Post {
   _id: string;
   authorId: UserSnippet;
-  media: { url: string; type: 'image' | 'video'; cloudinaryId: string }[];
-  description?: string;
-  tags: { _id: string; name: string }[];
-  stats: { saves: number; likes: number };
+  media: PostMedia[];
+  caption?: string;
+  tags: string[];
+  likesCount: number;
+  savesCount: number;
+  isHumanMade?: boolean;
   isLikedByMe?: boolean;
   isSavedByMe?: boolean;
   createdAt: string;

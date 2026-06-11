@@ -16,6 +16,7 @@ import { AppStackParamList } from '../../navigation/AppStack';
 import { lightColors } from '../../theme/colors';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { fetchProfile, fetchMyPosts } from '../../store/slices/userSlice';
+import { getPrimaryImageUrl } from '../../utils/media';
 
 export const ProfileScreen = () => {
   const dispatch = useAppDispatch();
@@ -46,7 +47,7 @@ export const ProfileScreen = () => {
   } : null);
 
   const renderPostThumbnail = ({ item }: { item: any }) => {
-    const imageUrl = item.media?.[0]?.url;
+    const imageUrl = getPrimaryImageUrl(item.media || []);
     return (
       <TouchableOpacity
         style={styles.thumbnailContainer}

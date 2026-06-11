@@ -15,6 +15,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
+import { getPrimaryImageUrl } from '../../utils/media';
 import { ReportModal } from '../../components/common/ReportModal';
 
 type PostDetailRouteProp = RouteProp<{ PostDetail: { postId: string } }, 'PostDetail'>;
@@ -139,9 +140,9 @@ export const PostDetailScreen = () => {
         </View>
 
         {/* Image */}
-        {post.media[0] && (
+        {getPrimaryImageUrl(post.media) && (
           <Image
-            source={{ uri: post.media[0].url }}
+            source={{ uri: getPrimaryImageUrl(post.media)! }}
             style={styles.postImage}
             resizeMode="cover"
           />
@@ -170,11 +171,11 @@ export const PostDetailScreen = () => {
         </View>
 
         {/* Caption */}
-        {post.description && (
+        {post.caption && (
           <View style={styles.captionContainer}>
             <Text style={styles.caption}>
               <Text style={styles.boldUsername}>{post.authorId.username} </Text>
-              {post.description}
+              {post.caption}
             </Text>
           </View>
         )}
@@ -182,12 +183,12 @@ export const PostDetailScreen = () => {
         {/* Tags */}
         {post.tags && post.tags.length > 0 && (
           <View style={styles.tagsContainer}>
-            {post.tags.map((tag, index) => (
+            {post.tags.map((tag: string) => (
               <Text
-                key={typeof tag === 'string' ? tag : (tag._id || index.toString())}
+                key={tag}
                 style={styles.tag}
               >
-                #{typeof tag === 'string' ? tag : tag.name}
+                #{tag}
               </Text>
             ))}
           </View>

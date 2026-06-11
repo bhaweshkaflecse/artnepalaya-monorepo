@@ -12,6 +12,7 @@ import {
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { darkColors } from '../../theme/colors';
 import { Post, postService } from '../../services/post.service';
+import { getPrimaryImageUrl } from '../../utils/media';
 import { ReportModal } from '../common/ReportModal';
 
 interface PostCardProps {
@@ -130,9 +131,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       {/* Image with double-tap */}
       <TouchableWithoutFeedback onPress={handleDoubleTap}>
         <View style={styles.imageWrapper}>
-          {post.media[0] && (
+          {getPrimaryImageUrl(post.media) && (
             <Image
-              source={{ uri: post.media[0].url }}
+              source={{ uri: getPrimaryImageUrl(post.media) }}
               style={styles.image}
               resizeMode="cover"
             />
@@ -174,19 +175,19 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Description and Tags */}
+      {/* Caption and Tags */}
       <View style={styles.content}>
-        {post.description && (
-          <Text style={styles.description}>
+        {post.caption && (
+          <Text style={styles.captionText}>
             <Text style={styles.boldUsername}>{post.authorId.username} </Text>
-            {post.description}
+            {post.caption}
           </Text>
         )}
         {post.tags.length > 0 && (
           <View style={styles.tagContainer}>
-            {post.tags.map((tag: any, index: number) => (
-              <Text key={typeof tag === 'string' ? tag : (tag._id || index.toString())} style={styles.tag}>
-                #{typeof tag === 'string' ? tag : tag.name}
+            {post.tags.map((tag: string) => (
+              <Text key={tag} style={styles.tag}>
+                #{tag}
               </Text>
             ))}
           </View>
@@ -275,7 +276,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  description: {
+  captionText: {
     fontSize: 14,
     color: '#FFFFFF',
     lineHeight: 20,

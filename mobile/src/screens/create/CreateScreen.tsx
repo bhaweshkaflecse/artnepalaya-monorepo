@@ -150,7 +150,7 @@ export const CreateScreen = () => {
       }
 
       if (description) {
-        formData.append('description', description);
+        formData.append('caption', description);
       }
 
       if (tags) {

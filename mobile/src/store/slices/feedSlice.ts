@@ -71,7 +71,7 @@ const feedSlice = createSlice({
       const post = state.feedPosts.find((p) => p._id === postId);
       if (post) {
         post.isLikedByMe = !post.isLikedByMe;
-        post.stats.likes += post.isLikedByMe ? 1 : -1;
+        post.likesCount += post.isLikedByMe ? 1 : -1;
       }
     },
     toggleSave(state, action: PayloadAction<string>) {
@@ -79,7 +79,7 @@ const feedSlice = createSlice({
       const post = state.feedPosts.find((p) => p._id === postId);
       if (post) {
         post.isSavedByMe = !post.isSavedByMe;
-        post.stats.saves += post.isSavedByMe ? 1 : -1;
+        post.savesCount += post.isSavedByMe ? 1 : -1;
       }
     },
   },
