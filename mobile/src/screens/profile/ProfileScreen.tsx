@@ -15,8 +15,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { lightColors } from '../../theme/colors';
 import { useAppSelector, useAppDispatch } from '../../store';
-import { fetchProfile, fetchMyPosts } from '../../store/slices/userSlice';
-import { selectIsGuest, selectGuestUsername } from '../../store/slices/authSlice';
+import { fetchProfile, fetchMyPosts, fetchSavedPosts } from '../../store/slices/userSlice';
+import { selectIsGuest, selectGuestUsername, logout } from '../../store/slices/authSlice';
 import { getPrimaryImageUrl } from '../../utils/media';
 
 export const ProfileScreen = () => {
@@ -25,7 +25,7 @@ export const ProfileScreen = () => {
   const authUser = useAppSelector((state) => state.auth.user);
   const isGuest = useAppSelector(selectIsGuest);
   const guestUsername = useAppSelector(selectGuestUsername);
-  const { profile, myPosts, isLoading } = useAppSelector((state) => state.user);
+  const { profile, myPosts, savedPosts, isLoading } = useAppSelector((state) => state.user);
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
 
   useEffect(() => {
@@ -38,6 +38,12 @@ export const ProfileScreen = () => {
       dispatch(fetchMyPosts(userId));
     }
   }, [dispatch, profile, authUser]);
+
+  useEffect(() => {
+    if (activeTab === 'saved' && !isGuest) {
+      dispatch(fetchSavedPosts());
+    }
+  }, [activeTab, isGuest, dispatch]);
 
   const displayUser = profile || (authUser ? {
     _id: authUser.id,
@@ -111,7 +117,7 @@ export const ProfileScreen = () => {
       </View>
 
       <FlatList
-        data={activeTab === 'posts' ? myPosts : []}
+        data={activeTab === 'posts' ? myPosts : savedPosts}
         keyExtractor={(item) => item._id}
         numColumns={3}
         showsVerticalScrollIndicator={false}
@@ -133,10 +139,10 @@ export const ProfileScreen = () => {
                   </View>
 
                   {/* Login Banner */}
-                  <View style={styles.loginBanner}>
+                  <TouchableOpacity style={styles.loginBanner} onPress={() => dispatch(logout())} activeOpacity={0.7}>
                     <Feather name="log-in" size={16} color={lightColors.accent} />
                     <Text style={styles.loginBannerText}>Login to customize your profile</Text>
-                  </View>
+                  </TouchableOpacity>
                 </>
               ) : (
                 <>

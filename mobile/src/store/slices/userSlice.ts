@@ -29,6 +29,14 @@ export const fetchMyPosts = createAsyncThunk(
   }
 );
 
+export const fetchSavedPosts = createAsyncThunk(
+  'user/fetchSavedPosts',
+  async () => {
+    const response = await userService.getSavedPosts();
+    return response.data;
+  }
+);
+
 const userSlice = createSlice({
   name: 'user',
   initialState,
@@ -63,6 +71,16 @@ const userSlice = createSlice({
         state.myPosts = action.payload;
       })
       .addCase(fetchMyPosts.rejected, (state) => {
+        state.isLoading = false;
+      })
+      .addCase(fetchSavedPosts.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchSavedPosts.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.savedPosts = action.payload;
+      })
+      .addCase(fetchSavedPosts.rejected, (state) => {
         state.isLoading = false;
       });
   },

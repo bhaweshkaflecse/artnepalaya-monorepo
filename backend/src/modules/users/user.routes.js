@@ -12,6 +12,7 @@ router.use(authGuard);
 // === Personal Profile Routes ===
 router.get('/me', controller.getMe);
 router.put('/me', validate(validation.updateProfileSchema), controller.updateMe);
+router.get('/me/saved', validate(validation.paginationSchema), controller.getSavedPosts);
 
 // === Push Token Routes ===
 router.post('/me/push-token', controller.registerPushToken);

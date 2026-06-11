@@ -38,6 +38,9 @@ export const getPublicProfile = async (req, res, next) => {
 
 export const getUserPosts = async (req, res, next) => {
   try {
+    if (!req.params.userId) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'userId is required' } });
+    }
     const { page, limit } = req.query; // Already parsed to Numbers by Zod
     const result = await userService.getUserPosts(req.params.userId, page, limit);
     
@@ -59,6 +62,16 @@ export const registerPushToken = async (req, res, next) => {
     }
     await userService.registerPushToken(req.user.id, token);
     res.status(200).json({ success: true, message: 'Push token registered' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getSavedPosts = async (req, res, next) => {
+  try {
+    const { page, limit } = req.query;
+    const result = await userService.getSavedPosts(req.user.id, page, limit);
+    res.status(200).json({ success: true, data: result.data, meta: result.meta });
   } catch (err) {
     next(err);
   }

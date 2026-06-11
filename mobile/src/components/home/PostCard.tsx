@@ -8,18 +8,23 @@ import {
   TouchableWithoutFeedback,
   Share,
   Animated,
+  Alert,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { darkColors } from '../../theme/colors';
 import { Post, postService } from '../../services/post.service';
 import { getPrimaryImageUrl } from '../../utils/media';
 import { ReportModal } from '../common/ReportModal';
+import { useAppSelector, useAppDispatch } from '../../store';
+import { selectIsGuest, logout } from '../../store/slices/authSlice';
 
 interface PostCardProps {
   post: Post;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post }) => {
+  const dispatch = useAppDispatch();
+  const isGuest = useAppSelector(selectIsGuest);
   const [isLiked, setIsLiked] = useState(post.isLikedByMe || false);
   const [isSaved, setIsSaved] = useState(post.isSavedByMe || false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -30,6 +35,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   // Heart animation values
   const heartScale = useRef(new Animated.Value(0)).current;
   const heartOpacity = useRef(new Animated.Value(0)).current;
+
+  const showLoginAlert = () => {
+    Alert.alert(
+      'Login Required',
+      'Please login or create an account to continue.',
+      [{ text: 'Cancel', style: 'cancel' }, { text: 'Login', onPress: () => { dispatch(logout()); } }]
+    );
+  };
 
   const triggerHeartAnimation = () => {
     heartScale.setValue(0);
@@ -60,6 +73,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
     if (delta < 300) {
       // Double-tap detected
+      if (isGuest) {
+        showLoginAlert();
+        return;
+      }
       if (!isLiked) {
         setIsLiked(true);
         postService.likePost(post._id).catch(() => setIsLiked(false));
@@ -69,6 +86,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   };
 
   const handleLike = async () => {
+    if (isGuest) {
+      showLoginAlert();
+      return;
+    }
     const newValue = !isLiked;
     setIsLiked(newValue);
     try {
@@ -83,6 +104,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   };
 
   const handleSave = async () => {
+    if (isGuest) {
+      showLoginAlert();
+      return;
+    }
     const newValue = !isSaved;
     setIsSaved(newValue);
     try {
