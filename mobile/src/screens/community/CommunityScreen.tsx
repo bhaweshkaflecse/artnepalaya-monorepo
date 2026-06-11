@@ -9,7 +9,10 @@ import {
   Alert,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { communityService } from '../../services/community.service';
+import { useAppSelector } from '../../store';
+import { selectIsGuest } from '../../store/slices/authSlice';
 
 interface SectionCardProps {
   icon: string;
@@ -39,9 +42,23 @@ const SectionCard = ({ icon, title, description, items }: SectionCardProps) => (
 );
 
 export const CommunityScreen = () => {
+  const navigation = useNavigation();
+  const isGuest = useAppSelector(selectIsGuest);
   const [isJoining, setIsJoining] = useState(false);
 
   const handleJoinWaitlist = async () => {
+    if (isGuest) {
+      Alert.alert(
+        'Login Required',
+        'Login to receive community event notifications.',
+        [
+          { text: 'Maybe Later', style: 'cancel' },
+          { text: 'Login', onPress: () => (navigation as any).navigate('Auth') },
+        ]
+      );
+      return;
+    }
+
     setIsJoining(true);
     try {
       const result = await communityService.joinWaitlist();

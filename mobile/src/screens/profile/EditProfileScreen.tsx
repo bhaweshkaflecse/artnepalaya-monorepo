@@ -15,6 +15,7 @@ import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { lightColors } from '../../theme/colors';
 import { useAppSelector, useAppDispatch } from '../../store';
+import { selectIsGuest } from '../../store/slices/authSlice';
 import { userService } from '../../services/user.service';
 import { setProfile } from '../../store/slices/userSlice';
 
@@ -28,6 +29,7 @@ const ROLE_OPTIONS = [
 export const EditProfileScreen = () => {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
+  const isGuest = useAppSelector(selectIsGuest);
   const authUser = useAppSelector((state) => state.auth.user);
   const profile = useAppSelector((state) => state.user.profile);
 
@@ -40,6 +42,18 @@ export const EditProfileScreen = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
+    if (isGuest) {
+      Alert.alert(
+        'Login Required',
+        'Login to customize your profile, update your bio, upload artwork, and join the community.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Login', onPress: () => (navigation as any).navigate('Auth') },
+        ]
+      );
+      return;
+    }
+
     if (!fullName.trim()) {
       Alert.alert('Error', 'Full name is required.');
       return;
@@ -86,6 +100,16 @@ export const EditProfileScreen = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Guest Login Banner */}
+        {isGuest && (
+          <View style={styles.guestBanner}>
+            <Feather name="log-in" size={18} color="#2563EB" style={styles.guestBannerIcon} />
+            <Text style={styles.guestBannerText}>
+              Login to customize your profile, update your bio, upload artwork, and join the community.
+            </Text>
+          </View>
+        )}
+
         {/* Avatar Preview */}
         <View style={styles.avatarSection}>
           {displayUser?.avatarUrl ? (
@@ -277,5 +301,26 @@ const styles = StyleSheet.create({
   roleLabelSelected: {
     color: lightColors.accent,
     fontWeight: '600',
+  },
+  guestBanner: {
+    flexDirection: 'row',
+    backgroundColor: '#EFF6FF',
+    padding: 14,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    alignItems: 'flex-start',
+  },
+  guestBannerIcon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  guestBannerText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1E40AF',
+    fontWeight: '500',
+    lineHeight: 20,
   },
 });

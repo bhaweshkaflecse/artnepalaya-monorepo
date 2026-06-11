@@ -13,8 +13,11 @@ import {
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useNavigation } from '@react-navigation/native';
 import { lightColors } from '../../theme/colors';
 import { api } from '../../services/api';
+import { useAppSelector } from '../../store';
+import { selectIsGuest } from '../../store/slices/authSlice';
 
 const MAX_IMAGES = 5;
 const MAX_VIDEOS = 1;
@@ -29,6 +32,8 @@ const ARTWORK_TYPES = [
 ];
 
 export const CreateScreen = () => {
+  const navigation = useNavigation();
+  const isGuest = useAppSelector(selectIsGuest);
   const [mediaItems, setMediaItems] = useState<Array<{ uri: string; type: 'image' | 'video'; fileSize?: number }>>([]);
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
@@ -95,6 +100,18 @@ export const CreateScreen = () => {
   };
 
   const handlePublish = async () => {
+    if (isGuest) {
+      Alert.alert(
+        'Login Required',
+        'Guest users cannot publish artwork. Please login to continue.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Login', onPress: () => (navigation as any).navigate('Auth') },
+        ]
+      );
+      return;
+    }
+
     if (mediaItems.length === 0) {
       Alert.alert('Error', 'Please select an artwork to upload.');
       return;
@@ -207,6 +224,21 @@ export const CreateScreen = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Guest Info Card */}
+        {isGuest && (
+          <View style={styles.guestInfoCard}>
+            <Feather name="info" size={20} color="#2563EB" style={styles.guestInfoIcon} />
+            <View style={styles.guestInfoContent}>
+              <Text style={styles.guestInfoText}>
+                Create and showcase your artwork to the ArtNepalaya community.
+              </Text>
+              <Text style={styles.guestInfoSubtext}>
+                Login or create an account to publish artwork.
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* Media Picker */}
         <TouchableOpacity style={styles.mediaContainer} onPress={pickImage}>
           {mediaItems.length > 0 ? (
@@ -311,6 +343,16 @@ export const CreateScreen = () => {
             content that may not be suitable for all audiences.
           </Text>
         </View>
+
+        {/* Guest Warning Card */}
+        {isGuest && (
+          <View style={styles.guestWarningCard}>
+            <Feather name="alert-circle" size={18} color="#DC2626" style={styles.guestWarningIcon} />
+            <Text style={styles.guestWarningText}>
+              Guest users cannot publish artwork. Please login to continue.
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -457,5 +499,53 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: lightColors.textPrimary,
     lineHeight: 20,
+  },
+  guestInfoCard: {
+    flexDirection: 'row',
+    backgroundColor: '#EFF6FF',
+    padding: 14,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  guestInfoIcon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  guestInfoContent: {
+    flex: 1,
+  },
+  guestInfoText: {
+    fontSize: 14,
+    color: '#1E40AF',
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  guestInfoSubtext: {
+    fontSize: 13,
+    color: '#3B82F6',
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  guestWarningCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FEF2F2',
+    padding: 14,
+    borderRadius: 8,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    alignItems: 'center',
+  },
+  guestWarningIcon: {
+    marginRight: 10,
+  },
+  guestWarningText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#DC2626',
+    fontWeight: '500',
+    lineHeight: 18,
   },
 });

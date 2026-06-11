@@ -122,7 +122,7 @@ export const GlobalPopupModal = () => {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -131,8 +131,13 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 32,
+    padding: 28,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 12,
   },
   closeBtn: {
     position: 'absolute',
@@ -147,7 +152,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   heading: {
     fontSize: 20,
@@ -167,7 +172,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF3B30',
     paddingHorizontal: 32,
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 10,
     width: '100%',
     alignItems: 'center',
     marginBottom: 12,
@@ -182,6 +187,6 @@ const styles = StyleSheet.create({
   },
   dismissText: {
     fontSize: 14,
-    color: '#4B5563',
+    color: '#6B7280',
   },
 });
