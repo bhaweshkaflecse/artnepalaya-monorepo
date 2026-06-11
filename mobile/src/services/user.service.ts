@@ -56,4 +56,17 @@ export const userService = {
       meta: response.data.meta,
     };
   },
+
+  getSavedPosts: async (
+    page: number = 1,
+    limit: number = 15
+  ): Promise<UserPostsResponse> => {
+    const response = await api.get('/users/me/saved', {
+      params: { page, limit },
+    });
+    return {
+      data: response.data.data,
+      meta: response.data.meta,
+    };
+  },
 };

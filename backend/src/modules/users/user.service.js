@@ -1,5 +1,6 @@
 import { User } from './user.model.js';
 import { Post } from '../posts/post.model.js';
+import { Save } from '../posts/post-interaction.model.js';
 
 // === Fetch Profile ===
 export const getUserProfile = async (userId, isPublic = false) => {
@@ -70,6 +71,18 @@ export const getUserPosts = async (userId, page, limit) => {
       hasNextPage: page < totalPages
     }
   };
+};
+
+// === Saved Posts ===
+export const getSavedPosts = async (userId, page, limit) => {
+  page = page || 1;
+  limit = limit || 15;
+  const skip = (page - 1) * limit;
+  const saves = await Save.find({ userId }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+  const postIds = saves.map(s => s.postId);
+  const posts = await Post.find({ _id: { $in: postIds } }).populate('authorId', 'username avatarUrl role').lean();
+  const totalItems = await Save.countDocuments({ userId });
+  return { data: posts, meta: { currentPage: page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
 };
 
 // === Push Token Management ===
