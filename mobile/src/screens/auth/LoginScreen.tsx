@@ -19,6 +19,7 @@ import { useAppDispatch } from '../../store';
 import { setCredentials, setGuest } from '../../store/slices/authSlice';
 import { authService } from '../../services/auth.service';
 import { AnimatedBackground } from '../../components/common/AnimatedBackground';
+import { registerForPushNotifications } from '../../services/pushNotification.service';
 
 // Complete any pending auth sessions (required for web-based auth)
 WebBrowser.maybeCompleteAuthSession();
@@ -135,6 +136,11 @@ export const LoginScreen = () => {
 
       // Update Redux auth state - this triggers navigation to MainTabs
       dispatch(setCredentials({ user, accessToken, refreshToken }));
+
+      // Register for push notifications after successful login
+      registerForPushNotifications().catch((err) =>
+        console.warn('[LoginScreen] Push notification registration failed:', err)
+      );
     } catch (error: any) {
       const message =
         error?.response?.data?.error?.message ||

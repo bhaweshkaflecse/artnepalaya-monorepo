@@ -1,5 +1,6 @@
 import { Notification } from './notification.model.js';
 import { User } from '../users/user.model.js';
+import { sendPushNotifications } from '../../shared/utils/pushNotifications.js';
 
 export const createNotification = async (payload) => {
   const { recipientId, senderId, postId, type, message } = payload;
@@ -70,5 +71,17 @@ export const broadcastNotification = async (title, message) => {
     skip += BATCH_SIZE;
   } while (batch.length === BATCH_SIZE);
 
-  return { recipientCount };
+  // Send actual push notifications to users with push tokens
+  const usersWithTokens = await User.find(
+    { status: 'active', pushTokens: { $exists: true, $ne: [] } },
+    'pushTokens'
+  ).lean();
+
+  const allTokens = usersWithTokens.reduce((tokens, user) => {
+    return tokens.concat(user.pushTokens);
+  }, []);
+
+  const pushResult = await sendPushNotifications(allTokens, title, message);
+
+  return { recipientCount, pushesSent: pushResult.sent, pushesFailed: pushResult.failed };
 };

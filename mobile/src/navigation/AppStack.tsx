@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { MainTabs } from './MainTabs';
 import { PostDetailScreen } from '../screens/post/PostDetailScreen';
 import { NotificationsScreen } from '../screens/notifications/NotificationsScreen';
 import { EditProfileScreen } from '../screens/profile/EditProfileScreen';
 import { SettingsScreen } from '../screens/profile/SettingsScreen';
 import { CmsPageScreen } from '../screens/settings/CmsPageScreen';
+import { setupNotificationListeners } from '../services/pushNotification.service';
 
 export type AppStackParamList = {
   MainTabs: undefined;
@@ -19,6 +21,17 @@ export type AppStackParamList = {
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
 export const AppStack = () => {
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const cleanup = setupNotificationListeners((response) => {
+      // Navigate to Notifications screen when user taps a notification
+      navigation.navigate('Notifications' as never);
+    });
+
+    return cleanup;
+  }, [navigation]);
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabs} />

@@ -81,7 +81,8 @@ export const broadcastNotification = async (req, res, next) => {
     }
     const result = await notificationService.broadcastNotification(title, message);
     const recipientCount = result?.recipientCount || 0;
-    res.status(201).json({ success: true, message: `In-app notifications created for ${recipientCount} users (device push requires Expo Push service configuration)`, data: result });
+    const pushesSent = result?.pushesSent || 0;
+    res.status(201).json({ success: true, message: `Broadcast sent: ${recipientCount} in-app notifications, ${pushesSent} push notifications delivered`, data: { notificationsCreated: recipientCount, pushesSent } });
   } catch (err) { next(err); }
 };
 

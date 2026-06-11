@@ -2,12 +2,18 @@ import { useState } from 'react';
 import { Bell, Send } from 'lucide-react';
 import { api } from '../services/api';
 
+interface BroadcastResult {
+  notificationsCreated: number;
+  pushesSent: number;
+}
+
 export const PushNotifications = () => {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<BroadcastResult | null>(null);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,10 +22,18 @@ export const PushNotifications = () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
+    setResult(null);
 
     try {
-      await api.post('/admin/notifications/broadcast', { title, message });
+      const response = await api.post('/admin/notifications/broadcast', { title, message });
+      const data = response.data?.data;
       setSuccess('Broadcast notification sent successfully!');
+      if (data) {
+        setResult({
+          notificationsCreated: data.notificationsCreated || 0,
+          pushesSent: data.pushesSent || 0,
+        });
+      }
       setTitle('');
       setMessage('');
     } catch {
@@ -39,6 +53,13 @@ export const PushNotifications = () => {
       {success && (
         <div className="bg-green-50 text-green-700 px-4 py-3 rounded-md text-sm">
           {success}
+        </div>
+      )}
+
+      {result && (
+        <div className="bg-blue-50 text-blue-700 px-4 py-3 rounded-md text-sm flex items-center space-x-4">
+          <span>In-app notifications: <strong>{result.notificationsCreated}</strong></span>
+          <span>Push notifications sent: <strong>{result.pushesSent}</strong></span>
         </div>
       )}
 
