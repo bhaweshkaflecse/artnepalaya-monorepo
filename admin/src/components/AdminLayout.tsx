@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, ShieldAlert, Award, Image, LogOut, Bell, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, ShieldAlert, Award, Image, LogOut, Bell, MessageSquare, Heart } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 export const AdminLayout = () => {
@@ -18,6 +18,7 @@ export const AdminLayout = () => {
     { path: '/push-notifications', label: 'Push Notifications', icon: Bell },
     { path: '/global-popup', label: 'Global Popup', icon: MessageSquare },
     { path: '/cms', label: 'CMS Pages', icon: FileText },
+    { path: '/community-interest', label: 'Community Interest', icon: Heart },
   ];
 
   const handleLogout = () => {

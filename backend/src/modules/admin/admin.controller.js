@@ -3,6 +3,7 @@ import { AppConfig } from './appConfig.model.js';
 import { CmsPage } from './cmsPage.model.js';
 import { GlobalPopup } from './globalPopup.model.js';
 import * as notificationService from '../notifications/notification.service.js';
+import { CommunityWaitlist } from '../community/communityWaitlist.model.js';
 
 export const getDashboardStats = async (req, res, next) => {
   try { res.status(200).json({ success: true, data: await adminService.getDashboardStats() }); } 
@@ -27,6 +28,16 @@ export const getReports = async (req, res, next) => {
 export const resolveReport = async (req, res, next) => {
   try { await adminService.resolveReport(req.params.reportId, req.user.id); res.status(200).json({ success: true, message: "Report resolved" }); } 
   catch (err) { next(err); }
+};
+
+export const getPosts = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const search = req.query.search || '';
+    const result = await adminService.getPosts(page, limit, search);
+    res.status(200).json({ success: true, ...result });
+  } catch (err) { next(err); }
 };
 
 export const deletePost = async (req, res, next) => {
@@ -124,5 +135,27 @@ export const updateGlobalPopup = async (req, res, next) => {
       { upsert: true, new: true }
     );
     res.status(200).json({ success: true, data: popup });
+  } catch (err) { next(err); }
+};
+
+export const getCommunityInterestUsers = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    const [users, totalItems] = await Promise.all([
+      CommunityWaitlist.find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('userId', 'username email')
+        .lean(),
+      CommunityWaitlist.countDocuments()
+    ]);
+    res.status(200).json({
+      success: true,
+      data: users,
+      meta: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) }
+    });
   } catch (err) { next(err); }
 };

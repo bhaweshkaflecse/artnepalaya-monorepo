@@ -10,6 +10,7 @@ import { AuthMedia } from './pages/AuthMedia';
 import { PushNotifications } from './pages/PushNotifications';
 import { GlobalPopup } from './pages/GlobalPopup';
 import { CmsEditor } from './pages/CmsEditor';
+import { CommunityInterest } from './pages/CommunityInterest';
 import { useAuthStore } from './store/authStore';
 import type { ReactNode } from 'react';
 
@@ -42,6 +43,7 @@ export default function App() {
           <Route path="push-notifications" element={<PushNotifications />} />
           <Route path="global-popup" element={<GlobalPopup />} />
           <Route path="cms" element={<CmsEditor />} />
+          <Route path="community-interest" element={<CommunityInterest />} />
         </Route>
       </Routes>
     </Router>

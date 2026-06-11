@@ -73,6 +73,27 @@ export const removeFeaturedPost = async (postId) => {
   return true;
 };
 
+export const getPosts = async (page = 1, limit = 15, search = '') => {
+  const skip = (page - 1) * limit;
+  const query = {};
+  if (search) {
+    query.$or = [
+      { caption: { $regex: search, $options: 'i' } },
+      { tags: { $regex: search, $options: 'i' } }
+    ];
+  }
+  const [posts, totalItems] = await Promise.all([
+    Post.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('authorId', 'username avatarUrl')
+      .lean(),
+    Post.countDocuments(query)
+  ]);
+  return { data: posts, meta: { page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
+};
+
 export const getAnalytics = async () => {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
