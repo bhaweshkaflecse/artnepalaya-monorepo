@@ -24,10 +24,8 @@ import { registerForPushNotifications } from '../../services/pushNotification.se
 // Complete any pending auth sessions (required for web-based auth)
 WebBrowser.maybeCompleteAuthSession();
 
-// Google OAuth configuration
+// Google OAuth configuration - Only web client ID is used in Expo Go
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
-const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '';
-const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '';
 
 /**
  * Generates a unique device identifier for token binding.
@@ -44,11 +42,22 @@ export const LoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Use the Google provider hook - handles Expo Go proxy and native redirects automatically
+  // Only use the web client ID in Expo Go to force the Expo auth proxy flow
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: GOOGLE_WEB_CLIENT_ID,
-    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-    iosClientId: GOOGLE_IOS_CLIENT_ID,
   });
+
+  // Debug: log request configuration to verify correct redirect and response type
+  useEffect(() => {
+    if (request) {
+      console.log('[GoogleAuth] Request configured:', {
+        clientId: request.clientId,
+        redirectUri: request.redirectUri,
+        responseType: request.responseType,
+        usePKCE: request.usePKCE,
+      });
+    }
+  }, [request]);
 
   // Handle the auth response when it comes back
   useEffect(() => {
@@ -126,7 +135,23 @@ export const LoginScreen = () => {
   const handleSkip = async () => {
     await SecureStore.deleteItemAsync('accessToken');
     await SecureStore.deleteItemAsync('refreshToken');
-    dispatch(setGuest());
+
+    // Generate a unique guest username
+    let guestUsername = await SecureStore.getItemAsync('guestUsername');
+    if (!guestUsername) {
+      const chars = '0123456789ABCDEF';
+      let random5 = '';
+      for (let i = 0; i < 5; i++) {
+        random5 += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      guestUsername = `Guest_${random5}`;
+      await SecureStore.setItemAsync('guestUsername', guestUsername);
+    }
+
+    // Store a default display name for guests
+    await SecureStore.setItemAsync('guestDisplayName', 'Guest Explorer');
+
+    dispatch(setGuest({ guestUsername }));
   };
 
   const handleSignUp = () => {

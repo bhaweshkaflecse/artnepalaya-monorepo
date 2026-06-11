@@ -18,6 +18,7 @@ interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isGuest: boolean;
+  guestUsername: string | null;
   guestPostsViewed: number;
 }
 
@@ -27,6 +28,7 @@ const initialState: AuthState = {
   refreshToken: null,
   isAuthenticated: false,
   isGuest: false,
+  guestUsername: null,
   guestPostsViewed: 0,
 };
 
@@ -44,12 +46,18 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.isGuest = false;
     },
-    setGuest(state) {
-      state.isGuest = true;
-      state.isAuthenticated = false;
-      state.user = null;
-      state.accessToken = null;
-      state.refreshToken = null;
+    setGuest: {
+      reducer(state, action: PayloadAction<{ guestUsername: string } | undefined>) {
+        state.isGuest = true;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.guestUsername = action.payload?.guestUsername || null;
+      },
+      prepare(payload?: { guestUsername: string }) {
+        return { payload };
+      },
     },
     incrementGuestViews(state) {
       state.guestPostsViewed += 1;
@@ -60,6 +68,7 @@ const authSlice = createSlice({
       state.refreshToken = null;
       state.isAuthenticated = false;
       state.isGuest = false;
+      state.guestUsername = null;
       state.guestPostsViewed = 0;
     },
     setTokens(
@@ -82,5 +91,6 @@ export const selectIsGuest = (state: RootState) => state.auth.isGuest;
 export const selectAccessToken = (state: RootState) => state.auth.accessToken;
 export const selectRefreshToken = (state: RootState) => state.auth.refreshToken;
 export const selectGuestPostsViewed = (state: RootState) => state.auth.guestPostsViewed;
+export const selectGuestUsername = (state: RootState) => state.auth.guestUsername;
 
 export default authSlice.reducer;
