@@ -1,10 +1,15 @@
-import { useState } from 'react';
-import { Bell, Send } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bell, Send, Users } from 'lucide-react';
 import { api } from '../services/api';
 
 interface BroadcastResult {
   notificationsCreated: number;
   pushesSent: number;
+}
+
+interface PushStats {
+  usersWithTokens: number;
+  totalTokens: number;
 }
 
 export const PushNotifications = () => {
@@ -14,6 +19,22 @@ export const PushNotifications = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BroadcastResult | null>(null);
+  const [stats, setStats] = useState<PushStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await api.get('/admin/push-stats');
+        setStats(res.data.data);
+      } catch {
+        // Stats are non-critical, silently fail
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +69,33 @@ export const PushNotifications = () => {
       <div className="flex items-center space-x-3">
         <Bell size={24} className="text-gray-700" />
         <h2 className="text-lg font-semibold text-gray-900">Push Notifications</h2>
+      </div>
+
+      {/* Push Stats */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex items-center space-x-2 mb-3">
+          <Users size={18} className="text-gray-600" />
+          <h3 className="text-sm font-medium text-gray-700">Push Notification Stats</h3>
+        </div>
+        {statsLoading ? (
+          <div className="flex space-x-6">
+            <div className="h-5 w-32 animate-pulse bg-gray-200 rounded" />
+            <div className="h-5 w-32 animate-pulse bg-gray-200 rounded" />
+          </div>
+        ) : stats ? (
+          <div className="flex space-x-6 text-sm">
+            <div>
+              <span className="text-gray-500">Users with tokens:</span>{' '}
+              <span className="font-semibold text-gray-900">{stats.usersWithTokens}</span>
+            </div>
+            <div>
+              <span className="text-gray-500">Total tokens:</span>{' '}
+              <span className="font-semibold text-gray-900">{stats.totalTokens}</span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">Unable to load stats</p>
+        )}
       </div>
 
       {success && (

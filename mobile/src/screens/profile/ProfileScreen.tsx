@@ -16,12 +16,15 @@ import { AppStackParamList } from '../../navigation/AppStack';
 import { lightColors } from '../../theme/colors';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { fetchProfile, fetchMyPosts } from '../../store/slices/userSlice';
+import { selectIsGuest, selectGuestUsername } from '../../store/slices/authSlice';
 import { getPrimaryImageUrl } from '../../utils/media';
 
 export const ProfileScreen = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const authUser = useAppSelector((state) => state.auth.user);
+  const isGuest = useAppSelector(selectIsGuest);
+  const guestUsername = useAppSelector(selectGuestUsername);
   const { profile, myPosts, isLoading } = useAppSelector((state) => state.user);
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
 
@@ -116,50 +119,73 @@ export const ProfileScreen = () => {
           <View>
             {/* Profile Info */}
             <View style={styles.profileInfo}>
-              {displayUser?.avatarUrl ? (
-                <Image
-                  source={{ uri: displayUser.avatarUrl }}
-                  style={styles.avatar}
-                />
+              {isGuest ? (
+                <>
+                  <View style={styles.avatarPlaceholder}>
+                    <Feather name="user" size={36} color={lightColors.textSecondary} />
+                  </View>
+                  <Text style={styles.fullName}>Guest Explorer</Text>
+                  <Text style={styles.username}>@{guestUsername || 'guest'}</Text>
+
+                  {/* Role Badge */}
+                  <View style={styles.roleBadge}>
+                    <Text style={styles.roleBadgeText}>Explorer</Text>
+                  </View>
+
+                  {/* Login Banner */}
+                  <View style={styles.loginBanner}>
+                    <Feather name="log-in" size={16} color={lightColors.accent} />
+                    <Text style={styles.loginBannerText}>Login to customize your profile</Text>
+                  </View>
+                </>
               ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Feather name="user" size={36} color={lightColors.textSecondary} />
-                </View>
+                <>
+                  {displayUser?.avatarUrl ? (
+                    <Image
+                      source={{ uri: displayUser.avatarUrl }}
+                      style={styles.avatar}
+                    />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <Feather name="user" size={36} color={lightColors.textSecondary} />
+                    </View>
+                  )}
+                  <Text style={styles.fullName}>
+                    {displayUser?.fullName || 'User'}
+                  </Text>
+                  <Text style={styles.username}>
+                    @{displayUser?.username || 'username'}
+                  </Text>
+
+                  {/* Role Badge */}
+                  <View style={styles.roleBadge}>
+                    <Text style={styles.roleBadgeText}>
+                      {getRoleBadgeLabel(displayUser?.role || '')}
+                    </Text>
+                  </View>
+
+                  {/* Stats */}
+                  <View style={styles.statsContainer}>
+                    <View style={styles.statBox}>
+                      <Text style={styles.statNum}>
+                        {displayUser?.stats?.followers ?? 0}
+                      </Text>
+                      <Text style={styles.statLabel}>Followers</Text>
+                    </View>
+                    <View style={styles.statBox}>
+                      <Text style={styles.statNum}>
+                        {displayUser?.stats?.following ?? 0}
+                      </Text>
+                      <Text style={styles.statLabel}>Following</Text>
+                    </View>
+                  </View>
+
+                  {/* Edit Profile Button */}
+                  <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('EditProfile')}>
+                    <Text style={styles.editBtnText}>Edit Profile</Text>
+                  </TouchableOpacity>
+                </>
               )}
-              <Text style={styles.fullName}>
-                {displayUser?.fullName || 'User'}
-              </Text>
-              <Text style={styles.username}>
-                @{displayUser?.username || 'username'}
-              </Text>
-
-              {/* Role Badge */}
-              <View style={styles.roleBadge}>
-                <Text style={styles.roleBadgeText}>
-                  {getRoleBadgeLabel(displayUser?.role || '')}
-                </Text>
-              </View>
-
-              {/* Stats */}
-              <View style={styles.statsContainer}>
-                <View style={styles.statBox}>
-                  <Text style={styles.statNum}>
-                    {displayUser?.stats?.followers ?? 0}
-                  </Text>
-                  <Text style={styles.statLabel}>Followers</Text>
-                </View>
-                <View style={styles.statBox}>
-                  <Text style={styles.statNum}>
-                    {displayUser?.stats?.following ?? 0}
-                  </Text>
-                  <Text style={styles.statLabel}>Following</Text>
-                </View>
-              </View>
-
-              {/* Edit Profile Button */}
-              <TouchableOpacity style={styles.editBtn} onPress={() => navigation.navigate('EditProfile')}>
-                <Text style={styles.editBtnText}>Edit Profile</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Tab Switcher */}
@@ -365,5 +391,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: lightColors.textSecondary,
     marginTop: 4,
+  },
+  loginBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: lightColors.surface,
+    borderWidth: 1,
+    borderColor: lightColors.accent,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginTop: 8,
+    width: '100%',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  loginBannerText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: lightColors.accent,
   },
 });
