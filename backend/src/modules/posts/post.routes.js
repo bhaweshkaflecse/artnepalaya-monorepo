@@ -9,6 +9,7 @@ const router = Router();
 
 // === Public Routes (no auth required) ===
 router.get('/feed', validate(validation.feedPaginationSchema), controller.getFeed);
+router.get('/:postId', controller.getSinglePost);
 
 // Protect all routes below
 router.use(authGuard);
@@ -22,8 +23,6 @@ router.post(
   validate(validation.createPostSchema), 
   controller.createPost
 );
-
-router.get('/:postId', controller.getSinglePost);
 
 // === Interactions ===
 router.post('/:postId/likes', controller.likePost);

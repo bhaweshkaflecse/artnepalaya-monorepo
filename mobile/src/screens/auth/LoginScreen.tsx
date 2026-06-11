@@ -60,6 +60,12 @@ async function performGoogleSignIn(): Promise<string | null> {
       tokenEndpoint: 'https://oauth2.googleapis.com/token',
     };
 
+    // Debug logging for Google Auth troubleshooting
+    console.log('[GoogleAuth] Platform:', Platform.OS);
+    console.log('[GoogleAuth] ClientID:', clientId);
+    console.log('[GoogleAuth] RedirectURI:', redirectUri);
+    console.log('[GoogleAuth] RequestURL:', await request.makeAuthUrlAsync(discovery));
+
     const result = await request.promptAsync(discovery);
 
     if (result.type === 'success' && result.params?.id_token) {

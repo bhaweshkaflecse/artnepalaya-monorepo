@@ -80,7 +80,8 @@ export const broadcastNotification = async (req, res, next) => {
       return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'title and message are required' } });
     }
     const result = await notificationService.broadcastNotification(title, message);
-    res.status(201).json({ success: true, message: 'Broadcast sent', data: result });
+    const recipientCount = result?.recipientCount || 0;
+    res.status(201).json({ success: true, message: `In-app notifications created for ${recipientCount} users (device push requires Expo Push service configuration)`, data: result });
   } catch (err) { next(err); }
 };
 
