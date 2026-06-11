@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "artnepalaya-mobile",
+    "owner": "erbhaweshkafle",
     "slug": "artnepalaya-mobile",
     "scheme": "artnepalaya",
     "version": "1.0.0",
@@ -30,7 +31,6 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-auth-session",
       "expo-notifications"
     ]
   }

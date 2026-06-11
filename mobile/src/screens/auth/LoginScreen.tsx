@@ -49,26 +49,35 @@ export const LoginScreen = () => {
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
   });
-
+console.log('[GoogleAuth] request=', request);
+console.log('[GoogleAuth] redirectUri=', request?.redirectUri);
   // Handle the auth response when it comes back
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const idToken = response.params.id_token;
-      if (idToken) {
-        handleAuthSuccess(idToken);
-      }
-    } else if (response?.type === 'error') {
-      console.warn('[GoogleAuth] Error:', response.error);
-      Alert.alert(
-        'Sign-In Failed',
-        'Google authentication encountered an error. Please try again.',
-        [{ text: 'OK' }]
-      );
-      setIsLoading(false);
-    } else if (response?.type === 'dismiss') {
-      setIsLoading(false);
+useEffect(() => {
+  if (request) {
+    console.log('GOOGLE_REDIRECT_URI=', request.redirectUri);
+  }
+
+  if (response?.type === 'success') {
+    const idToken = response.params.id_token;
+
+    if (idToken) {
+      handleAuthSuccess(idToken);
     }
-  }, [response]);
+  } else if (response?.type === 'error') {
+    console.warn('[GoogleAuth] Error:', response.error);
+
+    Alert.alert(
+      'Sign-In Failed',
+      'Google authentication encountered an error. Please try again.',
+      [{ text: 'OK' }]
+    );
+
+    setIsLoading(false);
+  } else if (response?.type === 'dismiss') {
+    setIsLoading(false);
+  }
+  console.log('[GoogleAuth] response=', response);
+}, [request, response]);
 
   const handleAuthSuccess = async (idToken: string) => {
     try {
