@@ -34,7 +34,7 @@ export interface FeedResponse {
 
 export const postService = {
   getFeatured: async (): Promise<Post[]> => {
-    const response = await api.get('/admin/featured');
+    const response = await api.get('/config/featured');
     return response.data.data;
   },
 

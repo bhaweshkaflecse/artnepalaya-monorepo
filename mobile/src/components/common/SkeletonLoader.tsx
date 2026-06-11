@@ -16,12 +16,12 @@ const ShimmerBlock: React.FC<{ width: number | string; height: number; borderRad
         Animated.timing(animatedValue, {
           toValue: 1,
           duration: 1000,
-          useNativeAnimation: true,
+          useNativeDriver: true,
         }),
         Animated.timing(animatedValue, {
           toValue: 0,
           duration: 1000,
-          useNativeAnimation: true,
+          useNativeDriver: true,
         }),
       ])
     );

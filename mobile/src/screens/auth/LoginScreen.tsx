@@ -13,74 +13,46 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import { useAppDispatch } from '../../store';
 import { setCredentials, setGuest } from '../../store/slices/authSlice';
 import { authService } from '../../services/auth.service';
 import { AnimatedBackground } from '../../components/common/AnimatedBackground';
 
+// Complete any pending auth sessions (required for web-based auth)
+WebBrowser.maybeCompleteAuthSession();
+
 // Google OAuth configuration
 // These are set via Expo environment variables (app.config.js or .env)
-let googleWebClientId = '';
-let googleAndroidClientId = '';
-let googleIosClientId = '';
-
-// Attempt to read Expo public env vars if available at runtime
-try {
-  const envObj = ((globalThis as any).process || {}).env || {};
-  googleWebClientId = envObj.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
-  googleAndroidClientId = envObj.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '';
-  googleIosClientId = envObj.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '';
-} catch {
-  // Environment not available, use empty defaults
-}
-
-const GOOGLE_WEB_CLIENT_ID = googleWebClientId;
-const GOOGLE_ANDROID_CLIENT_ID = googleAndroidClientId;
-const GOOGLE_IOS_CLIENT_ID = googleIosClientId;
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
+const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '';
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '';
 
 /**
  * Attempts to perform Google Sign-In using expo-auth-session.
- * Returns the Google ID token on success, or null if the module is unavailable.
+ * Returns the Google ID token on success, or null if the flow is cancelled/fails.
  */
 async function performGoogleSignIn(): Promise<string | null> {
   try {
-    // Dynamically load expo-auth-session and expo-web-browser
-    // These are optional dependencies that may not be installed in all environments
-    let AuthSession: any;
-    let WebBrowser: any;
-
-    try {
-      AuthSession = (globalThis as any).__modules?.['expo-auth-session'] ||
-        (() => { throw new Error('Module not available'); })();
-    } catch {
-      // expo-auth-session not available - this is expected in dev
-      return null;
-    }
-
-    try {
-      WebBrowser = (globalThis as any).__modules?.['expo-web-browser'] ||
-        (() => { throw new Error('Module not available'); })();
-    } catch {
-      // expo-web-browser not available
-      return null;
-    }
-
-    WebBrowser.maybeCompleteAuthSession();
-
     const clientId = Platform.select({
       android: GOOGLE_ANDROID_CLIENT_ID,
       ios: GOOGLE_IOS_CLIENT_ID,
       default: GOOGLE_WEB_CLIENT_ID,
     });
 
-    // Use AuthSession.makeRedirectUri for the redirect
+    if (!clientId) {
+      console.warn('Google Sign-In: No client ID configured for this platform');
+      return null;
+    }
+
     const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
 
     const request = new AuthSession.AuthRequest({
-      clientId: clientId || GOOGLE_WEB_CLIENT_ID,
+      clientId,
       scopes: ['openid', 'profile', 'email'],
       redirectUri,
-      responseType: 'id_token',
+      responseType: AuthSession.ResponseType.IdToken,
     });
 
     const discovery = {
@@ -96,8 +68,7 @@ async function performGoogleSignIn(): Promise<string | null> {
 
     return null;
   } catch (error: any) {
-    // Module not available or auth failed
-    console.warn('Google Sign-In module not available:', error?.message);
+    console.warn('Google Sign-In failed:', error?.message);
     return null;
   }
 }

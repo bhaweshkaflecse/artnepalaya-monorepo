@@ -97,8 +97,8 @@ export const ExploreScreen = () => {
       setPosts(response.data);
       setCursor(response.meta.nextCursor);
       setHasMore(response.meta.hasNextPage);
-    } catch (_e) {
-      // silently fail for MVP
+    } catch (error: any) {
+      console.warn('ExploreScreen fetchData failed:', error?.message || error);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
@@ -113,8 +113,8 @@ export const ExploreScreen = () => {
       setPosts((prev) => [...prev, ...response.data]);
       setCursor(response.meta.nextCursor);
       setHasMore(response.meta.hasNextPage);
-    } catch (_e) {
-      // silently fail for MVP
+    } catch (error: any) {
+      console.warn('ExploreScreen loadMore failed:', error?.message || error);
     } finally {
       setIsLoadingMore(false);
     }

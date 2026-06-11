@@ -131,12 +131,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       {/* Image with double-tap */}
       <TouchableWithoutFeedback onPress={handleDoubleTap}>
         <View style={styles.imageWrapper}>
-          {getPrimaryImageUrl(post.media) && (
+          {getPrimaryImageUrl(post.media) ? (
             <Image
               source={{ uri: getPrimaryImageUrl(post.media) }}
               style={styles.image}
               resizeMode="cover"
             />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Feather name="image" size={48} color={darkColors.textSecondary} />
+            </View>
           )}
           {/* Heart animation overlay */}
           <Animated.View
@@ -251,6 +255,13 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: darkColors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   heartOverlay: {
     position: 'absolute',
