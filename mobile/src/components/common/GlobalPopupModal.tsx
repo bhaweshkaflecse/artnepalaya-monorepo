@@ -8,7 +8,6 @@ import {
   Linking,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { darkColors } from '../../theme/colors';
 import { api } from '../../services/api';
 
 interface PopupData {
@@ -85,7 +84,7 @@ export const GlobalPopupModal = () => {
         <View style={styles.container}>
           {/* Close button */}
           <TouchableOpacity style={styles.closeBtn} onPress={handleDismiss}>
-            <Feather name="x" size={22} color={darkColors.textSecondary} />
+            <Feather name="x" size={22} color="#9CA3AF" />
           </TouchableOpacity>
 
           {/* Icon */}
@@ -93,7 +92,7 @@ export const GlobalPopupModal = () => {
             <Feather
               name={getIconName(popup.icon)}
               size={32}
-              color={darkColors.accent}
+              color="#DC2626"
             />
           </View>
 
@@ -112,7 +111,7 @@ export const GlobalPopupModal = () => {
 
           {/* Dismiss */}
           <TouchableOpacity style={styles.dismissBtn} onPress={handleDismiss}>
-            <Text style={styles.dismissText}>Dismiss</Text>
+            <Text style={styles.dismissText}>Maybe Later</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -123,16 +122,16 @@ export const GlobalPopupModal = () => {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   container: {
     width: '100%',
-    backgroundColor: darkColors.surface,
-    borderRadius: 16,
-    padding: 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 32,
     alignItems: 'center',
   },
   closeBtn: {
@@ -145,7 +144,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    backgroundColor: '#FEE2E2',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -153,19 +152,19 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#111827',
     textAlign: 'center',
     marginBottom: 12,
   },
   body: {
     fontSize: 15,
-    color: darkColors.textSecondary,
+    color: '#4B5563',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 24,
   },
   ctaBtn: {
-    backgroundColor: darkColors.accent,
+    backgroundColor: '#FF3B30',
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 8,
@@ -183,6 +182,6 @@ const styles = StyleSheet.create({
   },
   dismissText: {
     fontSize: 14,
-    color: darkColors.textSecondary,
+    color: '#4B5563',
   },
 });

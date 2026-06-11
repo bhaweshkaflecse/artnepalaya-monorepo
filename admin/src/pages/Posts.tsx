@@ -77,8 +77,8 @@ export const Posts = () => {
         await api.post('/admin/featured', { postId });
         setFeaturedIds((prev) => new Set(prev).add(postId));
       }
-    } catch {
-      setError('Failed to update featured status. Please try again.');
+    } catch (err) {
+      setError((err as any)?.response?.data?.error?.message || 'Failed to update featured status.');
     } finally {
       setActionLoading(null);
     }

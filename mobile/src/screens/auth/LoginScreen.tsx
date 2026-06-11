@@ -48,22 +48,26 @@ async function performGoogleSignIn(): Promise<string | null> {
 
     const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
 
+    // Debug logging for Google Auth troubleshooting
+    console.log('[GoogleAuth] Platform:', Platform.OS);
+    console.log('[GoogleAuth] ClientID:', clientId);
+    console.log('[GoogleAuth] RedirectURI:', redirectUri);
+
     const request = new AuthSession.AuthRequest({
       clientId,
       scopes: ['openid', 'profile', 'email'],
       redirectUri,
-      responseType: AuthSession.ResponseType.IdToken,
+      responseType: 'id_token',
+      usePKCE: false,
+      extraParams: {
+        nonce: Math.random().toString(36).substring(2),
+      },
     });
 
     const discovery = {
       authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
       tokenEndpoint: 'https://oauth2.googleapis.com/token',
     };
-
-    // Debug logging for Google Auth troubleshooting
-    console.log('[GoogleAuth] Platform:', Platform.OS);
-    console.log('[GoogleAuth] ClientID:', clientId);
-    console.log('[GoogleAuth] RedirectURI:', redirectUri);
     console.log('[GoogleAuth] RequestURL:', await request.makeAuthUrlAsync(discovery));
 
     const result = await request.promptAsync(discovery);

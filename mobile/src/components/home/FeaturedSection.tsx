@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, Image, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { darkColors } from '../../theme/colors';
 import { Post } from '../../services/post.service';
 import { getPrimaryImageUrl } from '../../utils/media';
@@ -12,6 +13,8 @@ interface FeaturedProps {
 }
 
 export const FeaturedSection: React.FC<FeaturedProps> = ({ posts, loading }) => {
+  const navigation = useNavigation<any>();
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -38,14 +41,19 @@ export const FeaturedSection: React.FC<FeaturedProps> = ({ posts, loading }) => 
         contentContainerStyle={styles.scrollContent}
       >
         {posts.map((post) => (
-          <View key={post._id} style={styles.featuredCard}>
+          <TouchableOpacity
+            key={post._id}
+            style={styles.featuredCard}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('PostDetail', { postId: post._id })}
+          >
             <Image source={{ uri: getPrimaryImageUrl(post.media) }} style={styles.image} />
             <View style={styles.overlay}>
               <Text style={styles.artist} numberOfLines={1}>
                 {post.authorId.username}
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     </View>

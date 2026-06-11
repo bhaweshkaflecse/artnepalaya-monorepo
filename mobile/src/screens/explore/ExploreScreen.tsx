@@ -221,6 +221,11 @@ export const ExploreScreen = () => {
       {/* Content */}
       {isLoading ? (
         <ExploreSkeleton />
+      ) : filteredPosts.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Feather name="inbox" size={48} color={darkColors.textSecondary} />
+          <Text style={styles.emptyStateText}>No posts found</Text>
+        </View>
       ) : (
         <FlatList
           data={filteredPosts}
@@ -326,5 +331,16 @@ const styles = StyleSheet.create({
   skeletonColumn: {
     flex: 1,
     paddingHorizontal: 2,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 64,
+  },
+  emptyStateText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: darkColors.textSecondary,
   },
 });
