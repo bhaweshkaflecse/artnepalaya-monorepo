@@ -218,6 +218,15 @@ export const ExploreScreen = () => {
         </ScrollView>
       </View>
 
+      {/* Search Results Feedback */}
+      {searchQuery.length > 0 && !isLoading && (
+        <View style={styles.searchFeedback}>
+          <Text style={styles.searchFeedbackText}>
+            Showing results for '{searchQuery}' - {filteredPosts.length} artwork{filteredPosts.length !== 1 ? 's' : ''} found
+          </Text>
+        </View>
+      )}
+
       {/* Content */}
       {isLoading ? (
         <ExploreSkeleton />
@@ -331,6 +340,15 @@ const styles = StyleSheet.create({
   skeletonColumn: {
     flex: 1,
     paddingHorizontal: 2,
+  },
+  searchFeedback: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  searchFeedbackText: {
+    fontSize: 13,
+    color: darkColors.textSecondary,
+    fontStyle: 'italic',
   },
   emptyState: {
     flex: 1,

@@ -1,5 +1,5 @@
 // src/screens/auth/LoginScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
-import * as AuthSession from 'expo-auth-session';
+import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { useAppDispatch } from '../../store';
 import { setCredentials, setGuest } from '../../store/slices/authSlice';
@@ -25,65 +25,9 @@ import { registerForPushNotifications } from '../../services/pushNotification.se
 WebBrowser.maybeCompleteAuthSession();
 
 // Google OAuth configuration
-// These are set via Expo environment variables (app.config.js or .env)
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '';
 const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '';
-
-/**
- * Attempts to perform Google Sign-In using expo-auth-session.
- * Returns the Google ID token on success, or null if the flow is cancelled/fails.
- */
-async function performGoogleSignIn(): Promise<string | null> {
-  try {
-    const clientId = Platform.select({
-      android: GOOGLE_ANDROID_CLIENT_ID,
-      ios: GOOGLE_IOS_CLIENT_ID,
-      default: GOOGLE_WEB_CLIENT_ID,
-    });
-
-    if (!clientId) {
-      console.warn('Google Sign-In: No client ID configured for this platform');
-      return null;
-    }
-
-    const redirectUri = AuthSession.makeRedirectUri({ scheme: 'artnepalaya' });
-
-    // Debug logging for Google Auth troubleshooting
-    console.log('[GoogleAuth] Platform:', Platform.OS);
-    console.log('[GoogleAuth] ClientID:', clientId);
-    console.log('[GoogleAuth] RedirectURI:', redirectUri);
-
-    const request = new AuthSession.AuthRequest({
-      clientId,
-      scopes: ['openid', 'profile', 'email'],
-      redirectUri,
-      responseType: 'id_token',
-      usePKCE: false,
-      extraParams: {
-        nonce: Math.random().toString(36).substring(2),
-      },
-    });
-
-    const discovery = {
-      authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-      tokenEndpoint: 'https://oauth2.googleapis.com/token',
-      revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
-    };
-    console.log('[GoogleAuth] RequestURL:', await request.makeAuthUrlAsync(discovery));
-
-    const result = await request.promptAsync(discovery, { useProxy: false });
-
-    if (result.type === 'success' && result.params?.id_token) {
-      return result.params.id_token;
-    }
-
-    return null;
-  } catch (error: any) {
-    console.warn('Google Sign-In failed:', error?.message);
-    return null;
-  }
-}
 
 /**
  * Generates a unique device identifier for token binding.
@@ -99,24 +43,35 @@ export const LoginScreen = () => {
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
+  // Use the Google provider hook - handles Expo Go proxy and native redirects automatically
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: GOOGLE_WEB_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+  });
 
-    try {
-      // Attempt to get Google ID token via expo-auth-session
-      const idToken = await performGoogleSignIn();
-
-      if (!idToken) {
-        Alert.alert(
-          'Google Sign-In Unavailable',
-          'Google authentication is not configured in this environment. ' +
-            'Please ensure expo-auth-session is installed and Google OAuth credentials are set.',
-          [{ text: 'OK' }]
-        );
-        setIsLoading(false);
-        return;
+  // Handle the auth response when it comes back
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const idToken = response.params.id_token;
+      if (idToken) {
+        handleAuthSuccess(idToken);
       }
+    } else if (response?.type === 'error') {
+      console.warn('[GoogleAuth] Error:', response.error);
+      Alert.alert(
+        'Sign-In Failed',
+        'Google authentication encountered an error. Please try again.',
+        [{ text: 'OK' }]
+      );
+      setIsLoading(false);
+    } else if (response?.type === 'dismiss') {
+      setIsLoading(false);
+    }
+  }, [response]);
 
+  const handleAuthSuccess = async (idToken: string) => {
+    try {
       // Generate or retrieve a device identifier
       let deviceId = await SecureStore.getItemAsync('deviceId');
       if (!deviceId) {
@@ -125,9 +80,9 @@ export const LoginScreen = () => {
       }
 
       // Send the Google ID token to the backend for verification and JWT exchange
-      const response = await authService.googleLogin(idToken, deviceId);
+      const authResponse = await authService.googleLogin(idToken, deviceId);
 
-      const { user, accessToken, refreshToken } = response.data;
+      const { user, accessToken, refreshToken } = authResponse.data;
 
       // Persist tokens and user data securely
       await SecureStore.setItemAsync('accessToken', accessToken);
@@ -151,6 +106,21 @@ export const LoginScreen = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleLogin = async () => {
+    if (!request) {
+      Alert.alert(
+        'Google Sign-In Unavailable',
+        'Google authentication is not configured in this environment. ' +
+          'Please ensure Google OAuth credentials are set.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    setIsLoading(true);
+    await promptAsync();
   };
 
   const handleSkip = async () => {
