@@ -46,7 +46,7 @@ async function performGoogleSignIn(): Promise<string | null> {
       return null;
     }
 
-    const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+    const redirectUri = AuthSession.makeRedirectUri({ scheme: 'artnepalaya' });
 
     // Debug logging for Google Auth troubleshooting
     console.log('[GoogleAuth] Platform:', Platform.OS);
@@ -67,10 +67,11 @@ async function performGoogleSignIn(): Promise<string | null> {
     const discovery = {
       authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
       tokenEndpoint: 'https://oauth2.googleapis.com/token',
+      revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
     };
     console.log('[GoogleAuth] RequestURL:', await request.makeAuthUrlAsync(discovery));
 
-    const result = await request.promptAsync(discovery);
+    const result = await request.promptAsync(discovery, { useProxy: false });
 
     if (result.type === 'success' && result.params?.id_token) {
       return result.params.id_token;

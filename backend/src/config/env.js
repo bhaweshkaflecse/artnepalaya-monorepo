@@ -14,6 +14,8 @@ const envSchema = z.object({
   REDIS_URL: z.string().url(),
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string(),
+  GOOGLE_ANDROID_CLIENT_ID: z.string().optional(),
+  GOOGLE_IOS_CLIENT_ID: z.string().optional(),
   // Cloudinary
   CLOUDINARY_CLOUD_NAME: z.string(),
   CLOUDINARY_API_KEY: z.string(),

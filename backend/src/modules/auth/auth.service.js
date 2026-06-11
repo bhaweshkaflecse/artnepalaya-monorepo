@@ -23,9 +23,14 @@ export const generateTokens = async (userId, role, deviceId) => {
 export const authenticateWithGoogle = async (idToken, deviceId) => {
   if (!deviceId) throw Object.assign(new Error('Device ID is required'), { status: 400 });
 
+  // Accept web, Android, and iOS client IDs as valid audiences
+  const audience = [env.GOOGLE_CLIENT_ID];
+  if (env.GOOGLE_ANDROID_CLIENT_ID) audience.push(env.GOOGLE_ANDROID_CLIENT_ID);
+  if (env.GOOGLE_IOS_CLIENT_ID) audience.push(env.GOOGLE_IOS_CLIENT_ID);
+
   const ticket = await googleClient.verifyIdToken({
     idToken,
-    audience: env.GOOGLE_CLIENT_ID,
+    audience,
   });
   const payload = ticket.getPayload();
   

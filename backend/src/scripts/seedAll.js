@@ -85,15 +85,15 @@ function generateAvatarUrl(username) {
 // Static Unsplash CDN image URLs (art-themed) to replace unreliable picsum.photos
 const UNSPLASH_ART_IDS = [
   '1579783902614-a3fb3927b6a5',
-  '1578926288018-1b09fdfa5eb6',
+  '1541961017774-22349e4a1262',
   '1513364776144-60967b0f800f',
   '1547891654-e66ed7ebb968',
   '1460661419201-fd4cecdf8a8b',
-  '1549887534-1541e9326642',
+  '1545239351-1141bd82e8a6',
   '1578321272176-b7bbc0679853',
-  '1558618666-fcd25c85f82e',
+  '1518998053901-5348d3961a04',
   '1544735716-392fe2489ffa',
-  '1565017386257-337e10db93e7'
+  '1500530855697-b586d89ba3ee'
 ];
 
 let _unsplashIndex = 0;
@@ -235,7 +235,11 @@ function buildArtLoverUsers() {
 function generatePosts(artists, galleries) {
   const posts = [];
   const authors = [...artists, ...galleries];
-  const videoUrl = 'https://res.cloudinary.com/demo/video/upload/v1/samples/sea-turtle.mp4';
+  const VIDEO_URLS = [
+    'https://res.cloudinary.com/demo/video/upload/v1/samples/sea-turtle.mp4',
+    'https://res.cloudinary.com/demo/video/upload/v1698730753/samples/elephants.mp4',
+    'https://res.cloudinary.com/demo/video/upload/v1698730753/samples/cld-sample-video.mp4'
+  ];
   let captionIndex = 0;
 
   for (let i = 0; i < 110; i++) {
@@ -243,6 +247,7 @@ function generatePosts(artists, galleries) {
     const isVideo = i >= 85; // first 85 are images, last 25 are videos
     const mediaCount = randomInt(1, 3);
     const media = [];
+    const videoUrl = VIDEO_URLS[i % VIDEO_URLS.length];
 
     for (let m = 0; m < mediaCount; m++) {
       if (isVideo && m === 0) {
@@ -501,10 +506,10 @@ async function seedAll() {
           key: 'auth_background_media',
           value: [
             { url: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1080', type: 'image' },
-            { url: 'https://images.unsplash.com/photo-1565017386257-337e10db93e7?w=1080', type: 'image' },
-            { url: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1080', type: 'image' },
-            { url: 'https://images.unsplash.com/photo-1609766856923-7e0a9a5d1c1c?w=1080', type: 'image' },
-            { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1080', type: 'image' }
+            { url: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=1080', type: 'image' },
+            { url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=1080', type: 'image' },
+            { url: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=1080', type: 'image' },
+            { url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1080', type: 'image' }
           ],
           updatedBy: adminUser._id
         }
