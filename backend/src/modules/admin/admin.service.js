@@ -3,6 +3,14 @@ import { Post } from '../posts/post.model.js';
 import { Report } from '../reports/report.model.js';
 import { FeaturedPost } from './featured.model.js';
 
+/**
+ * Escapes special regex characters in a string so it can be safely
+ * used inside a RegExp or MongoDB $regex without unintended behavior.
+ */
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export const getDashboardStats = async () => {
   const [totalUsers, totalPosts, pendingReports] = await Promise.all([
     User.countDocuments(), Post.countDocuments(), Report.countDocuments({ status: 'Pending' })
@@ -77,9 +85,10 @@ export const getPosts = async (page = 1, limit = 15, search = '') => {
   const skip = (page - 1) * limit;
   const query = {};
   if (search) {
+    const safeSearch = escapeRegex(search);
     query.$or = [
-      { caption: { $regex: search, $options: 'i' } },
-      { tags: { $regex: search, $options: 'i' } }
+      { caption: { $regex: safeSearch, $options: 'i' } },
+      { tags: { $regex: safeSearch, $options: 'i' } }
     ];
   }
   const [posts, totalItems] = await Promise.all([

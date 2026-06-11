@@ -4,6 +4,7 @@ import { requireRole } from '../../middlewares/roleGuard.js';
 import { validate } from '../../middlewares/validator.js';
 import * as validation from './admin.validation.js';
 import * as controller from './admin.controller.js';
+import { getInterestUsers } from '../community/community.controller.js';
 
 const router = Router();
 router.use(authGuard);
@@ -32,7 +33,7 @@ router.post('/notifications/broadcast', controller.broadcastNotification);
 router.get('/cms/:slug', controller.getCmsPage);
 router.put('/cms/:slug', controller.updateCmsPage);
 
-router.get('/community-interest', controller.getCommunityInterestUsers);
+router.get('/community-interest', getInterestUsers);
 
 router.get('/global-popup', controller.getGlobalPopup);
 router.put('/global-popup', controller.updateGlobalPopup);
