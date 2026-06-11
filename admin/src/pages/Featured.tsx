@@ -5,8 +5,9 @@ import { api } from '../services/api';
 interface FeaturedPost {
   postId: {
     _id: string;
-    media: string[];
+    media: { url: string; providerId?: string; type?: string }[];
     authorId: { username: string; avatarUrl?: string };
+    caption?: string;
   };
   featuredBy: string;
   createdAt: string;
@@ -121,9 +122,9 @@ export const Featured = () => {
               key={item.postId._id}
               className="bg-white border border-gray-200 rounded-lg overflow-hidden"
             >
-              {item.postId.media?.[0] ? (
+              {item.postId.media?.[0]?.url ? (
                 <img
-                  src={item.postId.media[0]}
+                  src={item.postId.media[0].url}
                   alt=""
                   className="h-48 w-full object-cover"
                 />

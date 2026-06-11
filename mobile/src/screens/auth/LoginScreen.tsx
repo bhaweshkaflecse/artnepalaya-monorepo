@@ -17,6 +17,7 @@ import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { useAppDispatch } from '../../store';
 import { setCredentials, setGuest } from '../../store/slices/authSlice';
+import { api } from '../../services/api';
 import { authService } from '../../services/auth.service';
 import { AnimatedBackground } from '../../components/common/AnimatedBackground';
 import { registerForPushNotifications } from '../../services/pushNotification.service';
@@ -40,6 +41,8 @@ export const LoginScreen = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
+  const [devLoading, setDevLoading] = useState(false);
+  const [devError, setDevError] = useState<string | null>(null);
 
   // Use the Google provider hook - handles Expo Go proxy and native redirects automatically
   // Only use the web client ID in Expo Go to force the Expo auth proxy flow
@@ -160,6 +163,36 @@ useEffect(() => {
     dispatch(setGuest({ guestUsername }));
   };
 
+  const handleDevLogin = async () => {
+    setDevLoading(true);
+    setDevError(null);
+    try {
+      const res = await api.post('/auth/admin-login', {
+        email: 'admin@artnepalaya.com',
+        password: 'admin123',
+      });
+      const { user, accessToken, refreshToken } = res.data.data;
+
+      await SecureStore.setItemAsync('accessToken', accessToken);
+      await SecureStore.setItemAsync('refreshToken', refreshToken);
+      await SecureStore.setItemAsync('userData', JSON.stringify(user));
+
+      dispatch(setCredentials({ user, accessToken, refreshToken }));
+
+      registerForPushNotifications().catch((err) =>
+        console.warn('[LoginScreen] Push notification registration failed:', err)
+      );
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.error?.message ||
+        error?.message ||
+        'Backend unreachable. Is the server running?';
+      setDevError(message);
+    } finally {
+      setDevLoading(false);
+    }
+  };
+
   const handleSignUp = () => {
     navigation.navigate('SignUp');
   };
@@ -209,6 +242,26 @@ useEffect(() => {
           <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
             <Text style={styles.skipText}>Skip for now</Text>
           </TouchableOpacity>
+
+          {/* Dev Login - only visible in development */}
+          {__DEV__ && (
+            <View style={styles.devLoginContainer}>
+              {devError && (
+                <Text style={styles.devErrorText}>{devError}</Text>
+              )}
+              <TouchableOpacity
+                style={[styles.devLoginButton, devLoading && styles.devLoginButtonDisabled]}
+                onPress={handleDevLogin}
+                disabled={devLoading}
+              >
+                {devLoading ? (
+                  <ActivityIndicator size="small" color="#999999" />
+                ) : (
+                  <Text style={styles.devLoginText}>Developer Login (Local Testing Only)</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     </View>
@@ -291,5 +344,33 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.6)',
+  },
+  devLoginContainer: {
+    marginTop: 24,
+    width: '100%',
+    alignItems: 'center',
+  },
+  devLoginButton: {
+    borderWidth: 1,
+    borderColor: '#999999',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    width: '100%',
+    alignItems: 'center',
+  },
+  devLoginButtonDisabled: {
+    opacity: 0.6,
+  },
+  devLoginText: {
+    fontSize: 13,
+    color: '#999999',
+    fontWeight: '500',
+  },
+  devErrorText: {
+    fontSize: 12,
+    color: '#FF6B6B',
+    marginBottom: 8,
+    textAlign: 'center',
   },
 });

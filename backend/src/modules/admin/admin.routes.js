@@ -30,6 +30,10 @@ router.put('/config/auth-media', controller.updateAuthMedia);
 
 router.post('/notifications/broadcast', controller.broadcastNotification);
 
+router.get('/push-stats', controller.getPushStats);
+
+router.get('/debug/posts', controller.getDebugPosts);
+
 router.get('/cms/:slug', controller.getCmsPage);
 router.put('/cms/:slug', controller.updateCmsPage);
 

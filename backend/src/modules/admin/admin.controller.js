@@ -3,6 +3,8 @@ import { AppConfig } from './appConfig.model.js';
 import { CmsPage } from './cmsPage.model.js';
 import { GlobalPopup } from './globalPopup.model.js';
 import * as notificationService from '../notifications/notification.service.js';
+import { User } from '../users/user.model.js';
+import { Post } from '../posts/post.model.js';
 
 export const getDashboardStats = async (req, res, next) => {
   try { res.status(200).json({ success: true, data: await adminService.getDashboardStats() }); } 
@@ -137,3 +139,28 @@ export const updateGlobalPopup = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+export const getPushStats = async (req, res, next) => {
+  try {
+    const usersWithTokens = await User.countDocuments({ pushTokens: { $exists: true, $not: { $size: 0 } } });
+    const result = await User.aggregate([
+      { $match: { pushTokens: { $exists: true, $not: { $size: 0 } } } },
+      { $project: { tokenCount: { $size: '$pushTokens' } } },
+      { $group: { _id: null, totalTokens: { $sum: '$tokenCount' } } },
+    ]);
+    const totalTokens = result.length > 0 ? result[0].totalTokens : 0;
+    res.status(200).json({ success: true, data: { usersWithTokens, totalTokens } });
+  } catch (err) { next(err); }
+};
+
+export const getDebugPosts = async (req, res, next) => {
+  try {
+    const posts = await Post.find().limit(20).lean();
+    const data = posts.map((p) => ({
+      _id: p._id,
+      caption: p.caption,
+      mediaType: p.media?.[0]?.type || null,
+      mediaUrl: p.media?.[0]?.url || null,
+    }));
+    res.status(200).json({ success: true, data });
+  } catch (err) { next(err); }
+};
