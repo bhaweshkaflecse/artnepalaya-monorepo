@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { Post } from '../../services/post.service';
 import { getPrimaryImageUrl } from '../../utils/media';
@@ -17,7 +19,7 @@ interface FeaturedProps {
 }
 
 export const FeaturedSection: React.FC<FeaturedProps> = ({ posts, loading }) => {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
 
   if (loading) {
     return (
@@ -44,9 +46,14 @@ export const FeaturedSection: React.FC<FeaturedProps> = ({ posts, loading }) => 
     >
       <Image source={{ uri: getPrimaryImageUrl(item.media) }} style={styles.image} />
       <View style={styles.overlay}>
-        <Text style={styles.artist} numberOfLines={1}>
-          {item.authorId.username}
-        </Text>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('UserProfile', { userId: item.authorId._id })}
+        >
+          <Text style={styles.artist} numberOfLines={1}>
+            {item.authorId.username}
+          </Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );

@@ -205,6 +205,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               <Feather name="image" size={48} color={darkColors.textSecondary} />
             </View>
           )}
+          {/* Video play icon overlay */}
+          {post.media?.[0]?.type === 'video' && (
+            <View style={styles.videoOverlay}>
+              <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
+            </View>
+          )}
           {/* Heart animation overlay */}
           <Animated.View
             style={[
@@ -327,6 +333,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   heartOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,

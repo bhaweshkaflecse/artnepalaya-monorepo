@@ -8,4 +8,5 @@ const router = Router();
 router.use(authGuard);
 router.get('/', validate(validation.paginationSchema), controller.getNotifications);
 router.put('/read', controller.markAsRead);
+router.put('/:notificationId/read', controller.markOneAsRead);
 export default router;

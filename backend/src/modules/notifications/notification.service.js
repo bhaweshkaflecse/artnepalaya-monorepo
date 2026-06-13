@@ -47,6 +47,20 @@ export const markAllAsRead = async (userId) => {
   return true;
 };
 
+export const markOneAsRead = async (userId, notificationId) => {
+  const notification = await Notification.findOneAndUpdate(
+    { _id: notificationId, recipientId: userId, isRead: false },
+    { $set: { isRead: true } },
+    { new: true }
+  );
+  if (!notification) {
+    const err = new Error('Notification not found');
+    err.statusCode = 404;
+    throw err;
+  }
+  return notification;
+};
+
 export const broadcastNotification = async (title, message) => {
   const BATCH_SIZE = 500;
   let recipientCount = 0;

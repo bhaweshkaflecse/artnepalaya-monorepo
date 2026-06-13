@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
 import { getPrimaryImageUrl } from '../../utils/media';
@@ -22,7 +24,7 @@ type PostDetailRouteProp = RouteProp<{ PostDetail: { postId: string } }, 'PostDe
 
 export const PostDetailScreen = () => {
   const route = useRoute<PostDetailRouteProp>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { postId } = route.params;
 
   const [post, setPost] = useState<Post | null>(null);
@@ -123,7 +125,11 @@ export const PostDetailScreen = () => {
 
       <ScrollView style={styles.scrollView}>
         {/* Author info */}
-        <View style={styles.authorRow}>
+        <TouchableOpacity
+          style={styles.authorRow}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('UserProfile', { userId: post.authorId._id })}
+        >
           <View style={styles.avatarContainer}>
             {post.authorId.avatarUrl ? (
               <Image source={{ uri: post.authorId.avatarUrl }} style={styles.avatar} />
@@ -137,7 +143,7 @@ export const PostDetailScreen = () => {
               {new Date(post.createdAt).toLocaleDateString()}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Image */}
         {getPrimaryImageUrl(post.media) && (
