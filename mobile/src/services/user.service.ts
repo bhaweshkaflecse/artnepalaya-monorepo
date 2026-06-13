@@ -69,4 +69,26 @@ export const userService = {
       meta: response.data.meta,
     };
   },
+
+  followUser: async (userId: string): Promise<void> => {
+    await api.post(`/users/${userId}/follow`);
+  },
+
+  unfollowUser: async (userId: string): Promise<void> => {
+    await api.delete(`/users/${userId}/follow`);
+  },
+
+  getFollowers: async (userId: string, page: number = 1, limit: number = 20) => {
+    const response = await api.get(`/users/${userId}/followers`, {
+      params: { page, limit },
+    });
+    return response.data;
+  },
+
+  getFollowing: async (userId: string, page: number = 1, limit: number = 20) => {
+    const response = await api.get(`/users/${userId}/following`, {
+      params: { page, limit },
+    });
+    return response.data;
+  },
 };

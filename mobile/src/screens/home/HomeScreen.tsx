@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -22,6 +22,7 @@ import { FeaturedSection } from '../../components/home/FeaturedSection';
 import { PostCardSkeleton } from '../../components/common/SkeletonLoader';
 import { GuestLimitModal } from '../../components/common/GuestLimitModal';
 import { Post } from '../../services/post.service';
+import { notificationService } from '../../services/notification.service';
 
 export const HomeScreen = () => {
   const dispatch = useAppDispatch();
@@ -33,12 +34,30 @@ export const HomeScreen = () => {
 
   const viewedPostIds = useRef<Set<string>>(new Set()).current;
   const [modalDismissed, setModalDismissed] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const showGuestModal = isGuest && guestPostsViewed >= 15 && !modalDismissed;
+
+  const fetchUnreadCount = useCallback(async () => {
+    if (isGuest) return;
+    try {
+      const response = await notificationService.getNotifications('unread', 1, 1);
+      setUnreadCount(response.meta.total ?? 0);
+    } catch (error) {
+      // Silently handle notification fetch failure
+    }
+  }, [isGuest]);
 
   useEffect(() => {
     dispatch(fetchFeed());
     dispatch(fetchFeatured());
-  }, [dispatch]);
+    fetchUnreadCount();
+  }, [dispatch, fetchUnreadCount]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchUnreadCount();
+    }, [fetchUnreadCount])
+  );
 
   const handleRefresh = () => {
     dispatch(fetchFeed());
@@ -73,8 +92,15 @@ export const HomeScreen = () => {
     <>
       <View style={styles.topBar}>
         <Text style={styles.logo}>ARTNEPALAYA</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+        <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.bellContainer}>
           <Feather name="bell" size={24} color="#FFFFFF" />
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
       <FeaturedSection posts={featuredPosts} loading={isLoadingFeatured} />
@@ -224,5 +250,25 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  bellContainer: {
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FF3B30',
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

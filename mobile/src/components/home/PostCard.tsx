@@ -11,6 +11,9 @@ import {
   Alert,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { Post, postService } from '../../services/post.service';
 import { getPrimaryImageUrl } from '../../utils/media';
@@ -24,13 +27,15 @@ interface PostCardProps {
 
 export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const isGuest = useAppSelector(selectIsGuest);
   const [isLiked, setIsLiked] = useState(post.isLikedByMe || false);
   const [isSaved, setIsSaved] = useState(post.isSavedByMe || false);
   const [showReportModal, setShowReportModal] = useState(false);
 
-  // Double-tap detection
+  // Single/double-tap detection
   const lastTap = useRef<number>(0);
+  const tapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Heart animation values
   const heartScale = useRef(new Animated.Value(0)).current;
@@ -39,8 +44,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const showLoginAlert = () => {
     Alert.alert(
       'Login Required',
-      'Please login or create an account to continue.',
-      [{ text: 'Cancel', style: 'cancel' }, { text: 'Login', onPress: () => { dispatch(logout()); } }]
+      'Guest accounts cannot like or save artworks. Create an account or sign in to unlock community features.',
+      [
+        { text: 'Continue Browsing', style: 'cancel' },
+        { text: 'Sign In', onPress: () => { dispatch(logout()); } },
+      ]
     );
   };
 
@@ -66,13 +74,18 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     ]).start();
   };
 
-  const handleDoubleTap = () => {
+  const handleImageTap = () => {
     const now = Date.now();
     const delta = now - lastTap.current;
     lastTap.current = now;
 
     if (delta < 300) {
-      // Double-tap detected
+      // Double-tap detected - cancel the single-tap timeout
+      if (tapTimeout.current) {
+        clearTimeout(tapTimeout.current);
+        tapTimeout.current = null;
+      }
+      // Perform like action
       if (isGuest) {
         showLoginAlert();
         return;
@@ -82,7 +95,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         postService.likePost(post._id).catch(() => setIsLiked(false));
       }
       triggerHeartAnimation();
+    } else {
+      // First tap - set timeout for single-tap navigation
+      tapTimeout.current = setTimeout(() => {
+        tapTimeout.current = null;
+        navigation.navigate('PostDetail', { postId: post._id });
+      }, 300);
     }
+  };
+
+  const navigateToProfile = () => {
+    navigation.navigate('UserProfile', { userId: post.authorId._id });
   };
 
   const handleLike = async () => {
@@ -135,26 +158,32 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     <View style={styles.card}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          {post.authorId.avatarUrl ? (
-            <Image source={{ uri: post.authorId.avatarUrl }} style={styles.avatar} />
-          ) : (
-            <Feather name="user" size={16} color={darkColors.textSecondary} />
-          )}
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.username}>{post.authorId.username}</Text>
-          <Text style={styles.timestamp}>
-            {new Date(post.createdAt).toLocaleDateString()}
-          </Text>
-        </View>
+        <TouchableOpacity
+          onPress={navigateToProfile}
+          style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
+          activeOpacity={0.7}
+        >
+          <View style={styles.avatarContainer}>
+            {post.authorId.avatarUrl ? (
+              <Image source={{ uri: post.authorId.avatarUrl }} style={styles.avatar} />
+            ) : (
+              <Feather name="user" size={16} color={darkColors.textSecondary} />
+            )}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.username}>{post.authorId.username}</Text>
+            <Text style={styles.timestamp}>
+              {new Date(post.createdAt).toLocaleDateString()}
+            </Text>
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => setShowReportModal(true)} style={styles.moreBtn}>
           <Feather name="more-horizontal" size={20} color={darkColors.textSecondary} />
         </TouchableOpacity>
       </View>
 
-      {/* Image with double-tap */}
-      <TouchableWithoutFeedback onPress={handleDoubleTap}>
+      {/* Image with single-tap (PostDetail) and double-tap (like) */}
+      <TouchableWithoutFeedback onPress={handleImageTap}>
         <View style={styles.imageWrapper}>
           {getPrimaryImageUrl(post.media) ? (
             <Image

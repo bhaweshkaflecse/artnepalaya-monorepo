@@ -44,6 +44,18 @@ export const LoginScreen = () => {
   const [devLoading, setDevLoading] = useState(false);
   const [devError, setDevError] = useState<string | null>(null);
 
+  /**
+   * IMPORTANT: Google OAuth in Expo Go (SDK 50)
+   * 
+   * The Expo auth proxy (auth.expo.io) has been deprecated and Google now rejects
+   * exp:// redirect URIs. This means Google Sign-In CANNOT work in Expo Go.
+   * 
+   * For development: Use the "Developer Login" button below (visible in __DEV__ mode).
+   * For production: Build with EAS Dev Client. See /GOOGLE_OAUTH_MIGRATION.md for full guide.
+   * 
+   * The Google button below is kept for when running in an EAS Development Build
+   * where native Google Sign-In will work with proper client IDs.
+   */
   // Use the Google provider hook - handles Expo Go proxy and native redirects automatically
   // Only use the web client ID in Expo Go to force the Expo auth proxy flow
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
