@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
+  Animated,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { api } from '../../services/api';
@@ -39,6 +40,7 @@ export const GlobalPopupModal = () => {
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [visible, setVisible] = useState(false);
   const [hasShown, setHasShown] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(0.92)).current;
 
   useEffect(() => {
     if (hasShown) return;
@@ -59,6 +61,17 @@ export const GlobalPopupModal = () => {
 
     fetchPopup();
   }, [hasShown]);
+
+  useEffect(() => {
+    if (visible) {
+      scaleAnim.setValue(0.92);
+      Animated.timing(scaleAnim, {
+        toValue: 1.0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, scaleAnim]);
 
   const handleCta = () => {
     if (popup?.ctaLink) {
@@ -81,14 +94,9 @@ export const GlobalPopupModal = () => {
       onRequestClose={handleDismiss}
     >
       <View style={styles.overlay}>
-        <View style={styles.container}>
-          {/* Close button */}
-          <TouchableOpacity style={styles.closeBtn} onPress={handleDismiss}>
-            <Feather name="x" size={22} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          {/* Icon */}
-          <View style={styles.iconContainer}>
+        <Animated.View style={[styles.container, { transform: [{ scale: scaleAnim }] }]}>
+          {/* Floating badge */}
+          <View style={styles.floatingBadge}>
             <Feather
               name={getIconName(popup.icon)}
               size={32}
@@ -96,11 +104,22 @@ export const GlobalPopupModal = () => {
             />
           </View>
 
+          {/* Close button */}
+          <TouchableOpacity style={styles.closeBtn} onPress={handleDismiss}>
+            <Feather name="x" size={22} color="#9CA3AF" />
+          </TouchableOpacity>
+
           {/* Heading */}
           <Text style={styles.heading}>{popup.heading}</Text>
 
           {/* Body */}
           <Text style={styles.body}>{popup.body}</Text>
+
+          {/* Helper text */}
+          <View style={styles.helperRow}>
+            <Feather name="clock" size={12} color="#9CA3AF" />
+            <Text style={styles.helperText}>Takes less than 1 minute</Text>
+          </View>
 
           {/* CTA Button */}
           {popup.ctaText && (
@@ -113,7 +132,7 @@ export const GlobalPopupModal = () => {
           <TouchableOpacity style={styles.dismissBtn} onPress={handleDismiss}>
             <Text style={styles.dismissText}>Maybe Later</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -130,8 +149,9 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 28,
+    paddingTop: 48,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
@@ -139,20 +159,26 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 12,
   },
+  floatingBadge: {
+    position: 'absolute',
+    top: -36,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
   closeBtn: {
     position: 'absolute',
     top: 12,
     right: 12,
     padding: 4,
-  },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#FEE2E2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
   },
   heading: {
     fontSize: 20,
@@ -166,7 +192,17 @@ const styles = StyleSheet.create({
     color: '#4B5563',
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 24,
+    marginBottom: 16,
+  },
+  helperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginLeft: 4,
   },
   ctaBtn: {
     backgroundColor: '#FF3B30',

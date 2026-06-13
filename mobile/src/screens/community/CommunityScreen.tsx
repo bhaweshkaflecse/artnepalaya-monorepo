@@ -16,30 +16,46 @@ import { selectIsGuest } from '../../store/slices/authSlice';
 
 type SegmentTab = 'community' | 'marketplace';
 
-interface SectionCardProps {
+interface HorizontalCardProps {
+  icon: string;
+  title: string;
+  date?: string;
+}
+
+const HorizontalCard = ({ icon, title, date }: HorizontalCardProps) => (
+  <View style={styles.horizontalCard}>
+    <View style={styles.horizontalCardIcon}>
+      <Feather name={icon as any} size={18} color="#FF3B30" />
+    </View>
+    <Text style={styles.horizontalCardTitle} numberOfLines={2}>{title}</Text>
+    {date && <Text style={styles.horizontalCardDate}>{date}</Text>}
+  </View>
+);
+
+interface BenefitItemProps {
+  text: string;
+}
+
+const BenefitItem = ({ text }: BenefitItemProps) => (
+  <View style={styles.benefitRow}>
+    <Feather name="check-circle" size={16} color="#FF3B30" />
+    <Text style={styles.benefitText}>{text}</Text>
+  </View>
+);
+
+interface SellerBenefitCardProps {
   icon: string;
   title: string;
   description: string;
-  items: string[];
 }
 
-const SectionCard = ({ icon, title, description, items }: SectionCardProps) => (
-  <View style={styles.card}>
-    <View style={styles.cardHeader}>
-      <View style={styles.iconContainer}>
-        <Feather name={icon as any} size={22} color="#FF3B30" />
-      </View>
-      <Text style={styles.cardTitle}>{title}</Text>
+const SellerBenefitCard = ({ icon, title, description }: SellerBenefitCardProps) => (
+  <View style={styles.sellerCard}>
+    <View style={styles.sellerCardIcon}>
+      <Feather name={icon as any} size={20} color="#FF3B30" />
     </View>
-    <Text style={styles.cardDescription}>{description}</Text>
-    <View style={styles.itemList}>
-      {items.map((item, index) => (
-        <View key={index} style={styles.itemRow}>
-          <View style={styles.itemDot} />
-          <Text style={styles.itemText}>{item}</Text>
-        </View>
-      ))}
-    </View>
+    <Text style={styles.sellerCardTitle}>{title}</Text>
+    <Text style={styles.sellerCardDesc}>{description}</Text>
   </View>
 );
 
@@ -76,38 +92,50 @@ const CommunityContent = () => {
 
   return (
     <>
-      <SectionCard
-        icon="calendar"
-        title="Art Festivals & Gallery Openings"
-        description="Discover upcoming local events celebrating Nepal's vibrant art scene, from traditional exhibitions to contemporary showcases."
-        items={[
-          'Kathmandu Art Festival 2025 - Dec 15',
-          'Patan Gallery Night - Jan 8',
-          'Bhaktapur Heritage Art Walk - Feb 3',
-        ]}
-      />
+      {/* Events Section */}
+      <View style={styles.sectionHeader}>
+        <Feather name="calendar" size={16} color="#FF3B30" />
+        <Text style={styles.sectionTitle}>Art Festivals & Gallery Openings</Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalScroll}
+      >
+        <HorizontalCard icon="map-pin" title="Kathmandu Art Festival 2025" date="Dec 15" />
+        <HorizontalCard icon="map-pin" title="Patan Gallery Night" date="Jan 8" />
+        <HorizontalCard icon="map-pin" title="Bhaktapur Heritage Art Walk" date="Feb 3" />
+      </ScrollView>
 
-      <SectionCard
-        icon="book-open"
-        title="Workshops & Master Classes"
-        description="Learn from master artists blending traditional Nepali techniques with modern digital tools in hands-on sessions."
-        items={[
-          'Thangka Painting with Karma Lama',
-          'Digital Art Fundamentals',
-          'Watercolor Landscapes - Pokhara Series',
-        ]}
-      />
+      {/* Workshops Section */}
+      <View style={styles.sectionHeader}>
+        <Feather name="book-open" size={16} color="#FF3B30" />
+        <Text style={styles.sectionTitle}>Workshops & Master Classes</Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalScroll}
+      >
+        <HorizontalCard icon="pen-tool" title="Thangka Painting with Karma Lama" />
+        <HorizontalCard icon="monitor" title="Digital Art Fundamentals" />
+        <HorizontalCard icon="droplet" title="Watercolor Landscapes - Pokhara Series" />
+      </ScrollView>
 
-      <SectionCard
-        icon="award"
-        title="Exhibitions & Competitions"
-        description="Showcase your talent on a national stage and connect with galleries, collectors, and fellow artists."
-        items={[
-          'Nepal Art Biennial 2025',
-          'Young Artists Challenge',
-          'Himalayan Digital Art Awards',
-        ]}
-      />
+      {/* Exhibitions Section */}
+      <View style={styles.sectionHeader}>
+        <Feather name="award" size={16} color="#FF3B30" />
+        <Text style={styles.sectionTitle}>Exhibitions & Competitions</Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalScroll}
+      >
+        <HorizontalCard icon="star" title="Nepal Art Biennial 2025" />
+        <HorizontalCard icon="zap" title="Young Artists Challenge" />
+        <HorizontalCard icon="globe" title="Himalayan Digital Art Awards" />
+      </ScrollView>
 
       <TouchableOpacity
         style={[styles.waitlistButton, isJoining && styles.waitlistButtonDisabled]}
@@ -157,41 +185,18 @@ const MarketplaceContent = () => {
 
   return (
     <>
-      <View style={styles.comingSoonContainer}>
-        <View style={styles.comingSoonIconWrapper}>
-          <Feather name="shopping-bag" size={48} color="#FF3B30" />
-        </View>
-        <Text style={styles.comingSoonTitle}>Marketplace Coming Soon</Text>
-        <Text style={styles.comingSoonDescription}>
-          Buy and sell original Nepali artwork directly from artists. Our marketplace
-          will connect collectors with creators across Nepal.
-        </Text>
+      {/* Benefits Checklist */}
+      <View style={styles.benefitsContainer}>
+        <Text style={styles.benefitsTitle}>Why sell on Artnepalaya?</Text>
+        <BenefitItem text="Set up your artist storefront" />
+        <BenefitItem text="List paintings, prints, and digital art" />
+        <BenefitItem text="Secure payments with buyer protection" />
+        <BenefitItem text="Reach collectors worldwide" />
+        <BenefitItem text="Priority access on launch day" />
+        <BenefitItem text="Reduced commission for early sellers" />
       </View>
 
-      <SectionCard
-        icon="user-check"
-        title="Seller Registration"
-        description="Register as a verified seller to list your artwork when the marketplace launches. Early sellers get featured placement."
-        items={[
-          'Set up your artist storefront',
-          'List paintings, prints, and digital art',
-          'Secure payments with buyer protection',
-          'Reach collectors worldwide',
-        ]}
-      />
-
-      <SectionCard
-        icon="clock"
-        title="Marketplace Waitlist"
-        description="Join the waitlist to be the first to know when buying and selling goes live. Early members receive exclusive benefits."
-        items={[
-          'Priority access on launch day',
-          'Reduced commission for early sellers',
-          'Exclusive collector badges',
-          'Early notification of new listings',
-        ]}
-      />
-
+      {/* CTA */}
       <TouchableOpacity
         style={[styles.waitlistButton, isRegistering && styles.waitlistButtonDisabled]}
         onPress={handleSellerRegistration}
@@ -203,6 +208,32 @@ const MarketplaceContent = () => {
           {isRegistering ? 'Registering...' : 'Join Marketplace Waitlist'}
         </Text>
       </TouchableOpacity>
+
+      {/* Seller Benefit Cards */}
+      <View style={styles.sellerCardsRow}>
+        <SellerBenefitCard
+          icon="trending-up"
+          title="Featured Placement"
+          description="Early sellers get featured on the homepage"
+        />
+        <SellerBenefitCard
+          icon="percent"
+          title="Low Commission"
+          description="Reduced fees for founding sellers"
+        />
+      </View>
+      <View style={styles.sellerCardsRow}>
+        <SellerBenefitCard
+          icon="shield"
+          title="Verified Badge"
+          description="Build trust with collector verification"
+        />
+        <SellerBenefitCard
+          icon="users"
+          title="Community"
+          description="Connect with collectors and artists"
+        />
+      </View>
     </>
   );
 };
@@ -217,11 +248,26 @@ export const CommunityScreen = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Community</Text>
-          <Text style={styles.headerSubtitle}>
+        {/* Hero Section */}
+        <View style={styles.hero}>
+          <Text style={styles.heroTitle}>Community Hub</Text>
+          <Text style={styles.heroSubtitle}>
             Connect with Nepal's creative world
           </Text>
+          <View style={styles.statChipsRow}>
+            <View style={styles.statChip}>
+              <Feather name="users" size={12} color="#FF3B30" />
+              <Text style={styles.statChipText}>2.5K Artists</Text>
+            </View>
+            <View style={styles.statChip}>
+              <Feather name="image" size={12} color="#FF3B30" />
+              <Text style={styles.statChipText}>10K+ Artworks</Text>
+            </View>
+            <View style={styles.statChip}>
+              <Feather name="globe" size={12} color="#FF3B30" />
+              <Text style={styles.statChipText}>15 Cities</Text>
+            </View>
+          </View>
         </View>
 
         {/* Segmented Control */}
@@ -293,20 +339,39 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
-  header: {
-    marginBottom: 20,
+  hero: {
+    marginBottom: 24,
     marginTop: 8,
   },
-  headerTitle: {
+  heroTitle: {
     fontSize: 28,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 6,
   },
-  headerSubtitle: {
+  heroSubtitle: {
     fontSize: 15,
     color: '#AAAAAA',
     fontWeight: '400',
+    marginBottom: 16,
+  },
+  statChipsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  statChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  statChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 4,
   },
   segmentedControl: {
     flexDirection: 'row',
@@ -337,90 +402,106 @@ const styles = StyleSheet.create({
   segmentTextActive: {
     color: '#FFFFFF',
   },
-  card: {
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginLeft: 8,
+  },
+  horizontalScroll: {
+    paddingBottom: 16,
+    gap: 12,
+  },
+  horizontalCard: {
+    width: 160,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  horizontalCardIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 59, 48, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  horizontalCardTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  horizontalCardDate: {
+    fontSize: 11,
+    color: 'gray',
+  },
+  benefitsContainer: {
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 16,
-    padding: 24,
+    padding: 20,
     marginBottom: 20,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 59, 48, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    flex: 1,
-  },
-  cardDescription: {
-    fontSize: 14,
-    color: '#BBBBBB',
-    lineHeight: 21,
-    marginBottom: 16,
-  },
-  itemList: {
-    gap: 10,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  itemDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FF3B30',
-    marginRight: 10,
-  },
-  itemText: {
-    fontSize: 14,
-    color: '#E0E0E0',
-    fontWeight: '500',
-  },
-  comingSoonContainer: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    marginBottom: 20,
-  },
-  comingSoonIconWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 59, 48, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  comingSoonTitle: {
-    fontSize: 22,
+  benefitsTitle: {
+    fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
+    marginBottom: 16,
+  },
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  comingSoonDescription: {
-    fontSize: 15,
-    color: '#BBBBBB',
-    textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 12,
+  benefitText: {
+    fontSize: 14,
+    color: '#E0E0E0',
+    marginLeft: 10,
+    fontWeight: '500',
+  },
+  sellerCardsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+  },
+  sellerCard: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  sellerCardIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 59, 48, 0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  sellerCardTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  sellerCardDesc: {
+    fontSize: 11,
+    color: 'gray',
+    lineHeight: 16,
   },
   waitlistButton: {
     flexDirection: 'row',

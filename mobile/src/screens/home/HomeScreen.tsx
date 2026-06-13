@@ -78,6 +78,10 @@ export const HomeScreen = () => {
         </TouchableOpacity>
       </View>
       <FeaturedSection posts={featuredPosts} loading={isLoadingFeatured} />
+      <View style={styles.dividerContainer}>
+        <Text style={styles.dividerText}>Latest Artworks</Text>
+        <View style={styles.dividerLine} />
+      </View>
     </>
   );
 
@@ -203,5 +207,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#A0A0A0',
     marginTop: 4,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  dividerText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginRight: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
 });
