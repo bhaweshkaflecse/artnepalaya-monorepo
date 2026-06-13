@@ -29,15 +29,17 @@ export const ProfileScreen = () => {
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
 
   useEffect(() => {
+    if (isGuest) return;
     dispatch(fetchProfile());
-  }, [dispatch]);
+  }, [dispatch, isGuest]);
 
   useEffect(() => {
+    if (isGuest) return;
     const userId = profile?._id || authUser?.id;
     if (userId) {
       dispatch(fetchMyPosts(userId));
     }
-  }, [dispatch, profile, authUser]);
+  }, [dispatch, profile, authUser, isGuest]);
 
   useEffect(() => {
     if (activeTab === 'saved' && !isGuest) {

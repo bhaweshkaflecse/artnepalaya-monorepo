@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import * as postService from './post.service.js';
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -54,6 +55,9 @@ export const createPost = async (req, res, next) => {
 
 export const getSinglePost = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid post ID format' } });
+    }
     const post = await postService.getSinglePost(req.params.postId);
     res.status(200).json({ success: true, data: post });
   } catch (err) {
@@ -72,6 +76,9 @@ export const getFeed = async (req, res, next) => {
 
 export const likePost = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid post ID format' } });
+    }
     await postService.addLike(req.user.id, req.params.postId);
     res.status(200).json({ success: true, message: "Post liked" });
   } catch (err) {
@@ -82,6 +89,9 @@ export const likePost = async (req, res, next) => {
 
 export const unlikePost = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid post ID format' } });
+    }
     await postService.removeLike(req.user.id, req.params.postId);
     res.status(200).json({ success: true, message: "Post unliked" });
   } catch (err) { next(err); }
@@ -89,6 +99,9 @@ export const unlikePost = async (req, res, next) => {
 
 export const savePost = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid post ID format' } });
+    }
     await postService.addSave(req.user.id, req.params.postId);
     res.status(200).json({ success: true, message: "Post saved" });
   } catch (err) {
@@ -99,6 +112,9 @@ export const savePost = async (req, res, next) => {
 
 export const unsavePost = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid post ID format' } });
+    }
     await postService.removeSave(req.user.id, req.params.postId);
     res.status(200).json({ success: true, message: "Post unsaved" });
   } catch (err) { next(err); }

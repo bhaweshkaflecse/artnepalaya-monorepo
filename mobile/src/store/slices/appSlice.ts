@@ -22,6 +22,18 @@ export const loadAppState = createAsyncThunk('app/loadAppState', async (_, { rej
     const value = await SecureStore.getItemAsync('hasCompletedOnboarding');
     const accessToken = await SecureStore.getItemAsync('accessToken');
     const refreshToken = await SecureStore.getItemAsync('refreshToken');
+
+    // Prevent orphaned access tokens from triggering refresh attempts
+    if (accessToken && !refreshToken) {
+      await SecureStore.deleteItemAsync('accessToken');
+      return {
+        hasCompletedOnboarding: value === 'true',
+        accessToken: null,
+        refreshToken: null,
+        userData: null,
+      };
+    }
+
     const userDataStr = await SecureStore.getItemAsync('userData');
 
     let userData = null;
