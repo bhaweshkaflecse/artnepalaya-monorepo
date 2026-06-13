@@ -1,6 +1,7 @@
 import { User } from './user.model.js';
 import { Post } from '../posts/post.model.js';
 import { Save } from '../posts/post-interaction.model.js';
+import { Follow } from './follow.model.js';
 
 // === Fetch Profile ===
 export const getUserProfile = async (userId, isPublic = false) => {
@@ -100,4 +101,97 @@ export const removePushToken = async (userId, token) => {
     { $pull: { pushTokens: token } }
   );
   return true;
+};
+
+// === Follow System ===
+export const followUser = async (currentUserId, targetUserId) => {
+  if (currentUserId === targetUserId) {
+    throw Object.assign(new Error('Cannot follow yourself'), { status: 400 });
+  }
+
+  try {
+    await Follow.create({ followerId: currentUserId, followingId: targetUserId });
+    await Promise.all([
+      User.findByIdAndUpdate(targetUserId, { $inc: { 'stats.followers': 1 } }),
+      User.findByIdAndUpdate(currentUserId, { $inc: { 'stats.following': 1 } })
+    ]);
+    return true;
+  } catch (err) {
+    if (err.code === 11000) return true; // Already following
+    throw err;
+  }
+};
+
+export const unfollowUser = async (currentUserId, targetUserId) => {
+  const deleted = await Follow.findOneAndDelete({ followerId: currentUserId, followingId: targetUserId });
+  if (deleted) {
+    await Promise.all([
+      User.findByIdAndUpdate(targetUserId, { $inc: { 'stats.followers': -1 } }),
+      User.findByIdAndUpdate(currentUserId, { $inc: { 'stats.following': -1 } })
+    ]);
+  }
+  return true;
+};
+
+export const getFollowers = async (userId, page, limit) => {
+  page = page || 1;
+  limit = limit || 20;
+  const skip = (page - 1) * limit;
+
+  const [follows, totalItems] = await Promise.all([
+    Follow.find({ followingId: userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('followerId', 'username avatarUrl')
+      .lean(),
+    Follow.countDocuments({ followingId: userId })
+  ]);
+
+  const totalPages = Math.ceil(totalItems / limit);
+
+  return {
+    data: follows.map(f => f.followerId),
+    meta: {
+      currentPage: page,
+      limit,
+      totalItems,
+      totalPages,
+      hasNextPage: page < totalPages
+    }
+  };
+};
+
+export const getFollowing = async (userId, page, limit) => {
+  page = page || 1;
+  limit = limit || 20;
+  const skip = (page - 1) * limit;
+
+  const [follows, totalItems] = await Promise.all([
+    Follow.find({ followerId: userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('followingId', 'username avatarUrl')
+      .lean(),
+    Follow.countDocuments({ followerId: userId })
+  ]);
+
+  const totalPages = Math.ceil(totalItems / limit);
+
+  return {
+    data: follows.map(f => f.followingId),
+    meta: {
+      currentPage: page,
+      limit,
+      totalItems,
+      totalPages,
+      hasNextPage: page < totalPages
+    }
+  };
+};
+
+export const isFollowing = async (currentUserId, targetUserId) => {
+  const exists = await Follow.exists({ followerId: currentUserId, followingId: targetUserId });
+  return !!exists;
 };

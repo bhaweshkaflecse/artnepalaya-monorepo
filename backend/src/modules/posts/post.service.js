@@ -1,5 +1,4 @@
 import { Post } from './post.model.js';
-import { User } from '../users/user.model.js';
 import { Like, Save } from './post-interaction.model.js';
 import * as tagService from '../tags/tag.service.js';
 import * as notificationService from '../notifications/notification.service.js';
@@ -47,18 +46,11 @@ export const getSinglePost = async (postId) => {
 export const getFeed = async (userId, cursor, limit) => {
   limit = limit || 15;
 
-  let userInterests = [];
-  if (userId) {
-    const user = await User.findById(userId).select('interests').lean();
-    userInterests = user?.interests || [];
-  }
-  
-  // THE UPGRADE: Caching the feed using Redis! (Caches for 5 minutes)
-  const cacheKey = `feed:${userId || 'guest'}:${cursor || 'start'}:${limit}`;
-  
+  const cacheKey = `feed:ranked:${userId || 'guest'}:${cursor || 'start'}:${limit}`;
+
   return await getOrSetCache(cacheKey, 300, async () => {
     const query = cursor ? { _id: { $lt: cursor } } : {};
-    const fetchLimit = limit * 2; 
+    const fetchLimit = limit * 2;
 
     let posts = await Post.find(query)
       .sort({ _id: -1 })
@@ -66,19 +58,33 @@ export const getFeed = async (userId, cursor, limit) => {
       .populate('authorId', 'username avatarUrl role')
       .lean();
 
-    // Redis Feed Algorithm (Interest Scoring)
-    if (userInterests.length > 0) {
-      posts.forEach(post => {
-        post._score = post.tags.filter(tag => userInterests.includes(tag)).length * 2;
-      });
-      posts.sort((a, b) => b._score !== a._score ? b._score - a._score : (b._id > a._id ? 1 : -1));
-    }
+    // Popularity scoring: likesCount * 3 + savesCount * 5
+    posts.forEach(post => {
+      post._score = (post.likesCount || 0) * 3 + (post.savesCount || 0) * 5;
+    });
 
-    const paginatedPosts = posts.slice(0, limit);
+    // Split into popular (sorted by score DESC, then createdAt DESC) and recent (createdAt DESC)
+    const popular = [...posts].sort((a, b) => {
+      if (b._score !== a._score) return b._score - a._score;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    const recent = [...posts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Interleave: first batch = top scored, rest = recent (filling up to limit)
+    const firstBatchSize = Math.ceil(limit / 3);
+    const topScored = popular.slice(0, firstBatchSize);
+    const topScoredIds = new Set(topScored.map(p => p._id.toString()));
+
+    const recentFill = recent.filter(p => !topScoredIds.has(p._id.toString()));
+    const remainingSlots = limit - topScored.length;
+    const recentPosts = recentFill.slice(0, remainingSlots);
+
+    const paginatedPosts = [...topScored, ...recentPosts];
     const hasNextPage = posts.length > limit;
-    
+
     let nextCursor = null;
-    if (hasNextPage) {
+    if (hasNextPage && paginatedPosts.length > 0) {
       const oldestPost = paginatedPosts.reduce((oldest, current) => current._id < oldest._id ? current : oldest);
       nextCursor = oldestPost._id.toString();
     }

@@ -23,4 +23,10 @@ router.delete('/me/push-token', controller.removePushToken);
 router.get('/:userId', controller.getPublicProfile);
 router.get('/:userId/posts', validate(validation.paginationSchema), controller.getUserPosts);
 
+// === Follow Routes ===
+router.post('/:userId/follow', controller.followUser);
+router.delete('/:userId/follow', controller.unfollowUser);
+router.get('/:userId/followers', controller.getFollowers);
+router.get('/:userId/following', controller.getFollowing);
+
 export default router;

@@ -89,3 +89,47 @@ export const removePushToken = async (req, res, next) => {
     next(err);
   }
 };
+
+// === Follow System ===
+export const followUser = async (req, res, next) => {
+  try {
+    await userService.followUser(req.user.id, req.params.userId);
+    res.status(200).json({ success: true, message: 'Followed successfully' });
+  } catch (err) {
+    if (err.status === 400) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: err.message } });
+    }
+    next(err);
+  }
+};
+
+export const unfollowUser = async (req, res, next) => {
+  try {
+    await userService.unfollowUser(req.user.id, req.params.userId);
+    res.status(200).json({ success: true, message: 'Unfollowed successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getFollowers = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const result = await userService.getFollowers(req.params.userId, page, limit);
+    res.status(200).json({ success: true, data: result.data, meta: result.meta });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getFollowing = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const result = await userService.getFollowing(req.params.userId, page, limit);
+    res.status(200).json({ success: true, data: result.data, meta: result.meta });
+  } catch (err) {
+    next(err);
+  }
+};
