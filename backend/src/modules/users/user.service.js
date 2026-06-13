@@ -109,6 +109,11 @@ export const followUser = async (currentUserId, targetUserId) => {
     throw Object.assign(new Error('Cannot follow yourself'), { status: 400 });
   }
 
+  const targetUser = await User.findById(targetUserId).select('_id').lean();
+  if (!targetUser) {
+    throw Object.assign(new Error('User not found'), { status: 404 });
+  }
+
   try {
     await Follow.create({ followerId: currentUserId, followingId: targetUserId });
     await Promise.all([

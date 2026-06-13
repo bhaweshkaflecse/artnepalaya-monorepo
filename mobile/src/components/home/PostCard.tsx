@@ -37,6 +37,15 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const lastTap = useRef<number>(0);
   const tapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Clear tap timeout on unmount to prevent navigation on unmounted component
+  React.useEffect(() => {
+    return () => {
+      if (tapTimeout.current) {
+        clearTimeout(tapTimeout.current);
+      }
+    };
+  }, []);
+
   // Heart animation values
   const heartScale = useRef(new Animated.Value(0)).current;
   const heartOpacity = useRef(new Animated.Value(0)).current;
