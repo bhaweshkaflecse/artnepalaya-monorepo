@@ -2,6 +2,7 @@
   "expo": {
     "name": "artnepalaya-mobile",
     "slug": "artnepalaya-mobile",
+    "owner": "erbhaweshkafle",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,18 +11,20 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
+      "bundleIdentifier": "com.artnepalaya.mobile",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.artnepalaya.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#000000"
       }
     },
     "web": {
@@ -29,7 +32,6 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-auth-session",
       "expo-notifications"
     ]
   }
