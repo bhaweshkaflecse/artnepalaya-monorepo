@@ -87,20 +87,20 @@ export const Featured = () => {
     }
   };
 
-  const handleMoveUp = (index: number) => {
+  const handleMoveUp = async (index: number) => {
     if (index === 0) return;
     const item = featured[index];
     const prevItem = featured[index - 1];
-    handleUpdateOrder(item.postId._id, prevItem.sortOrder);
-    handleUpdateOrder(prevItem.postId._id, item.sortOrder);
+    await handleUpdateOrder(item.postId._id, prevItem.sortOrder);
+    await handleUpdateOrder(prevItem.postId._id, item.sortOrder);
   };
 
-  const handleMoveDown = (index: number) => {
+  const handleMoveDown = async (index: number) => {
     if (index === featured.length - 1) return;
     const item = featured[index];
     const nextItem = featured[index + 1];
-    handleUpdateOrder(item.postId._id, nextItem.sortOrder);
-    handleUpdateOrder(nextItem.postId._id, item.sortOrder);
+    await handleUpdateOrder(item.postId._id, nextItem.sortOrder);
+    await handleUpdateOrder(nextItem.postId._id, item.sortOrder);
   };
 
   const handleUpdateExpiry = async (postId: string, expiresAt: string) => {

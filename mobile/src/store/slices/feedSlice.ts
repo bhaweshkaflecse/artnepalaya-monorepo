@@ -39,12 +39,7 @@ export const fetchMoreFeed = createAsyncThunk(
   'feed/fetchMoreFeed',
   async (_, thunkAPI: any) => {
     const state = thunkAPI.getState();
-    const { cursor, hasNextPage, isLoadingMore } = state.feed;
-
-    // Guard: prevent duplicate requests or fetching past the end
-    if (!cursor || !hasNextPage || isLoadingMore) {
-      return null;
-    }
+    const { cursor } = state.feed;
 
     try {
       const response = await postService.getFeed(cursor, 15);
@@ -52,6 +47,16 @@ export const fetchMoreFeed = createAsyncThunk(
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error?.response?.data?.message || 'Failed to load more posts');
     }
+  },
+  {
+    condition: (_, { getState }: any) => {
+      const { cursor, hasNextPage, isLoadingMore } = (getState() as any).feed;
+      // Prevent duplicate requests or fetching past the end
+      if (!cursor || !hasNextPage || isLoadingMore) {
+        return false;
+      }
+      return true;
+    },
   }
 );
 

@@ -274,6 +274,11 @@ export const deleteAdminTag = async (req, res, next) => {
     if (!tag) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Tag not found' } });
     }
+    // Remove the deleted tag name from all posts that reference it
+    await Post.updateMany(
+      { tags: tag.name },
+      { $pull: { tags: tag.name } }
+    );
     res.status(200).json({ success: true, message: 'Tag deleted' });
   } catch (err) { next(err); }
 };
