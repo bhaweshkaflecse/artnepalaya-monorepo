@@ -62,6 +62,7 @@ export const HomeScreen = () => {
   const handleRefresh = () => {
     dispatch(fetchFeed());
     dispatch(fetchFeatured());
+    fetchUnreadCount();
   };
 
   const handleEndReached = () => {

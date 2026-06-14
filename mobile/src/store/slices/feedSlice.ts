@@ -38,10 +38,15 @@ export const fetchFeed = createAsyncThunk(
 export const fetchMoreFeed = createAsyncThunk(
   'feed/fetchMoreFeed',
   async (_, thunkAPI: any) => {
+    const state = thunkAPI.getState();
+    const { cursor, hasNextPage, isLoadingMore } = state.feed;
+
+    // Guard: prevent duplicate requests or fetching past the end
+    if (!cursor || !hasNextPage || isLoadingMore) {
+      return null;
+    }
+
     try {
-      const state = thunkAPI.getState();
-      const cursor = state.feed.cursor;
-      if (!cursor) return null;
       const response = await postService.getFeed(cursor, 15);
       return response;
     } catch (error: any) {

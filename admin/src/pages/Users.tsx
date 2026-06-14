@@ -128,8 +128,8 @@ export const Users = () => {
   });
 
   return (
-    <div className="space-y-4">
-      {error && <div className="bg-red-50 text-red-700 px-4 py-2 rounded-md text-sm mb-4">{error}</div>}
+    <div className="space-y-5">
+      {error && <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm border border-red-100">{error}</div>}
       <div className="flex items-center space-x-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -138,7 +138,7 @@ export const Users = () => {
             placeholder="Search by username or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-black"
+            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all"
           />
         </div>
         {meta && (
@@ -148,44 +148,45 @@ export const Users = () => {
         )}
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="max-h-[calc(100vh-240px)] overflow-y-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="p-4 font-medium text-gray-600 text-sm">Avatar</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Username</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Email</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Role</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Sub-roles</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">18+</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Status</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Actions</th>
+            <tr className="bg-gray-50/80 border-b border-gray-100">
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Avatar</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Username</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Email</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Role</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Sub-roles</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">18+</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Status</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-b border-gray-100">
-                  <td className="p-4"><div className="h-8 w-8 animate-pulse bg-gray-200 rounded-full" /></td>
-                  <td className="p-4"><div className="h-4 w-24 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-32 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-16 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-20 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-10 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-16 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-24 animate-pulse bg-gray-200 rounded" /></td>
+                <tr key={i} className="border-b border-gray-50">
+                  <td className="px-5 py-3.5"><div className="h-8 w-8 animate-pulse bg-gray-100 rounded-full" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-24 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-32 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-20 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-10 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-24 animate-pulse bg-gray-100 rounded" /></td>
                 </tr>
               ))
             ) : filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-8 text-center text-gray-400">
+                <td colSpan={8} className="px-5 py-12 text-center text-gray-400">
                   No users found.
                 </td>
               </tr>
             ) : (
               filteredUsers.map((user) => (
-                <tr key={user._id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                  <td className="p-4">
+                <tr key={user._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors duration-100">
+                  <td className="px-5 py-3.5">
                     {user.avatarUrl ? (
                       <img
                         src={user.avatarUrl}
@@ -193,12 +194,12 @@ export const Users = () => {
                         className="w-8 h-8 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">
+                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
                         {user.username?.[0]?.toUpperCase() || '?'}
                       </div>
                     )}
                   </td>
-                  <td className="p-4 text-sm font-medium">
+                  <td className="px-5 py-3.5 text-sm font-medium">
                     <span className="inline-flex items-center gap-1">
                       {user.username}
                       {user.isVerified && (
@@ -206,12 +207,12 @@ export const Users = () => {
                       )}
                     </span>
                   </td>
-                  <td className="p-4 text-sm text-gray-500">{user.email}</td>
-                  <td className="p-4 text-sm">{user.role}</td>
-                  <td className="p-4 text-sm text-gray-500">
+                  <td className="px-5 py-3.5 text-sm text-gray-500">{user.email}</td>
+                  <td className="px-5 py-3.5 text-sm">{user.role}</td>
+                  <td className="px-5 py-3.5 text-sm text-gray-500">
                     {user.subRoles?.join(', ') || '-'}
                   </td>
-                  <td className="p-4">
+                  <td className="px-5 py-3.5">
                     {user.isAdult ? (
                       <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full">
                         Yes
@@ -222,14 +223,14 @@ export const Users = () => {
                       </span>
                     )}
                   </td>
-                  <td className="p-4">
+                  <td className="px-5 py-3.5">
                     <span
                       className={`px-2 py-1 text-xs font-semibold rounded-full capitalize ${getStatusBadge(user.status)}`}
                     >
                       {user.status}
                     </span>
                   </td>
-                  <td className="p-4">
+                  <td className="px-5 py-3.5">
                     <div className="flex space-x-1 flex-wrap gap-y-1">
                       {user.status !== 'active' && (
                         <button
@@ -241,7 +242,7 @@ export const Users = () => {
                             })
                           }
                           disabled={actionLoading === user._id}
-                          className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                          className="text-xs px-2 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
                         >
                           Activate
                         </button>
@@ -256,7 +257,7 @@ export const Users = () => {
                             })
                           }
                           disabled={actionLoading === user._id}
-                          className="text-xs px-2 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50"
+                          className="text-xs px-2 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 disabled:opacity-50 transition-colors"
                         >
                           Suspend
                         </button>
@@ -271,7 +272,7 @@ export const Users = () => {
                             })
                           }
                           disabled={actionLoading === user._id}
-                          className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                          className="text-xs px-2 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors"
                         >
                           Ban
                         </button>
@@ -280,7 +281,7 @@ export const Users = () => {
                         <button
                           onClick={() => setVerifyModal({ userId: user._id, username: user.username })}
                           disabled={actionLoading === user._id}
-                          className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                          className="text-xs px-2 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
                         >
                           Verify
                         </button>
@@ -288,7 +289,7 @@ export const Users = () => {
                         <button
                           onClick={() => handleUnverifyUser(user._id)}
                           disabled={actionLoading === user._id}
-                          className="text-xs px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50"
+                          className="text-xs px-2 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 transition-colors"
                         >
                           Unverify
                         </button>
@@ -300,6 +301,7 @@ export const Users = () => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {meta && meta.totalPages > 1 && (
@@ -307,7 +309,7 @@ export const Users = () => {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1 || loading}
-            className="flex items-center space-x-1 px-3 py-2 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            className="flex items-center space-x-1 px-3 py-2 border border-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
           >
             <ChevronLeft size={16} />
             <span>Previous</span>
@@ -318,7 +320,7 @@ export const Users = () => {
           <button
             onClick={() => setPage((p) => p + 1)}
             disabled={page >= meta.totalPages || loading}
-            className="flex items-center space-x-1 px-3 py-2 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            className="flex items-center space-x-1 px-3 py-2 border border-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
           >
             <span>Next</span>
             <ChevronRight size={16} />
@@ -327,18 +329,18 @@ export const Users = () => {
       )}
 
       {confirmAction && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-semibold mb-2">Confirm Action</h3>
-            <p className="text-sm text-gray-600 mb-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-lg">
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">Confirm Action</h3>
+            <p className="text-sm text-gray-500 mb-5">
               Are you sure you want to set{' '}
-              <span className="font-medium">{confirmAction.username}</span> to{' '}
-              <span className="font-medium capitalize">{confirmAction.status}</span>?
+              <span className="font-medium text-gray-700">{confirmAction.username}</span> to{' '}
+              <span className="font-medium capitalize text-gray-700">{confirmAction.status}</span>?
             </p>
             <div className="flex space-x-3 justify-end">
               <button
                 onClick={() => setConfirmAction(null)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
@@ -346,7 +348,7 @@ export const Users = () => {
                 onClick={() =>
                   handleStatusChange(confirmAction.userId, confirmAction.status)
                 }
-                className="px-4 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800"
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
               >
                 Confirm
               </button>
@@ -356,17 +358,17 @@ export const Users = () => {
       )}
 
       {verifyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-semibold mb-2">Verify User</h3>
-            <p className="text-sm text-gray-600 mb-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-lg">
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">Verify User</h3>
+            <p className="text-sm text-gray-500 mb-4">
               Select verification type for{' '}
-              <span className="font-medium">{verifyModal.username}</span>:
+              <span className="font-medium text-gray-700">{verifyModal.username}</span>:
             </p>
             <select
               value={verifyType}
               onChange={(e) => setVerifyType(e.target.value)}
-              className="w-full mb-4 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500"
+              className="w-full mb-5 px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300"
             >
               <option value="artist">Artist</option>
               <option value="gallery">Gallery</option>
@@ -375,13 +377,13 @@ export const Users = () => {
             <div className="flex space-x-3 justify-end">
               <button
                 onClick={() => setVerifyModal(null)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleVerifyUser(verifyModal.userId, verifyType)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
               >
                 Verify
               </button>

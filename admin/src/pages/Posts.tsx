@@ -154,8 +154,8 @@ export const Posts = () => {
   const showingEnd = Math.min(meta.page * meta.limit, meta.totalItems);
 
   return (
-    <div className="space-y-4">
-      {error && <div className="bg-red-50 text-red-700 px-4 py-2 rounded-md text-sm mb-4">{error}</div>}
+    <div className="space-y-5">
+      {error && <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm border border-red-100">{error}</div>}
       <div className="flex items-center space-x-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -165,12 +165,12 @@ export const Posts = () => {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={handleSearchKeyDown}
-            className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-black"
+            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all"
           />
         </div>
         <button
           onClick={handleSearch}
-          className="px-4 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800"
+          className="px-4 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
         >
           Search
         </button>
@@ -180,35 +180,36 @@ export const Posts = () => {
         Showing {showingStart}-{showingEnd} of {meta.totalItems} posts
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="p-4 font-medium text-gray-600 text-sm">#</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Thumbnail</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Caption</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Artist</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Tags</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Featured</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Actions</th>
+            <tr className="bg-gray-50/80 border-b border-gray-100">
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">#</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Thumbnail</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Caption</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Artist</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Tags</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Featured</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-b border-gray-100">
-                  <td className="p-4"><div className="h-4 w-6 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-10 w-10 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-32 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-20 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-24 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-16 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-16 animate-pulse bg-gray-200 rounded" /></td>
+                <tr key={i} className="border-b border-gray-50">
+                  <td className="px-5 py-3.5"><div className="h-4 w-6 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-10 w-10 animate-pulse bg-gray-100 rounded-lg" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-32 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-20 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-24 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
                 </tr>
               ))
             ) : posts.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-400">
+                <td colSpan={7} className="px-5 py-12 text-center text-gray-400">
                   No posts found.
                 </td>
               </tr>
@@ -218,9 +219,9 @@ export const Posts = () => {
                 const firstMedia = post.media?.[0];
                 const isVideo = firstMedia?.type === 'video';
                 return (
-                  <tr key={post._id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                    <td className="p-4 text-sm text-gray-500">{showingStart + idx}</td>
-                    <td className="p-4">
+                  <tr key={post._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors duration-100">
+                    <td className="px-5 py-3.5 text-sm text-gray-400">{showingStart + idx}</td>
+                    <td className="px-5 py-3.5">
                       {firstMedia ? (
                         isVideo ? (
                           <div className="relative w-10 h-10">
@@ -241,21 +242,21 @@ export const Posts = () => {
                           />
                         )
                       ) : (
-                        <div className="w-10 h-10 rounded bg-gray-200" />
+                        <div className="w-10 h-10 rounded-lg bg-gray-100" />
                       )}
                     </td>
-                    <td className="p-4 text-sm max-w-[200px] truncate">
+                    <td className="px-5 py-3.5 text-sm max-w-[200px] truncate text-gray-700">
                       {post.caption || '(No caption)'}
                     </td>
-                    <td className="p-4 text-sm">{post.authorId?.username || 'Unknown'}</td>
-                    <td className="p-4 text-sm text-gray-500 max-w-[150px] truncate">
+                    <td className="px-5 py-3.5 text-sm text-gray-700">{post.authorId?.username || 'Unknown'}</td>
+                    <td className="px-5 py-3.5 text-sm text-gray-400 max-w-[150px] truncate">
                       {post.tags?.join(', ') || '-'}
                     </td>
-                    <td className="p-4">
+                    <td className="px-5 py-3.5">
                       <button
                         onClick={() => handleFeatureToggle(post._id, isFeatured)}
                         disabled={actionLoading === post._id}
-                        className={`p-1.5 rounded transition-colors ${
+                        className={`p-1.5 rounded-lg transition-colors duration-150 ${
                           isFeatured
                             ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100'
                             : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
@@ -265,11 +266,11 @@ export const Posts = () => {
                         {isFeatured ? <Star size={16} fill="currentColor" /> : <StarOff size={16} />}
                       </button>
                     </td>
-                    <td className="p-4">
+                    <td className="px-5 py-3.5">
                       <button
                         onClick={() => setDeleteModal(post._id)}
                         disabled={actionLoading === post._id}
-                        className="text-red-600 hover:bg-red-50 p-1.5 rounded transition-colors disabled:opacity-50"
+                        className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors duration-150 disabled:opacity-50"
                         title="Delete post"
                       >
                         <Trash2 size={16} />
@@ -281,6 +282,7 @@ export const Posts = () => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Pagination */}
@@ -289,7 +291,7 @@ export const Posts = () => {
           <button
             onClick={() => handlePageChange(meta.page - 1)}
             disabled={meta.page <= 1 || loading}
-            className="flex items-center space-x-1 px-3 py-2 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            className="flex items-center space-x-1 px-3 py-2 border border-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
           >
             <ChevronLeft size={16} />
             <span>Previous</span>
@@ -299,10 +301,10 @@ export const Posts = () => {
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
               disabled={loading}
-              className={`px-3 py-2 rounded-md text-sm border ${
+              className={`px-3 py-2 rounded-lg text-sm border font-medium transition-colors ${
                 pageNum === meta.page
-                  ? 'bg-black text-white border-black'
-                  : 'border-gray-300 hover:bg-gray-50'
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'border-gray-200 hover:bg-gray-50 text-gray-600'
               } disabled:opacity-50`}
             >
               {pageNum}
@@ -311,7 +313,7 @@ export const Posts = () => {
           <button
             onClick={() => handlePageChange(meta.page + 1)}
             disabled={meta.page >= meta.totalPages || loading}
-            className="flex items-center space-x-1 px-3 py-2 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            className="flex items-center space-x-1 px-3 py-2 border border-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
           >
             <span>Next</span>
             <ChevronRight size={16} />
@@ -320,22 +322,22 @@ export const Posts = () => {
       )}
 
       {deleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-semibold mb-2">Delete Post</h3>
-            <p className="text-sm text-gray-600 mb-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-lg">
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">Delete Post</h3>
+            <p className="text-sm text-gray-500 mb-5">
               Are you sure you want to delete this post? This action cannot be undone.
             </p>
             <div className="flex space-x-3 justify-end">
               <button
                 onClick={() => setDeleteModal(null)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDelete(deleteModal)}
-                className="px-4 py-2 bg-accent text-white rounded-md text-sm hover:bg-red-800"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
               >
                 Delete
               </button>

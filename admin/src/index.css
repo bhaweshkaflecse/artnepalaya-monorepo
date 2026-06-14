@@ -3,6 +3,53 @@
 @tailwind utilities;
 
 body {
-  background-color: #F8F9FA;
-  color: #121212;
+  background-color: #F9FAFB;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Premium table styles */
+@layer components {
+  .admin-table-container {
+    @apply bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden;
+  }
+
+  .admin-table {
+    @apply w-full text-left border-collapse;
+  }
+
+  .admin-table thead tr {
+    @apply bg-gray-50/80 border-b border-gray-100;
+  }
+
+  .admin-table thead th {
+    @apply px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10;
+  }
+
+  .admin-table tbody tr {
+    @apply border-b border-gray-50 last:border-0 transition-colors duration-100;
+  }
+
+  .admin-table tbody tr:hover {
+    @apply bg-gray-50/50;
+  }
+
+  .admin-table tbody td {
+    @apply px-5 py-3.5 text-sm;
+  }
+
+  /* Card styles */
+  .admin-card {
+    @apply bg-white rounded-xl border border-gray-100 shadow-sm;
+  }
+
+  /* Button styles */
+  .admin-btn-primary {
+    @apply px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors duration-150;
+  }
+
+  .admin-btn-secondary {
+    @apply px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors duration-150;
+  }
 }

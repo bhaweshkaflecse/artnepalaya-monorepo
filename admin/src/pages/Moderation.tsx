@@ -92,8 +92,8 @@ export const Moderation = () => {
   ];
 
   return (
-    <div className="space-y-4">
-      {error && <div className="bg-red-50 text-red-700 px-4 py-2 rounded-md text-sm mb-4">{error}</div>}
+    <div className="space-y-5">
+      {error && <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm border border-red-100">{error}</div>}
       <div className="flex items-center space-x-2">
         {filterOptions.map((option) => (
           <button
@@ -102,10 +102,10 @@ export const Moderation = () => {
               setStatusFilter(option.value);
               setPage(1);
             }}
-            className={`px-4 py-2 text-sm rounded-md font-medium transition-colors ${
+            className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors duration-150 ${
               statusFilter === option.value
-                ? 'bg-black text-white'
-                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                ? 'bg-gray-900 text-white'
+                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}
           >
             {option.label}
@@ -113,36 +113,37 @@ export const Moderation = () => {
         ))}
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="max-h-[calc(100vh-260px)] overflow-y-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="p-4 font-medium text-gray-600 text-sm">Report ID</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Target Type</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Reason</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Reporter</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Details</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Status</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Actions</th>
+            <tr className="bg-gray-50/80 border-b border-gray-100">
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Report ID</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Target Type</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Reason</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Reporter</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Details</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Status</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="border-b border-gray-100">
-                  <td className="p-4"><div className="h-4 w-16 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-12 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-28 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-20 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-32 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-16 animate-pulse bg-gray-200 rounded" /></td>
-                  <td className="p-4"><div className="h-4 w-16 animate-pulse bg-gray-200 rounded" /></td>
+                <tr key={i} className="border-b border-gray-50">
+                  <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-12 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-28 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-20 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-32 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
                 </tr>
               ))
             ) : reports.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-12 text-center">
-                  <ShieldAlert size={40} className="mx-auto text-gray-300 mb-3" />
+                <td colSpan={7} className="px-5 py-16 text-center">
+                  <ShieldAlert size={40} className="mx-auto text-gray-200 mb-3" />
                   <p className="text-gray-400">No reports found.</p>
                 </td>
               </tr>
@@ -150,30 +151,30 @@ export const Moderation = () => {
               reports.map((report) => (
                 <tr
                   key={report._id}
-                  className="border-b border-gray-100 last:border-0 hover:bg-gray-50"
+                  className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors duration-100"
                 >
-                  <td className="p-4 text-sm font-mono text-gray-500">
+                  <td className="px-5 py-3.5 text-sm font-mono text-gray-400">
                     #{report._id.slice(-6)}
                   </td>
-                  <td className="p-4 text-sm">{report.targetType}</td>
-                  <td className="p-4 text-sm text-accent font-medium">{report.reason}</td>
-                  <td className="p-4 text-sm">{getReporterName(report.reporterId)}</td>
-                  <td className="p-4 text-sm text-gray-500 max-w-[200px] truncate">
+                  <td className="px-5 py-3.5 text-sm">{report.targetType}</td>
+                  <td className="px-5 py-3.5 text-sm text-accent font-medium">{report.reason}</td>
+                  <td className="px-5 py-3.5 text-sm">{getReporterName(report.reporterId)}</td>
+                  <td className="px-5 py-3.5 text-sm text-gray-500 max-w-[200px] truncate">
                     {report.details || '-'}
                   </td>
-                  <td className="p-4">
+                  <td className="px-5 py-3.5">
                     <span
                       className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadge(report.status)}`}
                     >
                       {report.status}
                     </span>
                   </td>
-                  <td className="p-4">
+                  <td className="px-5 py-3.5">
                     {report.status === 'Pending' && (
                       <button
                         onClick={() => handleResolve(report._id)}
                         disabled={actionLoading === report._id}
-                        className="text-xs bg-black text-white px-3 py-1.5 rounded hover:bg-gray-800 disabled:opacity-50"
+                        className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-md hover:bg-gray-800 disabled:opacity-50 transition-colors"
                       >
                         {actionLoading === report._id ? 'Resolving...' : 'Resolve'}
                       </button>
@@ -184,6 +185,7 @@ export const Moderation = () => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {meta && meta.totalPages > 1 && (
@@ -191,7 +193,7 @@ export const Moderation = () => {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1 || loading}
-            className="flex items-center space-x-1 px-3 py-2 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            className="flex items-center space-x-1 px-3 py-2 border border-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
           >
             <ChevronLeft size={16} />
             <span>Previous</span>
@@ -202,7 +204,7 @@ export const Moderation = () => {
           <button
             onClick={() => setPage((p) => p + 1)}
             disabled={page >= meta.totalPages || loading}
-            className="flex items-center space-x-1 px-3 py-2 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            className="flex items-center space-x-1 px-3 py-2 border border-gray-200 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
           >
             <span>Next</span>
             <ChevronRight size={16} />

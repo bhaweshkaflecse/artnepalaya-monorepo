@@ -20,6 +20,7 @@ import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
 import { ReportModal } from '../common/ReportModal';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest, logout } from '../../store/slices/authSlice';
+import { toggleLike, toggleSave } from '../../store/slices/feedSlice';
 
 interface PostCardProps {
   post: Post;
@@ -101,7 +102,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       }
       if (!isLiked) {
         setIsLiked(true);
-        postService.likePost(post._id).catch(() => setIsLiked(false));
+        dispatch(toggleLike(post._id));
+        postService.likePost(post._id).catch(() => {
+          setIsLiked(false);
+          dispatch(toggleLike(post._id));
+        });
       }
       triggerHeartAnimation();
     } else {
@@ -124,6 +129,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     }
     const newValue = !isLiked;
     setIsLiked(newValue);
+    dispatch(toggleLike(post._id));
     try {
       if (newValue) {
         await postService.likePost(post._id);
@@ -132,6 +138,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       }
     } catch {
       setIsLiked(!newValue);
+      dispatch(toggleLike(post._id));
     }
   };
 
@@ -142,6 +149,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     }
     const newValue = !isSaved;
     setIsSaved(newValue);
+    dispatch(toggleSave(post._id));
     try {
       if (newValue) {
         await postService.savePost(post._id);
@@ -150,6 +158,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       }
     } catch {
       setIsSaved(!newValue);
+      dispatch(toggleSave(post._id));
     }
   };
 

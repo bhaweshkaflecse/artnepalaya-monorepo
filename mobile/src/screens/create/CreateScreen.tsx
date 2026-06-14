@@ -60,6 +60,19 @@ export const CreateScreen = () => {
   }, []);
 
   const pickImage = async () => {
+    // Guest mode restriction - prevent media picking entirely
+    if (isGuest) {
+      Alert.alert(
+        'Login Required',
+        'Guest users cannot upload media. Please login or create an account to share your artwork.',
+        [
+          { text: 'Continue Browsing', style: 'cancel' },
+          { text: 'Login', onPress: () => (navigation as any).navigate('Auth') },
+        ]
+      );
+      return;
+    }
+
     const currentImages = mediaItems.filter((m) => m.type === 'image').length;
     const currentVideos = mediaItems.filter((m) => m.type === 'video').length;
 
@@ -78,13 +91,20 @@ export const CreateScreen = () => {
 
       if (!result.canceled && result.assets.length > 0) {
         const newItems: Array<{ uri: string; type: 'image' | 'video'; fileSize?: number }> = [];
+        const oversizedFiles: string[] = [];
 
         for (const asset of result.assets) {
           const isVideo = asset.type === 'video';
+          const filename = asset.uri.split('/').pop() || (isVideo ? 'video.mp4' : 'image.jpg');
 
           if (isVideo) {
             if (currentVideos + newItems.filter(i => i.type === 'video').length >= MAX_VIDEOS) {
               Alert.alert('Limit Reached', `You can upload a maximum of ${MAX_VIDEOS} video per post.`);
+              continue;
+            }
+            // Check file size (50MB limit for videos)
+            if (asset.fileSize && asset.fileSize > 50 * 1024 * 1024) {
+              oversizedFiles.push(`${filename} (video exceeds 50MB)`);
               continue;
             }
           } else {
@@ -94,7 +114,7 @@ export const CreateScreen = () => {
             }
             // Check file size (10MB limit for images)
             if (asset.fileSize && asset.fileSize > 10 * 1024 * 1024) {
-              Alert.alert('File Too Large', 'Please select images under 10MB.');
+              oversizedFiles.push(`${filename} (image exceeds 10MB)`);
               continue;
             }
           }
@@ -104,6 +124,13 @@ export const CreateScreen = () => {
             type: isVideo ? 'video' : 'image',
             fileSize: asset.fileSize || undefined,
           });
+        }
+
+        if (oversizedFiles.length > 0) {
+          Alert.alert(
+            'File Size Exceeded',
+            `The following files are too large and were skipped:\n\n${oversizedFiles.join('\n')}\n\nImages must be under 10MB and videos under 50MB.`
+          );
         }
 
         if (newItems.length > 0) {
@@ -185,9 +212,14 @@ export const CreateScreen = () => {
           ? (match ? `video/${match[1]}` : 'video/mp4')
           : (match ? `image/${match[1]}` : 'image/jpeg');
 
-        // File size guard for images
+        // File size guard for images (10MB) and videos (50MB)
         if (item.type === 'image' && item.fileSize && item.fileSize > 10 * 1024 * 1024) {
-          Alert.alert('File Too Large', 'Please select images under 10MB.');
+          Alert.alert('File Too Large', `"${filename}" exceeds the 10MB image limit.`);
+          setIsPublishing(false);
+          return;
+        }
+        if (item.type === 'video' && item.fileSize && item.fileSize > 50 * 1024 * 1024) {
+          Alert.alert('File Too Large', `"${filename}" exceeds the 50MB video limit.`);
           setIsPublishing(false);
           return;
         }
