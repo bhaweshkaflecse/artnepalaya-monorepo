@@ -27,5 +27,7 @@ export const paginationSchema = z.object({
   query: z.object({
     page: z.string().regex(/^\d+$/).transform(Number).default("1"),
     limit: z.string().regex(/^\d+$/).transform(Number).default("20")
-  })
+  }),
+  params: z.record(z.string()).optional(),
+  body: z.any().optional(),
 });

@@ -82,8 +82,11 @@ export const getSavedPosts = async (userId, page, limit) => {
   const saves = await Save.find({ userId }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
   const postIds = saves.map(s => s.postId);
   const posts = await Post.find({ _id: { $in: postIds } }).populate('authorId', 'username avatarUrl role').lean();
+  // Reorder posts to match save order (newest saved first)
+  const postMap = new Map(posts.map(p => [p._id.toString(), p]));
+  const orderedPosts = postIds.map(id => postMap.get(id.toString())).filter(Boolean);
   const totalItems = await Save.countDocuments({ userId });
-  return { data: posts, meta: { currentPage: page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
+  return { data: orderedPosts, meta: { currentPage: page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
 };
 
 // === Push Token Management ===
