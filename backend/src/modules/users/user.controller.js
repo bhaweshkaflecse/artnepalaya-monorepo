@@ -1,4 +1,8 @@
+import mongoose from 'mongoose';
 import * as userService from './user.service.js';
+
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+const invalidIdResponse = (res) => res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid user ID format' } });
 
 export const getMe = async (req, res, next) => {
   try {
@@ -26,6 +30,7 @@ export const updateMe = async (req, res, next) => {
 
 export const getPublicProfile = async (req, res, next) => {
   try {
+    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
     const user = await userService.getUserProfile(req.params.userId, true);
     res.status(200).json({ success: true, data: user });
   } catch (err) {
@@ -38,8 +43,8 @@ export const getPublicProfile = async (req, res, next) => {
 
 export const getUserPosts = async (req, res, next) => {
   try {
-    if (!req.params.userId) {
-      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'userId is required' } });
+    if (!req.params.userId || !isValidId(req.params.userId)) {
+      return invalidIdResponse(res);
     }
     const { page, limit } = req.query; // Already parsed to Numbers by Zod
     const result = await userService.getUserPosts(req.params.userId, page, limit);
@@ -93,6 +98,7 @@ export const removePushToken = async (req, res, next) => {
 // === Follow System ===
 export const followUser = async (req, res, next) => {
   try {
+    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
     await userService.followUser(req.user.id, req.params.userId);
     res.status(200).json({ success: true, message: 'Followed successfully' });
   } catch (err) {
@@ -105,6 +111,7 @@ export const followUser = async (req, res, next) => {
 
 export const unfollowUser = async (req, res, next) => {
   try {
+    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
     await userService.unfollowUser(req.user.id, req.params.userId);
     res.status(200).json({ success: true, message: 'Unfollowed successfully' });
   } catch (err) {
@@ -114,6 +121,7 @@ export const unfollowUser = async (req, res, next) => {
 
 export const getFollowers = async (req, res, next) => {
   try {
+    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const result = await userService.getFollowers(req.params.userId, page, limit);
@@ -125,6 +133,7 @@ export const getFollowers = async (req, res, next) => {
 
 export const getFollowing = async (req, res, next) => {
   try {
+    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const result = await userService.getFollowing(req.params.userId, page, limit);
@@ -136,6 +145,7 @@ export const getFollowing = async (req, res, next) => {
 
 export const getFollowStatus = async (req, res, next) => {
   try {
+    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
     const isFollowing = await userService.isFollowing(req.user.id, req.params.userId);
     res.status(200).json({ success: true, data: { isFollowing } });
   } catch (err) {
