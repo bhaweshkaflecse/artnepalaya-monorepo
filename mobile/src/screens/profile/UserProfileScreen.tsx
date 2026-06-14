@@ -281,8 +281,17 @@ export const UserProfileScreen = () => {
               <View style={styles.modalEmptyContainer}>
                 <Feather name="users" size={36} color={lightColors.textSecondary} />
                 <Text style={styles.modalEmptyText}>
-                  No {listModalTitle.toLowerCase()} yet
+                  {((listModalTitle === 'Followers' && followersCount > 0) ||
+                    (listModalTitle === 'Following' && (profile?.stats?.following ?? 0) > 0))
+                    ? 'Followers from before you joined'
+                    : `No ${listModalTitle.toLowerCase()} yet`}
                 </Text>
+                {((listModalTitle === 'Followers' && followersCount > 0) ||
+                  (listModalTitle === 'Following' && (profile?.stats?.following ?? 0) > 0)) && (
+                  <Text style={styles.modalEmptySubtext}>
+                    Counts are seeded placeholders until real follows occur
+                  </Text>
+                )}
               </View>
             ) : (
               <FlatList
@@ -517,6 +526,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: lightColors.textSecondary,
     marginTop: 8,
+  },
+  modalEmptySubtext: {
+    fontSize: 12,
+    color: lightColors.textSecondary,
+    marginTop: 4,
+    textAlign: 'center',
+    paddingHorizontal: 24,
   },
   modalUserItem: {
     flexDirection: 'row',

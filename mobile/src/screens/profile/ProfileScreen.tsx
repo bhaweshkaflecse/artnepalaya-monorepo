@@ -17,7 +17,7 @@ import { lightColors } from '../../theme/colors';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { fetchProfile, fetchMyPosts, fetchSavedPosts } from '../../store/slices/userSlice';
 import { selectIsGuest, selectGuestUsername, logout } from '../../store/slices/authSlice';
-import { getPrimaryImageUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
 
 export const ProfileScreen = () => {
   const dispatch = useAppDispatch();
@@ -58,7 +58,10 @@ export const ProfileScreen = () => {
   } : null);
 
   const renderPostThumbnail = ({ item }: { item: any }) => {
-    const imageUrl = getPrimaryImageUrl(item.media || []);
+    const isVideo = item.media?.[0]?.type === 'video';
+    const imageUrl = isVideo && item.media[0]?.url
+      ? getVideoThumbnailUrl(item.media[0].url)
+      : getPrimaryImageUrl(item.media || []);
     return (
       <TouchableOpacity
         style={styles.thumbnailContainer}
@@ -66,7 +69,14 @@ export const ProfileScreen = () => {
         activeOpacity={0.8}
       >
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.gridImage} />
+          <View style={{ flex: 1, position: 'relative' }}>
+            <Image source={{ uri: imageUrl }} style={styles.gridImage} />
+            {isVideo && (
+              <View style={styles.videoIndicator}>
+                <Feather name="play" size={12} color="#FFFFFF" />
+              </View>
+            )}
+          </View>
         ) : (
           <View style={styles.imagePlaceholder}>
             <Feather name="image" size={20} color={lightColors.textSecondary} />
@@ -381,6 +391,17 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     flex: 1,
     backgroundColor: lightColors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoIndicator: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },

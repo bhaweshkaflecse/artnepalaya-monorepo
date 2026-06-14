@@ -9,6 +9,10 @@ export interface Notification {
     fullName: string;
     avatarUrl?: string;
   };
+  postId?: {
+    _id: string;
+    media?: Array<{ type: string; url: string }>;
+  } | string;
   type: 'Like' | 'Save' | 'Follow' | 'Comment' | 'AdminBroadcast' | 'System';
   title?: string;
   message: string;

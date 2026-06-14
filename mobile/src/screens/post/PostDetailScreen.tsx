@@ -16,6 +16,7 @@ import {
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Video, ResizeMode } from 'expo-av';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
@@ -34,6 +35,7 @@ export const PostDetailScreen = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   // Double-tap detection
   const lastTap = useRef<number>(0);
@@ -208,14 +210,30 @@ export const PostDetailScreen = () => {
           </View>
         </TouchableOpacity>
 
-        {/* Image with double-tap to like */}
+        {/* Image/Video with double-tap to like */}
         <TouchableWithoutFeedback onPress={handleImageDoubleTap}>
           <View style={styles.imageWrapper}>
             {(() => {
               const isVideo = post.media?.[0]?.type === 'video';
-              const imageUrl = isVideo && post.media[0]?.url
-                ? getVideoThumbnailUrl(post.media[0].url)
-                : getPrimaryImageUrl(post.media);
+              if (isVideo && post.media[0]?.url) {
+                return (
+                  <Video
+                    source={{ uri: post.media[0].url }}
+                    style={styles.postImage}
+                    resizeMode={ResizeMode.COVER}
+                    shouldPlay={false}
+                    useNativeControls
+                    posterSource={{ uri: getVideoThumbnailUrl(post.media[0].url) }}
+                    usePoster
+                    onPlaybackStatusUpdate={(status) => {
+                      if (status.isLoaded) {
+                        setIsVideoPlaying(status.isPlaying);
+                      }
+                    }}
+                  />
+                );
+              }
+              const imageUrl = getPrimaryImageUrl(post.media);
               return imageUrl ? (
                 <Image
                   source={{ uri: imageUrl }}
@@ -228,9 +246,9 @@ export const PostDetailScreen = () => {
                 </View>
               );
             })()}
-            {/* Video play icon overlay */}
-            {post.media?.[0]?.type === 'video' && (
-              <View style={styles.videoOverlay}>
+            {/* Video play icon overlay - hidden when video is playing */}
+            {post.media?.[0]?.type === 'video' && !isVideoPlaying && (
+              <View style={styles.videoOverlay} pointerEvents="none">
                 <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
               </View>
             )}
@@ -243,6 +261,7 @@ export const PostDetailScreen = () => {
                   opacity: heartOpacity,
                 },
               ]}
+              pointerEvents="none"
             >
               <Ionicons name="heart" size={80} color="#FFFFFF" />
             </Animated.View>

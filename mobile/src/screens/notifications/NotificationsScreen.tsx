@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { notificationService, Notification } from '../../services/notification.service';
 
@@ -52,7 +54,7 @@ const getNotificationMessage = (notification: Notification): string => {
 };
 
 export const NotificationsScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -91,25 +93,40 @@ export const NotificationsScreen = () => {
   };
 
   const handleNotificationPress = async (notification: Notification) => {
-    // Toggle expand/collapse text
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(notification._id)) {
-        next.delete(notification._id);
-      } else {
-        next.add(notification._id);
+    // Mark as read
+    if (!notification.isRead) {
+      try {
+        await notificationService.markOneAsRead(notification._id);
+        setNotifications((prev) =>
+          prev.map((n) => (n._id === notification._id ? { ...n, isRead: true } : n))
+        );
+      } catch (_e) {
+        // Silently fail
       }
-      return next;
-    });
+    }
 
-    if (notification.isRead) return;
-    try {
-      await notificationService.markOneAsRead(notification._id);
-      setNotifications((prev) =>
-        prev.map((n) => (n._id === notification._id ? { ...n, isRead: true } : n))
-      );
-    } catch (_e) {
-      // Silently fail
+    // Navigate based on notification type and available data
+    const postId = notification.postId
+      ? (typeof notification.postId === 'string' ? notification.postId : notification.postId._id)
+      : null;
+
+    if (postId && (notification.type === 'Like' || notification.type === 'Save' || notification.type === 'Comment')) {
+      // Navigate to the post that was liked/saved/commented on
+      navigation.navigate('PostDetail', { postId });
+    } else if (notification.senderId?._id && (notification.type === 'Follow' || notification.type === 'Like' || notification.type === 'Save')) {
+      // Navigate to the sender's profile for Follow, or if no postId for Like/Save
+      navigation.navigate('UserProfile', { userId: notification.senderId._id });
+    } else {
+      // Toggle expand/collapse text for other types (AdminBroadcast, System)
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(notification._id)) {
+          next.delete(notification._id);
+        } else {
+          next.add(notification._id);
+        }
+        return next;
+      });
     }
   };
 
