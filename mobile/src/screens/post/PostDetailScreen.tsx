@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import {
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Video, ResizeMode } from 'expo-av';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
@@ -38,6 +38,47 @@ export const PostDetailScreen = () => {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [shouldPlay, setShouldPlay] = useState(false);
 
+  // Video player state
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [playbackProgress, setPlaybackProgress] = useState(0);
+  const [durationMs, setDurationMs] = useState(0);
+  const videoRef = useRef<Video>(null);
+
+  // Pause icon animation
+  const pauseIconOpacity = useRef(new Animated.Value(0)).current;
+  const pauseFadeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showPauseIcon = useCallback(() => {
+    pauseIconOpacity.setValue(1);
+    if (pauseFadeTimeout.current) {
+      clearTimeout(pauseFadeTimeout.current);
+    }
+    pauseFadeTimeout.current = setTimeout(() => {
+      Animated.timing(pauseIconOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, 500);
+  }, [pauseIconOpacity]);
+
+  // Video tap handler
+  const handleVideoTap = useCallback(async () => {
+    if (!shouldPlay) {
+      // Initial state: start video
+      setShouldPlay(true);
+      return;
+    }
+    if (isVideoPlaying) {
+      // Currently playing: pause
+      await videoRef.current?.pauseAsync();
+      showPauseIcon();
+    } else {
+      // Currently paused: resume
+      await videoRef.current?.playAsync();
+    }
+  }, [shouldPlay, isVideoPlaying, showPauseIcon]);
+
   // Double-tap detection
   const lastTap = useRef<number>(0);
   const tapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,6 +88,9 @@ export const PostDetailScreen = () => {
     return () => {
       if (tapTimeout.current) {
         clearTimeout(tapTimeout.current);
+      }
+      if (pauseFadeTimeout.current) {
+        clearTimeout(pauseFadeTimeout.current);
       }
     };
   }, []);
@@ -215,40 +259,65 @@ export const PostDetailScreen = () => {
         {(() => {
           const isVideo = post.media?.[0]?.type === 'video';
           if (isVideo && post.media[0]?.url) {
-            // Video: don't wrap in TouchableWithoutFeedback so native controls receive touches
+            // Social-media style video player - tap to play/pause, no native controls
             return (
-              <View style={styles.imageWrapper}>
-                <Video
-                  source={{ uri: post.media[0].url }}
-                  style={styles.postImage}
-                  resizeMode={ResizeMode.COVER}
-                  shouldPlay={shouldPlay}
-                  useNativeControls
-                  posterSource={{ uri: getVideoThumbnailUrl(post.media[0].url) }}
-                  usePoster
-                  onPlaybackStatusUpdate={(status) => {
-                    if (status.isLoaded) {
-                      setIsVideoPlaying(status.isPlaying);
-                    }
-                  }}
-                />
-                {/* Play overlay - tapping starts video and hides overlay */}
-                {!shouldPlay && (
-                  <TouchableOpacity
-                    style={styles.videoOverlay}
-                    activeOpacity={0.7}
-                    onPress={() => setShouldPlay(true)}
-                  >
-                    <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
-                  </TouchableOpacity>
-                )}
-                {/* Once playing, show overlay only when paused - but don't block touches */}
-                {shouldPlay && !isVideoPlaying && (
-                  <View style={styles.videoOverlay} pointerEvents="none">
-                    <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
-                  </View>
-                )}
-              </View>
+              <TouchableWithoutFeedback onPress={handleVideoTap}>
+                <View style={styles.imageWrapper}>
+                  <Video
+                    ref={videoRef}
+                    source={{ uri: post.media[0].url }}
+                    style={styles.postImage}
+                    resizeMode={ResizeMode.COVER}
+                    shouldPlay={shouldPlay}
+                    posterSource={{ uri: getVideoThumbnailUrl(post.media[0].url) }}
+                    usePoster
+                    onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
+                      if (status.isLoaded) {
+                        setIsVideoPlaying(status.isPlaying);
+                        setIsBuffering(status.isBuffering);
+                        if (status.durationMillis && status.durationMillis > 0) {
+                          setDurationMs(status.durationMillis);
+                          setPlaybackProgress(
+                            status.positionMillis / status.durationMillis
+                          );
+                        }
+                      }
+                    }}
+                  />
+                  {/* Initial play icon - shown before video starts */}
+                  {!shouldPlay && (
+                    <View style={styles.videoOverlay} pointerEvents="none">
+                      <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
+                    </View>
+                  )}
+                  {/* Pause icon - fades out after 500ms */}
+                  {shouldPlay && !isVideoPlaying && (
+                    <Animated.View
+                      style={[styles.videoOverlay, { opacity: pauseIconOpacity }]}
+                      pointerEvents="none"
+                    >
+                      <Ionicons name="pause" size={48} color="rgba(255,255,255,0.85)" />
+                    </Animated.View>
+                  )}
+                  {/* Buffering spinner */}
+                  {isBuffering && shouldPlay && (
+                    <View style={styles.videoOverlay} pointerEvents="none">
+                      <ActivityIndicator size="large" color="#FFFFFF" />
+                    </View>
+                  )}
+                  {/* Progress bar */}
+                  {shouldPlay && (
+                    <View style={styles.progressBarContainer}>
+                      <View
+                        style={[
+                          styles.progressBarFill,
+                          { width: `${playbackProgress * 100}%` },
+                        ]}
+                      />
+                    </View>
+                  )}
+                </View>
+              </TouchableWithoutFeedback>
             );
           }
           // Image: keep double-tap behavior
@@ -444,6 +513,18 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  progressBarContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  progressBarFill: {
+    height: 3,
+    backgroundColor: '#FF3B30',
   },
   actions: {
     flexDirection: 'row',
