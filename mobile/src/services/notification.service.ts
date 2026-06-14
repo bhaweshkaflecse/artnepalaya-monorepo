@@ -27,6 +27,8 @@ export interface NotificationsResponse {
     page: number;
     limit: number;
     total: number;
+    totalItems: number;
+    unreadCount?: number;
     hasNextPage: boolean;
   };
 }
@@ -40,9 +42,17 @@ export const notificationService = {
     const response = await api.get('/notifications', {
       params: { filter, page, limit },
     });
+    const meta = response.data.meta || { page, limit, totalItems: 0, total: 0, hasNextPage: false };
     return {
       data: response.data.data,
-      meta: response.data.meta || { page, limit, total: 0, hasNextPage: false },
+      meta: {
+        page: meta.currentPage || meta.page || page,
+        limit: meta.limit || limit,
+        total: meta.totalItems || meta.total || 0,
+        totalItems: meta.totalItems || meta.total || 0,
+        unreadCount: meta.unreadCount,
+        hasNextPage: meta.hasNextPage || false,
+      },
     };
   },
 

@@ -41,7 +41,7 @@ export const HomeScreen = () => {
     if (isGuest) return;
     try {
       const response = await notificationService.getNotifications('unread', 1, 1);
-      setUnreadCount(response.meta.total ?? 0);
+      setUnreadCount(response.meta.totalItems ?? response.meta.total ?? 0);
     } catch (error) {
       // Silently handle notification fetch failure
     }
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
     top: -4,
-    right: -4,
+    right: -6,
     backgroundColor: '#FF3B30',
     borderRadius: 9,
     minWidth: 18,

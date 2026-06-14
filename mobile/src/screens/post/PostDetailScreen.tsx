@@ -36,6 +36,7 @@ export const PostDetailScreen = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [shouldPlay, setShouldPlay] = useState(false);
 
   // Double-tap detection
   const lastTap = useRef<number>(0);
@@ -211,62 +212,78 @@ export const PostDetailScreen = () => {
         </TouchableOpacity>
 
         {/* Image/Video with double-tap to like */}
-        <TouchableWithoutFeedback onPress={handleImageDoubleTap}>
-          <View style={styles.imageWrapper}>
-            {(() => {
-              const isVideo = post.media?.[0]?.type === 'video';
-              if (isVideo && post.media[0]?.url) {
-                return (
-                  <Video
-                    source={{ uri: post.media[0].url }}
-                    style={styles.postImage}
-                    resizeMode={ResizeMode.COVER}
-                    shouldPlay={false}
-                    useNativeControls
-                    posterSource={{ uri: getVideoThumbnailUrl(post.media[0].url) }}
-                    usePoster
-                    onPlaybackStatusUpdate={(status) => {
-                      if (status.isLoaded) {
-                        setIsVideoPlaying(status.isPlaying);
-                      }
-                    }}
-                  />
-                );
-              }
-              const imageUrl = getPrimaryImageUrl(post.media);
-              return imageUrl ? (
-                <Image
-                  source={{ uri: imageUrl }}
+        {(() => {
+          const isVideo = post.media?.[0]?.type === 'video';
+          if (isVideo && post.media[0]?.url) {
+            // Video: don't wrap in TouchableWithoutFeedback so native controls receive touches
+            return (
+              <View style={styles.imageWrapper}>
+                <Video
+                  source={{ uri: post.media[0].url }}
                   style={styles.postImage}
-                  resizeMode="cover"
+                  resizeMode={ResizeMode.COVER}
+                  shouldPlay={shouldPlay}
+                  useNativeControls
+                  posterSource={{ uri: getVideoThumbnailUrl(post.media[0].url) }}
+                  usePoster
+                  onPlaybackStatusUpdate={(status) => {
+                    if (status.isLoaded) {
+                      setIsVideoPlaying(status.isPlaying);
+                    }
+                  }}
                 />
-              ) : (
-                <View style={styles.imagePlaceholder}>
-                  <Feather name="image" size={48} color={darkColors.textSecondary} />
-                </View>
-              );
-            })()}
-            {/* Video play icon overlay - hidden when video is playing */}
-            {post.media?.[0]?.type === 'video' && !isVideoPlaying && (
-              <View style={styles.videoOverlay} pointerEvents="none">
-                <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
+                {/* Play overlay - tapping starts video and hides overlay */}
+                {!shouldPlay && (
+                  <TouchableOpacity
+                    style={styles.videoOverlay}
+                    activeOpacity={0.7}
+                    onPress={() => setShouldPlay(true)}
+                  >
+                    <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
+                  </TouchableOpacity>
+                )}
+                {/* Once playing, show overlay only when paused - but don't block touches */}
+                {shouldPlay && !isVideoPlaying && (
+                  <View style={styles.videoOverlay} pointerEvents="none">
+                    <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
+                  </View>
+                )}
               </View>
-            )}
-            {/* Heart animation overlay */}
-            <Animated.View
-              style={[
-                styles.heartOverlay,
-                {
-                  transform: [{ scale: heartScale }],
-                  opacity: heartOpacity,
-                },
-              ]}
-              pointerEvents="none"
-            >
-              <Ionicons name="heart" size={80} color="#FFFFFF" />
-            </Animated.View>
-          </View>
-        </TouchableWithoutFeedback>
+            );
+          }
+          // Image: keep double-tap behavior
+          const imageUrl = getPrimaryImageUrl(post.media);
+          return (
+            <TouchableWithoutFeedback onPress={handleImageDoubleTap}>
+              <View style={styles.imageWrapper}>
+                {imageUrl ? (
+                  <Image
+                    source={{ uri: imageUrl }}
+                    style={styles.postImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Feather name="image" size={48} color={darkColors.textSecondary} />
+                  </View>
+                )}
+                {/* Heart animation overlay */}
+                <Animated.View
+                  style={[
+                    styles.heartOverlay,
+                    {
+                      transform: [{ scale: heartScale }],
+                      opacity: heartOpacity,
+                    },
+                  ]}
+                  pointerEvents="none"
+                >
+                  <Ionicons name="heart" size={80} color="#FFFFFF" />
+                </Animated.View>
+              </View>
+            </TouchableWithoutFeedback>
+          );
+        })()}
 
         {/* Actions */}
         <View style={styles.actions}>
