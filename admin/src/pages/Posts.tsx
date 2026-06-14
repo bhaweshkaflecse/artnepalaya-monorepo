@@ -2,6 +2,25 @@ import { useEffect, useState, useCallback } from 'react';
 import { Trash2, Star, StarOff, ChevronLeft, ChevronRight, Search, Film } from 'lucide-react';
 import { api } from '../services/api';
 
+/**
+ * Transforms a Cloudinary video URL into a thumbnail image URL.
+ * Inserts so_0,w_400,c_fill transformation and changes extension to .jpg.
+ */
+function getVideoThumbnail(videoUrl: string): string {
+  if (!videoUrl) return '';
+  // Replace the extension with .jpg
+  const withoutExt = videoUrl.replace(/\.[^/.]+$/, '.jpg');
+  // Insert transformation before the version/path segment
+  const uploadSegment = '/upload/';
+  const uploadIdx = withoutExt.indexOf(uploadSegment);
+  if (uploadIdx === -1) {
+    return withoutExt;
+  }
+  const beforeUpload = withoutExt.substring(0, uploadIdx + uploadSegment.length);
+  const afterUpload = withoutExt.substring(uploadIdx + uploadSegment.length);
+  return `${beforeUpload}so_0,w_400,c_fill/${afterUpload}`;
+}
+
 interface Post {
   _id: string;
   media: Array<{url: string; type: string; providerId?: string}>;
@@ -204,8 +223,15 @@ export const Posts = () => {
                     <td className="p-4">
                       {firstMedia ? (
                         isVideo ? (
-                          <div className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center">
-                            <Film size={18} className="text-white" />
+                          <div className="relative w-10 h-10">
+                            <img
+                              src={getVideoThumbnail(firstMedia.url)}
+                              alt=""
+                              className="w-10 h-10 rounded object-cover"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Film size={14} className="text-white drop-shadow" />
+                            </div>
                           </div>
                         ) : (
                           <img

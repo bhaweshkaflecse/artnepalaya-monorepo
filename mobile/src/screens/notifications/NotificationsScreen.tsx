@@ -57,6 +57,7 @@ export const NotificationsScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const fetchNotifications = useCallback(async (filter: FilterType) => {
     try {
@@ -90,6 +91,17 @@ export const NotificationsScreen = () => {
   };
 
   const handleNotificationPress = async (notification: Notification) => {
+    // Toggle expand/collapse text
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(notification._id)) {
+        next.delete(notification._id);
+      } else {
+        next.add(notification._id);
+      }
+      return next;
+    });
+
     if (notification.isRead) return;
     try {
       await notificationService.markOneAsRead(notification._id);
@@ -101,33 +113,39 @@ export const NotificationsScreen = () => {
     }
   };
 
-  const renderNotification = ({ item }: { item: Notification }) => (
-    <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={() => handleNotificationPress(item)}
-    >
-      <View style={[styles.notificationItem, !item.isRead && styles.unreadItem]}>
-        <View style={styles.senderAvatar}>
-          {item.senderId?.avatarUrl ? (
-            <Image source={{ uri: item.senderId.avatarUrl }} style={styles.avatarImage} />
-          ) : (
-            <Feather
-              name={item.type === 'AdminBroadcast' ? 'bell' : 'user'}
-              size={18}
-              color={darkColors.textSecondary}
-            />
-          )}
+  const renderNotification = ({ item }: { item: Notification }) => {
+    const isExpanded = expandedIds.has(item._id);
+    return (
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => handleNotificationPress(item)}
+      >
+        <View style={[styles.notificationItem, !item.isRead && styles.unreadItem]}>
+          <View style={styles.senderAvatar}>
+            {item.senderId?.avatarUrl ? (
+              <Image source={{ uri: item.senderId.avatarUrl }} style={styles.avatarImage} />
+            ) : (
+              <Feather
+                name={item.type === 'AdminBroadcast' ? 'bell' : 'user'}
+                size={18}
+                color={darkColors.textSecondary}
+              />
+            )}
+          </View>
+          <View style={styles.notificationContent}>
+            <Text
+              style={styles.notificationText}
+              numberOfLines={isExpanded ? undefined : 2}
+            >
+              {getNotificationMessage(item)}
+            </Text>
+            <Text style={styles.notificationTime}>{getTimeAgo(item.createdAt)}</Text>
+          </View>
+          {!item.isRead && <View style={styles.unreadDot} />}
         </View>
-        <View style={styles.notificationContent}>
-          <Text style={styles.notificationText} numberOfLines={2}>
-            {getNotificationMessage(item)}
-          </Text>
-          <Text style={styles.notificationTime}>{getTimeAgo(item.createdAt)}</Text>
-        </View>
-        {!item.isRead && <View style={styles.unreadDot} />}
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>

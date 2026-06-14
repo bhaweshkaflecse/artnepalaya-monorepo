@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,11 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   ActivityIndicator,
   Share,
   Alert,
+  Animated,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
@@ -17,7 +19,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
-import { getPrimaryImageUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
 import { ReportModal } from '../../components/common/ReportModal';
 
 type PostDetailRouteProp = RouteProp<{ PostDetail: { postId: string } }, 'PostDetail'>;
@@ -32,6 +34,67 @@ export const PostDetailScreen = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+
+  // Double-tap detection
+  const lastTap = useRef<number>(0);
+  const tapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear tap timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (tapTimeout.current) {
+        clearTimeout(tapTimeout.current);
+      }
+    };
+  }, []);
+
+  // Heart animation values
+  const heartScale = useRef(new Animated.Value(0)).current;
+  const heartOpacity = useRef(new Animated.Value(0)).current;
+
+  const triggerHeartAnimation = () => {
+    heartScale.setValue(0);
+    heartOpacity.setValue(1);
+
+    Animated.sequence([
+      Animated.spring(heartScale, {
+        toValue: 1.2,
+        useNativeDriver: true,
+      }),
+      Animated.spring(heartScale, {
+        toValue: 1,
+        useNativeDriver: true,
+      }),
+      Animated.delay(400),
+      Animated.timing(heartOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const handleImageDoubleTap = () => {
+    const now = Date.now();
+    const delta = now - lastTap.current;
+    lastTap.current = now;
+
+    if (delta < 300) {
+      // Double-tap detected - cancel single-tap timeout
+      if (tapTimeout.current) {
+        clearTimeout(tapTimeout.current);
+        tapTimeout.current = null;
+      }
+      // Perform like action
+      if (!isLiked) {
+        setIsLiked(true);
+        if (post) {
+          postService.likePost(post._id).catch(() => setIsLiked(false));
+        }
+      }
+      triggerHeartAnimation();
+    }
+  };
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -145,14 +208,46 @@ export const PostDetailScreen = () => {
           </View>
         </TouchableOpacity>
 
-        {/* Image */}
-        {getPrimaryImageUrl(post.media) && (
-          <Image
-            source={{ uri: getPrimaryImageUrl(post.media)! }}
-            style={styles.postImage}
-            resizeMode="cover"
-          />
-        )}
+        {/* Image with double-tap to like */}
+        <TouchableWithoutFeedback onPress={handleImageDoubleTap}>
+          <View style={styles.imageWrapper}>
+            {(() => {
+              const isVideo = post.media?.[0]?.type === 'video';
+              const imageUrl = isVideo && post.media[0]?.url
+                ? getVideoThumbnailUrl(post.media[0].url)
+                : getPrimaryImageUrl(post.media);
+              return imageUrl ? (
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={styles.postImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Feather name="image" size={48} color={darkColors.textSecondary} />
+                </View>
+              );
+            })()}
+            {/* Video play icon overlay */}
+            {post.media?.[0]?.type === 'video' && (
+              <View style={styles.videoOverlay}>
+                <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
+              </View>
+            )}
+            {/* Heart animation overlay */}
+            <Animated.View
+              style={[
+                styles.heartOverlay,
+                {
+                  transform: [{ scale: heartScale }],
+                  opacity: heartOpacity,
+                },
+              ]}
+            >
+              <Ionicons name="heart" size={80} color="#FFFFFF" />
+            </Animated.View>
+          </View>
+        </TouchableWithoutFeedback>
 
         {/* Actions */}
         <View style={styles.actions}>
@@ -282,6 +377,37 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 4 / 5,
     backgroundColor: darkColors.surface,
+  },
+  imageWrapper: {
+    width: '100%',
+    aspectRatio: 4 / 5,
+    backgroundColor: darkColors.surface,
+    position: 'relative',
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: darkColors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  heartOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actions: {
     flexDirection: 'row',
