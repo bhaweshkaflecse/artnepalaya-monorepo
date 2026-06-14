@@ -55,4 +55,14 @@ router.put('/tags/:id', controller.updateAdminTag);
 router.delete('/tags/:id', controller.deleteAdminTag);
 router.post('/tags/merge', controller.mergeAdminTags);
 
+// Feed Analytics
+router.get('/feed-analytics', controller.getFeedAnalytics);
+
+// Featured Content Ordering & Expiry
+router.put('/featured/:postId/order', controller.updateFeaturedOrder);
+router.put('/featured/:postId/expiry', controller.updateFeaturedExpiry);
+
+// Search Insights
+router.get('/search-insights', controller.getSearchInsights);
+
 export default router;

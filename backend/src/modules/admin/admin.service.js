@@ -2,6 +2,7 @@ import { User } from '../users/user.model.js';
 import { Post } from '../posts/post.model.js';
 import { Report } from '../reports/report.model.js';
 import { FeaturedPost } from './featured.model.js';
+import { SearchLog } from './searchLog.model.js';
 
 /**
  * Escapes special regex characters in a string so it can be safely
@@ -57,7 +58,13 @@ export const deletePost = async (postId) => {
 };
 
 export const getFeaturedPosts = async () => {
-  return FeaturedPost.find().populate({ path: 'postId', populate: { path: 'authorId', select: 'username avatarUrl' } }).lean();
+  const now = new Date();
+  return FeaturedPost.find({
+    $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }]
+  })
+    .sort({ sortOrder: 1 })
+    .populate({ path: 'postId', populate: { path: 'authorId', select: 'username avatarUrl' } })
+    .lean();
 };
 
 export const addFeaturedPost = async (postId, adminId) => {
@@ -135,3 +142,63 @@ export const getAnalytics = async () => {
 
   return { postsPerDay, activeUsersThisWeek, newPostsToday };
 };
+
+export const getFeedAnalytics = async () => {
+  const [mostLikedPosts, mostSavedPosts, mostFollowedArtists] = await Promise.all([
+    Post.find()
+      .sort({ likesCount: -1 })
+      .limit(5)
+      .populate('authorId', 'username avatarUrl')
+      .select('caption media likesCount authorId')
+      .lean(),
+    Post.find()
+      .sort({ savesCount: -1 })
+      .limit(5)
+      .populate('authorId', 'username avatarUrl')
+      .select('caption media savesCount authorId')
+      .lean(),
+    User.find()
+      .sort({ 'stats.followers': -1 })
+      .limit(5)
+      .select('username avatarUrl stats.followers')
+      .lean()
+  ]);
+
+  return { mostLikedPosts, mostSavedPosts, mostFollowedArtists };
+};
+
+export const updateFeaturedOrder = async (postId, sortOrder) => {
+  const featured = await FeaturedPost.findOneAndUpdate(
+    { postId },
+    { $set: { sortOrder } },
+    { new: true }
+  );
+  if (!featured) throw Object.assign(new Error('Featured post not found'), { status: 404 });
+  return featured;
+};
+
+export const updateFeaturedExpiry = async (postId, expiresAt) => {
+  const featured = await FeaturedPost.findOneAndUpdate(
+    { postId },
+    { $set: { expiresAt: expiresAt || null } },
+    { new: true }
+  );
+  if (!featured) throw Object.assign(new Error('Featured post not found'), { status: 404 });
+  return featured;
+};
+
+export const getSearchInsights = async () => {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const [topSearches, trending] = await Promise.all([
+    SearchLog.find().sort({ count: -1 }).limit(50).lean(),
+    SearchLog.find({ lastSearchedAt: { $gte: sevenDaysAgo } })
+      .sort({ count: -1 })
+      .limit(20)
+      .lean()
+  ]);
+
+  return { topSearches, trending };
+};
+

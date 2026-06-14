@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, Image, ShieldAlert, BarChart3, TrendingUp } from 'lucide-react';
+import { Users, Image, ShieldAlert, BarChart3, TrendingUp, Heart, Bookmark, UserCheck } from 'lucide-react';
 import { api } from '../services/api';
 
 interface DashboardStats {
@@ -19,6 +19,28 @@ interface AnalyticsData {
   newPostsToday: number;
 }
 
+interface FeedPost {
+  _id: string;
+  caption?: string;
+  media?: { url: string }[];
+  likesCount?: number;
+  savesCount?: number;
+  authorId?: { username: string; avatarUrl?: string };
+}
+
+interface FeedArtist {
+  _id: string;
+  username: string;
+  avatarUrl?: string;
+  stats?: { followers: number };
+}
+
+interface FeedAnalyticsData {
+  mostLikedPosts: FeedPost[];
+  mostSavedPosts: FeedPost[];
+  mostFollowedArtists: FeedArtist[];
+}
+
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function getDayLabel(dateStr: string): string {
@@ -29,8 +51,10 @@ function getDayLabel(dateStr: string): string {
 export const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [feedAnalytics, setFeedAnalytics] = useState<FeedAnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [feedLoading, setFeedLoading] = useState(true);
   const [error, setError] = useState('');
   const [analyticsError, setAnalyticsError] = useState('');
 
@@ -55,8 +79,19 @@ export const Dashboard = () => {
         setAnalyticsLoading(false);
       }
     };
+    const fetchFeedAnalytics = async () => {
+      try {
+        const res = await api.get('/admin/feed-analytics');
+        setFeedAnalytics(res.data.data);
+      } catch {
+        // Silently fail - feed analytics is supplementary
+      } finally {
+        setFeedLoading(false);
+      }
+    };
     fetchStats();
     fetchAnalytics();
+    fetchFeedAnalytics();
   }, []);
 
   if (error) {
@@ -232,6 +267,113 @@ export const Dashboard = () => {
         ) : (
           <p className="text-gray-400 text-sm">No post activity in the last 7 days.</p>
         )}
+      </div>
+
+      {/* Feed Analytics Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Most Liked Posts */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <Heart size={20} className="text-red-500" />
+            Most Liked Posts
+          </h3>
+          {feedLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-10 animate-pulse bg-gray-100 rounded" />
+              ))}
+            </div>
+          ) : feedAnalytics?.mostLikedPosts?.length ? (
+            <div className="space-y-3">
+              {feedAnalytics.mostLikedPosts.map((post, idx) => (
+                <div key={post._id} className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-gray-400 w-5">#{idx + 1}</span>
+                  {post.media?.[0]?.url ? (
+                    <img src={post.media[0].url} alt="" className="w-10 h-10 rounded object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded bg-gray-200" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">@{post.authorId?.username || 'unknown'}</p>
+                    <p className="text-xs text-gray-500 truncate">{post.caption || 'No caption'}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-red-500">{post.likesCount || 0}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-400 text-sm">No data available.</p>
+          )}
+        </div>
+
+        {/* Most Saved Posts */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <Bookmark size={20} className="text-blue-500" />
+            Most Saved Posts
+          </h3>
+          {feedLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-10 animate-pulse bg-gray-100 rounded" />
+              ))}
+            </div>
+          ) : feedAnalytics?.mostSavedPosts?.length ? (
+            <div className="space-y-3">
+              {feedAnalytics.mostSavedPosts.map((post, idx) => (
+                <div key={post._id} className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-gray-400 w-5">#{idx + 1}</span>
+                  {post.media?.[0]?.url ? (
+                    <img src={post.media[0].url} alt="" className="w-10 h-10 rounded object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded bg-gray-200" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">@{post.authorId?.username || 'unknown'}</p>
+                    <p className="text-xs text-gray-500 truncate">{post.caption || 'No caption'}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-blue-500">{post.savesCount || 0}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-400 text-sm">No data available.</p>
+          )}
+        </div>
+
+        {/* Most Followed Artists */}
+        <div className="bg-white p-6 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <UserCheck size={20} className="text-green-500" />
+            Most Followed Artists
+          </h3>
+          {feedLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-10 animate-pulse bg-gray-100 rounded" />
+              ))}
+            </div>
+          ) : feedAnalytics?.mostFollowedArtists?.length ? (
+            <div className="space-y-3">
+              {feedAnalytics.mostFollowedArtists.map((artist, idx) => (
+                <div key={artist._id} className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-gray-400 w-5">#{idx + 1}</span>
+                  {artist.avatarUrl ? (
+                    <img src={artist.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-200" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">@{artist.username}</p>
+                  </div>
+                  <span className="text-sm font-semibold text-green-500">{artist.stats?.followers || 0}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-400 text-sm">No data available.</p>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Plus, X, Award } from 'lucide-react';
+import { Plus, X, Award, ArrowUp, ArrowDown, Calendar } from 'lucide-react';
 import { api } from '../services/api';
 
 interface FeaturedPost {
+  _id: string;
   postId: {
     _id: string;
     media: { url: string; providerId?: string; type?: string }[];
@@ -10,6 +11,8 @@ interface FeaturedPost {
     caption?: string;
   };
   featuredBy: string;
+  sortOrder: number;
+  expiresAt: string | null;
   createdAt: string;
 }
 
@@ -72,6 +75,49 @@ export const Featured = () => {
     }
   };
 
+  const handleUpdateOrder = async (postId: string, newOrder: number) => {
+    setActionLoading(true);
+    try {
+      await api.put(`/admin/featured/${postId}/order`, { sortOrder: newOrder });
+      await fetchFeatured();
+    } catch {
+      setError('Failed to update order.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return;
+    const item = featured[index];
+    const prevItem = featured[index - 1];
+    handleUpdateOrder(item.postId._id, prevItem.sortOrder);
+    handleUpdateOrder(prevItem.postId._id, item.sortOrder);
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index === featured.length - 1) return;
+    const item = featured[index];
+    const nextItem = featured[index + 1];
+    handleUpdateOrder(item.postId._id, nextItem.sortOrder);
+    handleUpdateOrder(nextItem.postId._id, item.sortOrder);
+  };
+
+  const handleUpdateExpiry = async (postId: string, expiresAt: string) => {
+    setActionLoading(true);
+    try {
+      await api.put(`/admin/featured/${postId}/expiry`, { expiresAt: expiresAt || null });
+      await fetchFeatured();
+    } catch {
+      setError('Failed to update expiration date.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Sort displayed items by sortOrder
+  const sortedFeatured = [...featured].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
   return (
     <div className="space-y-6">
       {error && <div className="bg-red-50 text-red-700 px-4 py-2 rounded-md text-sm mb-4">{error}</div>}
@@ -79,7 +125,7 @@ export const Featured = () => {
         <div>
           <h3 className="text-lg font-semibold">Featured Carousel</h3>
           <p className="text-sm text-gray-500">
-            Maximum 3 artworks. These appear at the top of the mobile home feed.
+            Maximum 3 artworks. These appear at the top of the mobile home feed. Drag to reorder.
           </p>
           <div className="mt-2 flex items-center space-x-2">
             <Award size={16} className="text-accent" />
@@ -99,13 +145,15 @@ export const Featured = () => {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-              <div className="h-48 animate-pulse bg-gray-200 w-full" />
-              <div className="p-4 space-y-2">
-                <div className="h-4 w-24 animate-pulse bg-gray-200 rounded" />
-                <div className="h-3 w-32 animate-pulse bg-gray-200 rounded" />
+            <div key={i} className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-20 animate-pulse bg-gray-200 rounded" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-24 animate-pulse bg-gray-200 rounded" />
+                  <div className="h-3 w-32 animate-pulse bg-gray-200 rounded" />
+                </div>
               </div>
             </div>
           ))}
@@ -116,34 +164,77 @@ export const Featured = () => {
           <p className="text-gray-500">No featured posts yet. Add up to 3 artworks to the carousel.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {featured.map((item) => (
+        <div className="space-y-4">
+          {sortedFeatured.map((item, index) => (
             <div
               key={item.postId._id}
-              className="bg-white border border-gray-200 rounded-lg overflow-hidden"
+              className="bg-white border border-gray-200 rounded-lg p-4"
             >
-              {item.postId.media?.[0]?.url ? (
-                <img
-                  src={item.postId.media[0].url}
-                  alt=""
-                  className="h-48 w-full object-cover"
-                />
-              ) : (
-                <div className="h-48 bg-gray-200 w-full" />
-              )}
-              <div className="p-4 flex justify-between items-center">
-                <div>
+              <div className="flex items-center gap-4">
+                {/* Order controls */}
+                <div className="flex flex-col gap-1">
+                  <button
+                    onClick={() => handleMoveUp(index)}
+                    disabled={index === 0 || actionLoading}
+                    className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Move up"
+                  >
+                    <ArrowUp size={16} />
+                  </button>
+                  <span className="text-xs text-center text-gray-500 font-mono">{index + 1}</span>
+                  <button
+                    onClick={() => handleMoveDown(index)}
+                    disabled={index === sortedFeatured.length - 1 || actionLoading}
+                    className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Move down"
+                  >
+                    <ArrowDown size={16} />
+                  </button>
+                </div>
+
+                {/* Thumbnail */}
+                {item.postId.media?.[0]?.url ? (
+                  <img
+                    src={item.postId.media[0].url}
+                    alt=""
+                    className="h-20 w-20 rounded object-cover"
+                  />
+                ) : (
+                  <div className="h-20 w-20 bg-gray-200 rounded" />
+                )}
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm">
                     @{item.postId.authorId?.username || 'unknown'}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 truncate">
+                    {item.postId.caption || 'No caption'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
                     Featured {new Date(item.createdAt).toLocaleDateString()}
                   </p>
                 </div>
+
+                {/* Expiration date picker */}
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} className="text-gray-400" />
+                  <div className="flex flex-col">
+                    <label className="text-xs text-gray-500 mb-1">Expires</label>
+                    <input
+                      type="date"
+                      value={item.expiresAt ? new Date(item.expiresAt).toISOString().split('T')[0] : ''}
+                      onChange={(e) => handleUpdateExpiry(item.postId._id, e.target.value)}
+                      className="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-black"
+                    />
+                  </div>
+                </div>
+
+                {/* Remove button */}
                 <button
                   onClick={() => handleRemove(item.postId._id)}
                   disabled={actionLoading}
-                  className="text-red-600 text-sm font-medium hover:underline disabled:opacity-50"
+                  className="text-red-600 text-sm font-medium hover:underline disabled:opacity-50 ml-4"
                 >
                   Remove
                 </button>

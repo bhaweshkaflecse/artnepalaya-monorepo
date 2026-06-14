@@ -13,6 +13,7 @@ import { CmsEditor } from './pages/CmsEditor';
 import { CommunityInterest } from './pages/CommunityInterest';
 import { ArtworkTypes } from './pages/ArtworkTypes';
 import { TagManagement } from './pages/TagManagement';
+import { SearchInsights } from './pages/SearchInsights';
 import { useAuthStore } from './store/authStore';
 import type { ReactNode } from 'react';
 
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="community-interest" element={<CommunityInterest />} />
           <Route path="artwork-types" element={<ArtworkTypes />} />
           <Route path="tags" element={<TagManagement />} />
+          <Route path="search-insights" element={<SearchInsights />} />
         </Route>
       </Routes>
     </Router>

@@ -46,8 +46,11 @@ router.get('/global-popup', async (req, res, next) => {
 // Public featured posts endpoint - no auth required
 router.get('/featured', async (req, res, next) => {
   try {
-    const featured = await FeaturedPost.find()
-      .sort({ createdAt: -1 })
+    const now = new Date();
+    const featured = await FeaturedPost.find({
+      $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }]
+    })
+      .sort({ sortOrder: 1 })
       .populate({
         path: 'postId',
         populate: {

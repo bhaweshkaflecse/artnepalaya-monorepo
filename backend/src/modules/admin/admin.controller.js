@@ -310,3 +310,43 @@ export const mergeAdminTags = async (req, res, next) => {
     res.status(200).json({ success: true, message: 'Tags merged successfully', data: target });
   } catch (err) { next(err); }
 };
+
+// --- Feed Analytics ---
+
+export const getFeedAnalytics = async (req, res, next) => {
+  try {
+    const data = await adminService.getFeedAnalytics();
+    res.status(200).json({ success: true, data });
+  } catch (err) { next(err); }
+};
+
+// --- Featured Content Order & Expiry ---
+
+export const updateFeaturedOrder = async (req, res, next) => {
+  try {
+    const { sortOrder } = req.body;
+    if (sortOrder === undefined || sortOrder === null) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'sortOrder is required' } });
+    }
+    await adminService.updateFeaturedOrder(req.params.postId, Number(sortOrder));
+    res.status(200).json({ success: true, message: 'Featured post order updated' });
+  } catch (err) { next(err); }
+};
+
+export const updateFeaturedExpiry = async (req, res, next) => {
+  try {
+    const { expiresAt } = req.body;
+    await adminService.updateFeaturedExpiry(req.params.postId, expiresAt);
+    res.status(200).json({ success: true, message: 'Featured post expiration updated' });
+  } catch (err) { next(err); }
+};
+
+// --- Search Insights ---
+
+export const getSearchInsights = async (req, res, next) => {
+  try {
+    const data = await adminService.getSearchInsights();
+    res.status(200).json({ success: true, data });
+  } catch (err) { next(err); }
+};
+
