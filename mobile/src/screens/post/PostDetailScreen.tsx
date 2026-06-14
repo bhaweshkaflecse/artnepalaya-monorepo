@@ -22,6 +22,8 @@ import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
 import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
 import { ReportModal } from '../../components/common/ReportModal';
+import { useAppSelector, useAppDispatch } from '../../store';
+import { selectIsGuest, logout } from '../../store/slices/authSlice';
 
 type PostDetailRouteProp = RouteProp<{ PostDetail: { postId: string } }, 'PostDetail'>;
 
@@ -37,6 +39,9 @@ export const PostDetailScreen = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [shouldPlay, setShouldPlay] = useState(false);
+
+  const isGuest = useAppSelector(selectIsGuest);
+  const dispatch = useAppDispatch();
 
   // Video player state
   const [isBuffering, setIsBuffering] = useState(false);
@@ -160,6 +165,14 @@ export const PostDetailScreen = () => {
   }, [postId]);
 
   const handleLike = async () => {
+    if (isGuest) {
+      Alert.alert(
+        'Login Required',
+        'Guest accounts cannot like or save artworks. Create an account or sign in to unlock community features.',
+        [{ text: 'Continue Browsing', style: 'cancel' }, { text: 'Sign In', onPress: () => dispatch(logout()) }]
+      );
+      return;
+    }
     if (!post) return;
     const newValue = !isLiked;
     setIsLiked(newValue);
@@ -175,6 +188,14 @@ export const PostDetailScreen = () => {
   };
 
   const handleSave = async () => {
+    if (isGuest) {
+      Alert.alert(
+        'Login Required',
+        'Guest accounts cannot like or save artworks. Create an account or sign in to unlock community features.',
+        [{ text: 'Continue Browsing', style: 'cancel' }, { text: 'Sign In', onPress: () => dispatch(logout()) }]
+      );
+      return;
+    }
     if (!post) return;
     const newValue = !isSaved;
     setIsSaved(newValue);

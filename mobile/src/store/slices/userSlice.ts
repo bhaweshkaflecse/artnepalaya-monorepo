@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { userService, User } from '../../services/user.service';
 import { Post } from '../../services/post.service';
+import { logout } from './authSlice';
 
 interface UserState {
   profile: User | null;
@@ -83,6 +84,13 @@ const userSlice = createSlice({
       .addCase(fetchSavedPosts.rejected, (state) => {
         state.isLoading = false;
       });
+
+    builder.addCase(logout, (state) => {
+      state.profile = null;
+      state.myPosts = [];
+      state.savedPosts = [];
+      state.isLoading = false;
+    });
   },
 });
 

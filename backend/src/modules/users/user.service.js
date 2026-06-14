@@ -2,6 +2,7 @@ import { User } from './user.model.js';
 import { Post } from '../posts/post.model.js';
 import { Save } from '../posts/post-interaction.model.js';
 import { Follow } from './follow.model.js';
+import * as notificationService from '../notifications/notification.service.js';
 
 // === Fetch Profile ===
 export const getUserProfile = async (userId, isPublic = false) => {
@@ -123,6 +124,13 @@ export const followUser = async (currentUserId, targetUserId) => {
       User.findByIdAndUpdate(targetUserId, { $inc: { 'stats.followers': 1 } }),
       User.findByIdAndUpdate(currentUserId, { $inc: { 'stats.following': 1 } })
     ]);
+    notificationService.createNotification({
+      recipientId: targetUserId,
+      senderId: currentUserId,
+      postId: null,
+      type: 'Follow',
+      message: 'started following you'
+    }).catch(console.error);
     return true;
   } catch (err) {
     if (err.code === 11000) return true; // Already following
