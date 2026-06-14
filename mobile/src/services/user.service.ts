@@ -20,11 +20,19 @@ export interface User {
   isAdult?: boolean;
   nsfwBlurEnabled?: boolean;
   status?: string;
+  isVerified?: boolean;
+  verifiedType?: string | null;
 }
 
 export interface UserPostsResponse {
   data: Post[];
   meta: any;
+}
+
+export interface UserMetrics {
+  totalPosts: number;
+  totalLikes: number;
+  totalSaves: number;
 }
 
 export const userService = {
@@ -94,6 +102,11 @@ export const userService = {
 
   getFollowStatus: async (userId: string): Promise<{ isFollowing: boolean }> => {
     const response = await api.get(`/users/${userId}/follow/status`);
+    return response.data.data;
+  },
+
+  getUserMetrics: async (userId: string): Promise<UserMetrics> => {
+    const response = await api.get(`/users/${userId}/metrics`);
     return response.data.data;
   },
 };

@@ -215,7 +215,23 @@ export const LoginScreen = () => {
               <Feather name="aperture" size={48} color="#FFFFFF" />
             </View>
             <Text style={styles.logoText}>ARTNEPALAYA</Text>
-            <Text style={styles.tagline}>Discover Nepali Art</Text>
+            <Text style={styles.subtitle}>Discover Nepal's Creative World</Text>
+
+            {/* Social Proof Counters */}
+            <View style={styles.socialProofRow}>
+              <View style={styles.socialProofItem}>
+                <Feather name="users" size={16} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.socialProofText}>2,500+ Artists</Text>
+              </View>
+              <View style={styles.socialProofItem}>
+                <Feather name="image" size={16} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.socialProofText}>10,000+ Artworks</Text>
+              </View>
+              <View style={styles.socialProofItem}>
+                <Feather name="map-pin" size={16} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.socialProofText}>15 Cities</Text>
+              </View>
+            </View>
           </View>
 
           {/* Login Buttons */}
@@ -299,27 +315,43 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   logoText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '700',
-    letterSpacing: 3,
+    letterSpacing: 4,
     color: '#FFFFFF',
   },
-  tagline: {
-    fontSize: 14,
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 10,
+    fontWeight: '500',
+  },
+  socialProofRow: {
+    flexDirection: 'row',
+    marginTop: 20,
+    gap: 16,
+  },
+  socialProofItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  socialProofText: {
+    fontSize: 12,
     color: 'rgba(255,255,255,0.8)',
-    marginTop: 8,
+    fontWeight: '500',
   },
   buttonContainer: {
     width: '100%',
-    marginBottom: 24,
+    marginBottom: 28,
   },
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FF3B30',
-    paddingVertical: 16,
-    borderRadius: 8,
+    paddingVertical: 18,
+    borderRadius: 12,
     width: '100%',
   },
   googleButtonDisabled: {

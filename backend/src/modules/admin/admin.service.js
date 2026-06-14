@@ -103,7 +103,7 @@ export const getPosts = async (page = 1, limit = 15, search = '') => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('authorId', 'username avatarUrl')
+      .populate('authorId', 'username avatarUrl isVerified verifiedType')
       .lean(),
     Post.countDocuments(query)
   ]);
@@ -148,19 +148,19 @@ export const getFeedAnalytics = async () => {
     Post.find()
       .sort({ likesCount: -1 })
       .limit(5)
-      .populate('authorId', 'username avatarUrl')
+      .populate('authorId', 'username avatarUrl isVerified verifiedType')
       .select('caption media likesCount authorId')
       .lean(),
     Post.find()
       .sort({ savesCount: -1 })
       .limit(5)
-      .populate('authorId', 'username avatarUrl')
+      .populate('authorId', 'username avatarUrl isVerified verifiedType')
       .select('caption media savesCount authorId')
       .lean(),
     User.find()
       .sort({ 'stats.followers': -1 })
       .limit(5)
-      .select('username avatarUrl stats.followers')
+      .select('username avatarUrl stats.followers isVerified verifiedType')
       .lean()
   ]);
 

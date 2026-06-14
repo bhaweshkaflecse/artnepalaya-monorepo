@@ -35,6 +35,7 @@ export const CreateScreen = () => {
   const navigation = useNavigation();
   const isGuest = useAppSelector(selectIsGuest);
   const [mediaItems, setMediaItems] = useState<Array<{ uri: string; type: 'image' | 'video'; fileSize?: number }>>([]);
+  const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const [artworkType, setArtworkType] = useState<string>('');
@@ -60,50 +61,68 @@ export const CreateScreen = () => {
 
   const pickImage = async () => {
     const currentImages = mediaItems.filter((m) => m.type === 'image').length;
-    if (currentImages >= MAX_IMAGES) {
-      Alert.alert('Limit Reached', `You can upload a maximum of ${MAX_IMAGES} images per post.`);
+    const currentVideos = mediaItems.filter((m) => m.type === 'video').length;
+
+    if (currentImages >= MAX_IMAGES && currentVideos >= MAX_VIDEOS) {
+      Alert.alert('Limit Reached', `You have reached the maximum media limit.`);
       return;
     }
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.All,
-        allowsEditing: true,
+        allowsMultipleSelection: true,
+        selectionLimit: MAX_IMAGES - currentImages,
         quality: 0.8,
       });
 
-      if (!result.canceled) {
-        const asset = result.assets[0];
-        const isVideo = asset.type === 'video';
+      if (!result.canceled && result.assets.length > 0) {
+        const newItems: Array<{ uri: string; type: 'image' | 'video'; fileSize?: number }> = [];
 
-        if (isVideo) {
-          const currentVideos = mediaItems.filter((m) => m.type === 'video').length;
-          if (currentVideos >= MAX_VIDEOS) {
-            Alert.alert('Limit Reached', `You can upload a maximum of ${MAX_VIDEOS} video per post.`);
-            return;
+        for (const asset of result.assets) {
+          const isVideo = asset.type === 'video';
+
+          if (isVideo) {
+            if (currentVideos + newItems.filter(i => i.type === 'video').length >= MAX_VIDEOS) {
+              Alert.alert('Limit Reached', `You can upload a maximum of ${MAX_VIDEOS} video per post.`);
+              continue;
+            }
+          } else {
+            if (currentImages + newItems.filter(i => i.type === 'image').length >= MAX_IMAGES) {
+              Alert.alert('Limit Reached', `You can upload a maximum of ${MAX_IMAGES} images per post.`);
+              continue;
+            }
+            // Check file size (10MB limit for images)
+            if (asset.fileSize && asset.fileSize > 10 * 1024 * 1024) {
+              Alert.alert('File Too Large', 'Please select images under 10MB.');
+              continue;
+            }
           }
-        } else {
-          if (currentImages >= MAX_IMAGES) {
-            Alert.alert('Limit Reached', `You can upload a maximum of ${MAX_IMAGES} images per post.`);
-            return;
-          }
+
+          newItems.push({
+            uri: asset.uri,
+            type: isVideo ? 'video' : 'image',
+            fileSize: asset.fileSize || undefined,
+          });
         }
 
-        // Check file size if available (10MB limit for images)
-        if (!isVideo && asset.fileSize && asset.fileSize > 10 * 1024 * 1024) {
-          Alert.alert('File Too Large', 'Please select an image under 10MB.');
-          return;
+        if (newItems.length > 0) {
+          setMediaItems((prev) => [...prev, ...newItems]);
         }
-
-        setMediaItems((prev) => [
-          ...prev,
-          { uri: asset.uri, type: isVideo ? 'video' : 'image', fileSize: asset.fileSize || undefined },
-        ]);
       }
     } catch (_e) {
-      // Image picker not available - this is expected if expo-image-picker
-      // is not in package.json dependencies
+      // Image picker not available
     }
+  };
+
+  const removeMediaItem = (index: number) => {
+    setMediaItems((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      if (activePreviewIndex >= updated.length) {
+        setActivePreviewIndex(Math.max(0, updated.length - 1));
+      }
+      return updated;
+    });
   };
 
   const resetForm = () => {
@@ -258,7 +277,7 @@ export const CreateScreen = () => {
         {/* Media Picker */}
         <TouchableOpacity style={styles.mediaContainer} onPress={pickImage}>
           {mediaItems.length > 0 ? (
-            <Image source={{ uri: mediaItems[0].uri }} style={styles.previewImage} />
+            <Image source={{ uri: mediaItems[activePreviewIndex]?.uri || mediaItems[0].uri }} style={styles.previewImage} />
           ) : (
             <View style={styles.placeholder}>
               <Feather name="image" size={32} color={lightColors.textSecondary} />
@@ -267,10 +286,49 @@ export const CreateScreen = () => {
             </View>
           )}
         </TouchableOpacity>
+
+        {/* Media Counters */}
         {mediaItems.length > 0 && (
           <Text style={styles.mediaCount}>
-            {mediaItems.filter((m) => m.type === 'image').length}/{MAX_IMAGES} images, {mediaItems.filter((m) => m.type === 'video').length}/{MAX_VIDEOS} video selected
+            {mediaItems.filter((m) => m.type === 'image').length}/{MAX_IMAGES} Images, {mediaItems.filter((m) => m.type === 'video').length}/{MAX_VIDEOS} Video
           </Text>
+        )}
+
+        {/* Thumbnail Strip */}
+        {mediaItems.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.thumbnailStrip}
+          >
+            {mediaItems.map((item, index) => (
+              <View key={`${item.uri}-${index}`} style={styles.thumbnailWrapper}>
+                <TouchableOpacity
+                  onPress={() => setActivePreviewIndex(index)}
+                  style={[
+                    styles.thumbnailItem,
+                    activePreviewIndex === index && styles.thumbnailItemActive,
+                  ]}
+                >
+                  <Image source={{ uri: item.uri }} style={styles.thumbnailImage} />
+                  {item.type === 'video' && (
+                    <View style={styles.thumbnailVideoIcon}>
+                      <Feather name="play" size={10} color="#FFFFFF" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => removeMediaItem(index)}
+                  style={styles.thumbnailRemoveBtn}
+                >
+                  <Feather name="x" size={12} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            <TouchableOpacity style={styles.thumbnailAddBtn} onPress={pickImage}>
+              <Feather name="plus" size={20} color={lightColors.textSecondary} />
+            </TouchableOpacity>
+          </ScrollView>
         )}
 
         {/* Description */}
@@ -436,10 +494,69 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   mediaCount: {
-    fontSize: 12,
-    color: lightColors.textSecondary,
-    marginBottom: 16,
+    fontSize: 13,
+    color: lightColors.accent,
+    marginBottom: 12,
     textAlign: 'center',
+    fontWeight: '600',
+  },
+  thumbnailStrip: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+    paddingHorizontal: 2,
+  },
+  thumbnailWrapper: {
+    position: 'relative',
+  },
+  thumbnailItem: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  thumbnailItemActive: {
+    borderColor: lightColors.accent,
+  },
+  thumbnailImage: {
+    width: '100%',
+    height: '100%',
+  },
+  thumbnailVideoIcon: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 8,
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  thumbnailRemoveBtn: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  thumbnailAddBtn: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: lightColors.border,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: lightColors.surface,
   },
   input: {
     borderBottomWidth: 1,

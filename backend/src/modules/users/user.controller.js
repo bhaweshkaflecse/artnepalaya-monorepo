@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import * as userService from './user.service.js';
+import { Post } from '../posts/post.model.js';
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 const invalidIdResponse = (res) => res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid user ID format' } });
@@ -148,6 +149,30 @@ export const getFollowStatus = async (req, res, next) => {
     if (!isValidId(req.params.userId)) return invalidIdResponse(res);
     const isFollowing = await userService.isFollowing(req.user.id, req.params.userId);
     res.status(200).json({ success: true, data: { isFollowing } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getUserMetrics = async (req, res, next) => {
+  try {
+    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
+    const userId = new mongoose.Types.ObjectId(req.params.userId);
+    const result = await Post.aggregate([
+      { $match: { authorId: userId } },
+      {
+        $group: {
+          _id: null,
+          totalPosts: { $sum: 1 },
+          totalLikes: { $sum: { $ifNull: ['$likesCount', 0] } },
+          totalSaves: { $sum: { $ifNull: ['$savesCount', 0] } },
+        },
+      },
+    ]);
+    const metrics = result.length > 0
+      ? { totalPosts: result[0].totalPosts, totalLikes: result[0].totalLikes, totalSaves: result[0].totalSaves }
+      : { totalPosts: 0, totalLikes: 0, totalSaves: 0 };
+    res.status(200).json({ success: true, data: metrics });
   } catch (err) {
     next(err);
   }

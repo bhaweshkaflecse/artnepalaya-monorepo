@@ -19,6 +19,7 @@ router.delete('/me/push-token', authGuard, controller.removePushToken);
 // (Order matters! These must go AFTER '/me' so Express doesn't think "me" is a userId)
 router.get('/:userId', controller.getPublicProfile);
 router.get('/:userId/posts', validate(validation.paginationSchema), controller.getUserPosts);
+router.get('/:userId/metrics', controller.getUserMetrics);
 router.get('/:userId/followers', controller.getFollowers);
 router.get('/:userId/following', controller.getFollowing);
 

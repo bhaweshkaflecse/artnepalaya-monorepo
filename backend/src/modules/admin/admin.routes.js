@@ -65,4 +65,8 @@ router.put('/featured/:postId/expiry', controller.updateFeaturedExpiry);
 // Search Insights
 router.get('/search-insights', controller.getSearchInsights);
 
+// User Verification
+router.put('/users/:userId/verify', controller.verifyUser);
+router.put('/users/:userId/unverify', controller.unverifyUser);
+
 export default router;

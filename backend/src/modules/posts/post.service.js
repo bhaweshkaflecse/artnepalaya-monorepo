@@ -38,7 +38,7 @@ export const createPost = async (userId, postData) => {
 };
 
 export const getSinglePost = async (postId) => {
-  const post = await Post.findById(postId).populate('authorId', 'username avatarUrl role').lean();
+  const post = await Post.findById(postId).populate('authorId', 'username avatarUrl role isVerified verifiedType').lean();
   if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
   return post;
 };
@@ -55,7 +55,7 @@ export const getFeed = async (userId, cursor, limit) => {
     let posts = await Post.find(query)
       .sort({ _id: -1 })
       .limit(fetchLimit)
-      .populate('authorId', 'username avatarUrl role')
+      .populate('authorId', 'username avatarUrl role isVerified verifiedType')
       .lean();
 
     // Popularity scoring: likesCount * 3 + savesCount * 5

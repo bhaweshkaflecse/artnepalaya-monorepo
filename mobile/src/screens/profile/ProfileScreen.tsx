@@ -18,6 +18,13 @@ import { useAppSelector, useAppDispatch } from '../../store';
 import { fetchProfile, fetchMyPosts, fetchSavedPosts } from '../../store/slices/userSlice';
 import { selectIsGuest, selectGuestUsername, logout } from '../../store/slices/authSlice';
 import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
+import { userService } from '../../services/user.service';
+
+interface UserMetrics {
+  totalPosts: number;
+  totalLikes: number;
+  totalSaves: number;
+}
 
 export const ProfileScreen = () => {
   const dispatch = useAppDispatch();
@@ -27,6 +34,7 @@ export const ProfileScreen = () => {
   const guestUsername = useAppSelector(selectGuestUsername);
   const { profile, myPosts, savedPosts, isLoading } = useAppSelector((state) => state.user);
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
+  const [metrics, setMetrics] = useState<UserMetrics>({ totalPosts: 0, totalLikes: 0, totalSaves: 0 });
 
   useEffect(() => {
     if (isGuest) return;
@@ -38,6 +46,8 @@ export const ProfileScreen = () => {
     const userId = profile?._id || authUser?.id;
     if (userId) {
       dispatch(fetchMyPosts(userId));
+      // Fetch user metrics
+      userService.getUserMetrics(userId).then(setMetrics).catch(() => {});
     }
   }, [dispatch, profile, authUser, isGuest]);
 
@@ -171,9 +181,14 @@ export const ProfileScreen = () => {
                   <Text style={styles.fullName}>
                     {displayUser?.fullName || 'User'}
                   </Text>
-                  <Text style={styles.username}>
-                    @{displayUser?.username || 'username'}
-                  </Text>
+                  <View style={styles.usernameRow}>
+                    <Text style={styles.username}>
+                      @{displayUser?.username || 'username'}
+                    </Text>
+                    {(displayUser as any)?.isVerified && (
+                      <Feather name="check-circle" size={16} color="#3B82F6" style={styles.verifiedBadge} />
+                    )}
+                  </View>
 
                   {/* Role Badge */}
                   <View style={styles.roleBadge}>
@@ -195,6 +210,25 @@ export const ProfileScreen = () => {
                         {displayUser?.stats?.following ?? 0}
                       </Text>
                       <Text style={styles.statLabel}>Following</Text>
+                    </View>
+                  </View>
+
+                  {/* Metrics Row */}
+                  <View style={styles.metricsContainer}>
+                    <View style={styles.metricBox}>
+                      <Feather name="grid" size={16} color={lightColors.accent} />
+                      <Text style={styles.metricNum}>{metrics.totalPosts}</Text>
+                      <Text style={styles.metricLabel}>Posts</Text>
+                    </View>
+                    <View style={styles.metricBox}>
+                      <Feather name="heart" size={16} color="#FF3B30" />
+                      <Text style={styles.metricNum}>{metrics.totalLikes}</Text>
+                      <Text style={styles.metricLabel}>Likes Received</Text>
+                    </View>
+                    <View style={styles.metricBox}>
+                      <Feather name="bookmark" size={16} color="#8B5CF6" />
+                      <Text style={styles.metricNum}>{metrics.totalSaves}</Text>
+                      <Text style={styles.metricLabel}>Saves Received</Text>
                     </View>
                   </View>
 
@@ -309,7 +343,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: lightColors.textSecondary,
     marginTop: 2,
+  },
+  usernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
     marginBottom: 10,
+  },
+  verifiedBadge: {
+    marginLeft: 6,
   },
   roleBadge: {
     borderWidth: 1.5,
@@ -341,6 +383,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: lightColors.textSecondary,
     marginTop: 2,
+  },
+  metricsContainer: {
+    flexDirection: 'row',
+    backgroundColor: lightColors.surface,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    width: '100%',
+    justifyContent: 'space-around',
+    borderWidth: 1,
+    borderColor: lightColors.border,
+  },
+  metricBox: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  metricNum: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: lightColors.textPrimary,
+  },
+  metricLabel: {
+    fontSize: 11,
+    color: lightColors.textSecondary,
   },
   editBtn: {
     borderWidth: 1,

@@ -350,3 +350,38 @@ export const getSearchInsights = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// --- User Verification ---
+
+export const verifyUser = async (req, res, next) => {
+  try {
+    const { verifiedType } = req.body;
+    const validTypes = ['artist', 'gallery', 'business'];
+    if (!verifiedType || !validTypes.includes(verifiedType)) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'verifiedType must be one of: artist, gallery, business' } });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      { $set: { isVerified: true, verifiedType } },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'User not found' } });
+    }
+    res.status(200).json({ success: true, message: 'User verified', data: { isVerified: user.isVerified, verifiedType: user.verifiedType } });
+  } catch (err) { next(err); }
+};
+
+export const unverifyUser = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.userId,
+      { $set: { isVerified: false, verifiedType: null } },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'User not found' } });
+    }
+    res.status(200).json({ success: true, message: 'User unverified', data: { isVerified: user.isVerified, verifiedType: user.verifiedType } });
+  } catch (err) { next(err); }
+};
+

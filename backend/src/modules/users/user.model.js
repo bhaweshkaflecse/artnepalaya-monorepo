@@ -89,6 +89,15 @@ const userSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verifiedType: {
+      type: String,
+      enum: ['artist', 'gallery', 'business', null],
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, BadgeCheck } from 'lucide-react';
 import { api } from '../services/api';
 
 interface UserData {
@@ -9,6 +9,8 @@ interface UserData {
   role: string;
   subRoles?: string[];
   isAdult?: boolean;
+  isVerified?: boolean;
+  verifiedType?: string | null;
   status: string;
   avatarUrl?: string;
 }
@@ -33,6 +35,8 @@ export const Users = () => {
   } | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [verifyModal, setVerifyModal] = useState<{ userId: string; username: string } | null>(null);
+  const [verifyType, setVerifyType] = useState<string>('artist');
 
   const fetchUsers = useCallback(async (pageNum: number) => {
     setLoading(true);
@@ -67,6 +71,37 @@ export const Users = () => {
     } finally {
       setActionLoading(null);
       setConfirmAction(null);
+    }
+  };
+
+  const handleVerifyUser = async (userId: string, verifiedType: string) => {
+    setActionLoading(userId);
+    setError(null);
+    try {
+      await api.put(`/admin/users/${userId}/verify`, { verifiedType });
+      setUsers((prev) =>
+        prev.map((u) => (u._id === userId ? { ...u, isVerified: true, verifiedType } : u))
+      );
+    } catch {
+      setError('Failed to verify user. Please try again.');
+    } finally {
+      setActionLoading(null);
+      setVerifyModal(null);
+    }
+  };
+
+  const handleUnverifyUser = async (userId: string) => {
+    setActionLoading(userId);
+    setError(null);
+    try {
+      await api.put(`/admin/users/${userId}/unverify`);
+      setUsers((prev) =>
+        prev.map((u) => (u._id === userId ? { ...u, isVerified: false, verifiedType: null } : u))
+      );
+    } catch {
+      setError('Failed to unverify user. Please try again.');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -163,7 +198,14 @@ export const Users = () => {
                       </div>
                     )}
                   </td>
-                  <td className="p-4 text-sm font-medium">{user.username}</td>
+                  <td className="p-4 text-sm font-medium">
+                    <span className="inline-flex items-center gap-1">
+                      {user.username}
+                      {user.isVerified && (
+                        <BadgeCheck size={14} className="text-blue-500" />
+                      )}
+                    </span>
+                  </td>
                   <td className="p-4 text-sm text-gray-500">{user.email}</td>
                   <td className="p-4 text-sm">{user.role}</td>
                   <td className="p-4 text-sm text-gray-500">
@@ -188,7 +230,7 @@ export const Users = () => {
                     </span>
                   </td>
                   <td className="p-4">
-                    <div className="flex space-x-1">
+                    <div className="flex space-x-1 flex-wrap gap-y-1">
                       {user.status !== 'active' && (
                         <button
                           onClick={() =>
@@ -232,6 +274,23 @@ export const Users = () => {
                           className="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
                         >
                           Ban
+                        </button>
+                      )}
+                      {!user.isVerified ? (
+                        <button
+                          onClick={() => setVerifyModal({ userId: user._id, username: user.username })}
+                          disabled={actionLoading === user._id}
+                          className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          Verify
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleUnverifyUser(user._id)}
+                          disabled={actionLoading === user._id}
+                          className="text-xs px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50"
+                        >
+                          Unverify
                         </button>
                       )}
                     </div>
@@ -290,6 +349,41 @@ export const Users = () => {
                 className="px-4 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800"
               >
                 Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {verifyModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold mb-2">Verify User</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Select verification type for{' '}
+              <span className="font-medium">{verifyModal.username}</span>:
+            </p>
+            <select
+              value={verifyType}
+              onChange={(e) => setVerifyType(e.target.value)}
+              className="w-full mb-4 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500"
+            >
+              <option value="artist">Artist</option>
+              <option value="gallery">Gallery</option>
+              <option value="business">Business</option>
+            </select>
+            <div className="flex space-x-3 justify-end">
+              <button
+                onClick={() => setVerifyModal(null)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleVerifyUser(verifyModal.userId, verifyType)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+              >
+                Verify
               </button>
             </div>
           </div>

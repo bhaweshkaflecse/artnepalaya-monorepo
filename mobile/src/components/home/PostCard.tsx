@@ -180,7 +180,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
             )}
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.username}>{post.authorId.username}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.username}>{post.authorId.username}</Text>
+              {(post.authorId as any).isVerified && (
+                <Feather name="check-circle" size={14} color="#3B82F6" style={{ marginLeft: 4 }} />
+              )}
+            </View>
             <Text style={styles.timestamp}>
               {new Date(post.createdAt).toLocaleDateString()}
             </Text>
