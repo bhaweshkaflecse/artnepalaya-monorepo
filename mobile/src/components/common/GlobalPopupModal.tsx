@@ -9,7 +9,10 @@ import {
   Animated,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../services/api';
+
+const POPUP_PREFS_KEY = '@artnepalaya_popup_prefs';
 
 interface PopupData {
   heading: string;
@@ -18,6 +21,12 @@ interface PopupData {
   ctaText?: string;
   ctaLink?: string;
   isActive: boolean;
+  frequency?: string;
+}
+
+interface PopupPrefs {
+  dismissedAt: number | null;
+  dontAskAgain: boolean;
 }
 
 const getIconName = (icon?: string): keyof typeof Feather.glyphMap => {
@@ -36,31 +45,68 @@ const getIconName = (icon?: string): keyof typeof Feather.glyphMap => {
   }
 };
 
+const shouldShowPopup = (prefs: PopupPrefs, frequency?: string): boolean => {
+  if (prefs.dontAskAgain) return false;
+  if (!prefs.dismissedAt) return true;
+
+  const now = Date.now();
+  const elapsed = now - prefs.dismissedAt;
+
+  switch (frequency) {
+    case 'show_once':
+      return false; // Already shown once (dismissedAt exists)
+    case 'every_login':
+      return true; // Always show on login
+    case 'every_7_days':
+      return elapsed >= 7 * 24 * 60 * 60 * 1000;
+    case 'every_30_days':
+      return elapsed >= 30 * 24 * 60 * 60 * 1000;
+    default:
+      return false;
+  }
+};
+
 export const GlobalPopupModal = () => {
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [visible, setVisible] = useState(false);
-  const [hasShown, setHasShown] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
   const scaleAnim = useRef(new Animated.Value(0.92)).current;
 
   useEffect(() => {
-    if (hasShown) return;
+    if (hasChecked) return;
 
     const fetchPopup = async () => {
       try {
+        // Load local preferences
+        const prefsRaw = await AsyncStorage.getItem(POPUP_PREFS_KEY);
+        const prefs: PopupPrefs = prefsRaw
+          ? JSON.parse(prefsRaw)
+          : { dismissedAt: null, dontAskAgain: false };
+
+        // If user opted out permanently, skip API call
+        if (prefs.dontAskAgain) {
+          setHasChecked(true);
+          return;
+        }
+
         const response = await api.get('/config/global-popup');
         const data = response.data.data;
         if (data && data.isActive) {
-          setPopup(data);
-          setVisible(true);
-          setHasShown(true);
+          // Check frequency preference
+          if (shouldShowPopup(prefs, data.frequency)) {
+            setPopup(data);
+            setVisible(true);
+          }
         }
+        setHasChecked(true);
       } catch (_e) {
         // Silently fail - popup is non-critical
+        setHasChecked(true);
       }
     };
 
     fetchPopup();
-  }, [hasShown]);
+  }, [hasChecked]);
 
   useEffect(() => {
     if (visible) {
@@ -73,14 +119,29 @@ export const GlobalPopupModal = () => {
     }
   }, [visible, scaleAnim]);
 
+  const savePrefs = async (prefs: PopupPrefs) => {
+    try {
+      await AsyncStorage.setItem(POPUP_PREFS_KEY, JSON.stringify(prefs));
+    } catch (_e) {
+      // Non-critical
+    }
+  };
+
   const handleCta = () => {
     if (popup?.ctaLink) {
       Linking.openURL(popup.ctaLink).catch(() => {});
     }
+    savePrefs({ dismissedAt: Date.now(), dontAskAgain: false });
     setVisible(false);
   };
 
-  const handleDismiss = () => {
+  const handleMaybeLater = () => {
+    savePrefs({ dismissedAt: Date.now(), dontAskAgain: false });
+    setVisible(false);
+  };
+
+  const handleDontAskAgain = () => {
+    savePrefs({ dismissedAt: Date.now(), dontAskAgain: true });
     setVisible(false);
   };
 
@@ -91,7 +152,7 @@ export const GlobalPopupModal = () => {
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={handleDismiss}
+      onRequestClose={handleMaybeLater}
     >
       <View style={styles.overlay}>
         <Animated.View style={[styles.container, { transform: [{ scale: scaleAnim }] }]}>
@@ -105,7 +166,7 @@ export const GlobalPopupModal = () => {
           </View>
 
           {/* Close button */}
-          <TouchableOpacity style={styles.closeBtn} onPress={handleDismiss}>
+          <TouchableOpacity style={styles.closeBtn} onPress={handleMaybeLater}>
             <Feather name="x" size={22} color="#9CA3AF" />
           </TouchableOpacity>
 
@@ -121,16 +182,21 @@ export const GlobalPopupModal = () => {
             <Text style={styles.helperText}>Takes less than 1 minute</Text>
           </View>
 
-          {/* CTA Button */}
+          {/* CTA Button (Take Action) */}
           {popup.ctaText && (
             <TouchableOpacity style={styles.ctaBtn} onPress={handleCta}>
               <Text style={styles.ctaText}>{popup.ctaText}</Text>
             </TouchableOpacity>
           )}
 
-          {/* Dismiss */}
-          <TouchableOpacity style={styles.dismissBtn} onPress={handleDismiss}>
+          {/* Maybe Later */}
+          <TouchableOpacity style={styles.dismissBtn} onPress={handleMaybeLater}>
             <Text style={styles.dismissText}>Maybe Later</Text>
+          </TouchableOpacity>
+
+          {/* Don't Ask Again */}
+          <TouchableOpacity style={styles.dontAskBtn} onPress={handleDontAskAgain}>
+            <Text style={styles.dontAskText}>Don't Ask Again</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -224,5 +290,14 @@ const styles = StyleSheet.create({
   dismissText: {
     fontSize: 14,
     color: '#6B7280',
+  },
+  dontAskBtn: {
+    paddingVertical: 8,
+    marginTop: 4,
+  },
+  dontAskText: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    textDecorationLine: 'underline',
   },
 });

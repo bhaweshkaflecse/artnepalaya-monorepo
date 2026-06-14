@@ -2,9 +2,11 @@ import * as adminService from './admin.service.js';
 import { AppConfig } from './appConfig.model.js';
 import { CmsPage } from './cmsPage.model.js';
 import { GlobalPopup } from './globalPopup.model.js';
+import { ArtworkType } from './artworkType.model.js';
 import * as notificationService from '../notifications/notification.service.js';
 import { User } from '../users/user.model.js';
 import { Post } from '../posts/post.model.js';
+import { Tag } from '../tags/tag.model.js';
 
 export const getDashboardStats = async (req, res, next) => {
   try { res.status(200).json({ success: true, data: await adminService.getDashboardStats() }); } 
@@ -129,10 +131,10 @@ export const getGlobalPopup = async (req, res, next) => {
 
 export const updateGlobalPopup = async (req, res, next) => {
   try {
-    const { heading, icon, body, ctaText, ctaLink, isActive } = req.body;
+    const { heading, icon, body, ctaText, ctaLink, isActive, frequency } = req.body;
     const popup = await GlobalPopup.findOneAndUpdate(
       {},
-      { $set: { heading, icon, body, ctaText, ctaLink, isActive, updatedBy: req.user.id } },
+      { $set: { heading, icon, body, ctaText, ctaLink, isActive, frequency, updatedBy: req.user.id } },
       { upsert: true, new: true }
     );
     res.status(200).json({ success: true, data: popup });
@@ -162,5 +164,149 @@ export const getDebugPosts = async (req, res, next) => {
       mediaUrl: p.media?.[0]?.url || null,
     }));
     res.status(200).json({ success: true, data });
+  } catch (err) { next(err); }
+};
+
+// --- Artwork Type Management ---
+
+export const getArtworkTypes = async (req, res, next) => {
+  try {
+    const types = await ArtworkType.find().sort({ sortOrder: 1, name: 1 }).lean();
+    res.status(200).json({ success: true, data: types });
+  } catch (err) { next(err); }
+};
+
+export const createArtworkType = async (req, res, next) => {
+  try {
+    const { name, sortOrder } = req.body;
+    if (!name) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'name is required' } });
+    }
+    const artworkType = await ArtworkType.create({ name, sortOrder: sortOrder || 0 });
+    res.status(201).json({ success: true, data: artworkType });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ success: false, error: { code: 'DUPLICATE', message: 'Artwork type already exists' } });
+    }
+    next(err);
+  }
+};
+
+export const updateArtworkType = async (req, res, next) => {
+  try {
+    const { name, sortOrder } = req.body;
+    const artworkType = await ArtworkType.findByIdAndUpdate(
+      req.params.id,
+      { $set: { name, sortOrder } },
+      { new: true, runValidators: true }
+    );
+    if (!artworkType) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Artwork type not found' } });
+    }
+    res.status(200).json({ success: true, data: artworkType });
+  } catch (err) { next(err); }
+};
+
+export const toggleArtworkType = async (req, res, next) => {
+  try {
+    const artworkType = await ArtworkType.findById(req.params.id);
+    if (!artworkType) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Artwork type not found' } });
+    }
+    artworkType.isActive = !artworkType.isActive;
+    await artworkType.save();
+    res.status(200).json({ success: true, data: artworkType });
+  } catch (err) { next(err); }
+};
+
+// --- Tag Management ---
+
+export const getAdminTags = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+    const [tags, total] = await Promise.all([
+      Tag.find().sort({ postCount: -1 }).skip(skip).limit(limit).lean(),
+      Tag.countDocuments()
+    ]);
+    res.status(200).json({ success: true, data: tags, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+  } catch (err) { next(err); }
+};
+
+export const createAdminTag = async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'name is required' } });
+    }
+    const tag = await Tag.create({ name: name.toLowerCase().trim(), postCount: 0 });
+    res.status(201).json({ success: true, data: tag });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ success: false, error: { code: 'DUPLICATE', message: 'Tag already exists' } });
+    }
+    next(err);
+  }
+};
+
+export const updateAdminTag = async (req, res, next) => {
+  try {
+    const { name, status } = req.body;
+    const updateFields = {};
+    if (name) updateFields.name = name.toLowerCase().trim();
+    if (status) updateFields.status = status;
+    const tag = await Tag.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    );
+    if (!tag) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Tag not found' } });
+    }
+    res.status(200).json({ success: true, data: tag });
+  } catch (err) { next(err); }
+};
+
+export const deleteAdminTag = async (req, res, next) => {
+  try {
+    const tag = await Tag.findByIdAndDelete(req.params.id);
+    if (!tag) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Tag not found' } });
+    }
+    res.status(200).json({ success: true, message: 'Tag deleted' });
+  } catch (err) { next(err); }
+};
+
+export const mergeAdminTags = async (req, res, next) => {
+  try {
+    const { sourceId, targetId } = req.body;
+    if (!sourceId || !targetId) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'sourceId and targetId are required' } });
+    }
+    if (sourceId === targetId) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Cannot merge a tag into itself' } });
+    }
+    const [source, target] = await Promise.all([
+      Tag.findById(sourceId),
+      Tag.findById(targetId)
+    ]);
+    if (!source || !target) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Source or target tag not found' } });
+    }
+    // Update all posts that use the source tag to use the target tag
+    await Post.updateMany(
+      { tags: source.name },
+      { $addToSet: { tags: target.name } }
+    );
+    await Post.updateMany(
+      { tags: source.name },
+      { $pull: { tags: source.name } }
+    );
+    // Transfer count
+    target.postCount = (target.postCount || 0) + (source.postCount || 0);
+    await target.save();
+    await Tag.findByIdAndDelete(sourceId);
+    res.status(200).json({ success: true, message: 'Tags merged successfully', data: target });
   } catch (err) { next(err); }
 };

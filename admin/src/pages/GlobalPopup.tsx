@@ -9,9 +9,16 @@ interface PopupConfig {
   ctaText: string;
   ctaLink: string;
   isActive: boolean;
+  frequency: string;
 }
 
 const iconOptions = ['info', 'warning', 'survey', 'update', 'celebration'];
+const frequencyOptions = [
+  { value: 'show_once', label: 'Show Once' },
+  { value: 'every_login', label: 'Show Every Login' },
+  { value: 'every_7_days', label: 'Show Every 7 Days' },
+  { value: 'every_30_days', label: 'Show Every 30 Days' },
+];
 
 export const GlobalPopup = () => {
   const [config, setConfig] = useState<PopupConfig>({
@@ -21,6 +28,7 @@ export const GlobalPopup = () => {
     ctaText: '',
     ctaLink: '',
     isActive: false,
+    frequency: 'show_once',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,6 +49,7 @@ export const GlobalPopup = () => {
           ctaText: data.ctaText || '',
           ctaLink: data.ctaLink || '',
           isActive: data.isActive || false,
+          frequency: data.frequency || 'show_once',
         });
       } catch {
         setError('Failed to load popup configuration.');
@@ -136,6 +145,24 @@ export const GlobalPopup = () => {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="popup-frequency" className="block text-sm font-medium text-gray-700 mb-1">
+              Display Frequency
+            </label>
+            <select
+              id="popup-frequency"
+              value={config.frequency}
+              onChange={(e) => setConfig({ ...config, frequency: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            >
+              {frequencyOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

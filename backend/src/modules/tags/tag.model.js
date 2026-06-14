@@ -2,7 +2,8 @@ import mongoose from 'mongoose';
 
 const tagSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
-  postCount: { type: Number, default: 1, index: -1 }
+  postCount: { type: Number, default: 1, index: -1 },
+  status: { type: String, enum: ['active', 'disabled'], default: 'active' }
 }, { timestamps: true });
 
 export const Tag = mongoose.model('Tag', tagSchema);

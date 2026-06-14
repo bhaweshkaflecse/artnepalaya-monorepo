@@ -3,6 +3,7 @@ import { AppConfig } from './appConfig.model.js';
 import { CmsPage } from './cmsPage.model.js';
 import { GlobalPopup } from './globalPopup.model.js';
 import { FeaturedPost } from './featured.model.js';
+import { ArtworkType } from './artworkType.model.js';
 
 const router = Router();
 
@@ -62,6 +63,16 @@ router.get('/featured', async (req, res, next) => {
       .map((f) => f.postId);
 
     res.status(200).json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Public artwork types endpoint - no auth required
+router.get('/artwork-types', async (req, res, next) => {
+  try {
+    const types = await ArtworkType.find({ isActive: true }).sort({ sortOrder: 1, name: 1 }).lean();
+    res.status(200).json({ success: true, data: types });
   } catch (err) {
     next(err);
   }

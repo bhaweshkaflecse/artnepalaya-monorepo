@@ -42,4 +42,17 @@ router.get('/community-interest', getInterestUsers);
 router.get('/global-popup', controller.getGlobalPopup);
 router.put('/global-popup', controller.updateGlobalPopup);
 
+// Artwork Type Management
+router.get('/artwork-types', controller.getArtworkTypes);
+router.post('/artwork-types', controller.createArtworkType);
+router.put('/artwork-types/:id', controller.updateArtworkType);
+router.patch('/artwork-types/:id/toggle', controller.toggleArtworkType);
+
+// Tag Management
+router.get('/tags', controller.getAdminTags);
+router.post('/tags', controller.createAdminTag);
+router.put('/tags/:id', controller.updateAdminTag);
+router.delete('/tags/:id', controller.deleteAdminTag);
+router.post('/tags/merge', controller.mergeAdminTags);
+
 export default router;

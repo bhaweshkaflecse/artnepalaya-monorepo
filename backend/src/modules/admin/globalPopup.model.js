@@ -7,6 +7,7 @@ const globalPopupSchema = new mongoose.Schema({
   ctaText: { type: String, default: null },
   ctaLink: { type: String, default: null },
   isActive: { type: Boolean, default: true },
+  frequency: { type: String, enum: ['show_once', 'every_login', 'every_7_days', 'every_30_days'], default: 'show_once' },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
 }, { timestamps: true });
 

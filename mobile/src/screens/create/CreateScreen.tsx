@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,7 +22,7 @@ import { selectIsGuest } from '../../store/slices/authSlice';
 const MAX_IMAGES = 5;
 const MAX_VIDEOS = 1;
 
-const ARTWORK_TYPES = [
+const FALLBACK_ARTWORK_TYPES = [
   'Painting',
   'Digital Art',
   'Photography',
@@ -38,9 +38,25 @@ export const CreateScreen = () => {
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const [artworkType, setArtworkType] = useState<string>('');
+  const [artworkTypes, setArtworkTypes] = useState<string[]>(FALLBACK_ARTWORK_TYPES);
   const [isHumanMade, setIsHumanMade] = useState(false);
   const [isNsfw, setIsNsfw] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+
+  useEffect(() => {
+    const fetchArtworkTypes = async () => {
+      try {
+        const response = await api.get('/config/artwork-types');
+        const data = response.data.data;
+        if (data && Array.isArray(data) && data.length > 0) {
+          setArtworkTypes(data.map((t: { name: string }) => t.name));
+        }
+      } catch (_e) {
+        // Fallback to hardcoded values if API fails
+      }
+    };
+    fetchArtworkTypes();
+  }, []);
 
   const pickImage = async () => {
     const currentImages = mediaItems.filter((m) => m.type === 'image').length;
@@ -284,7 +300,7 @@ export const CreateScreen = () => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chipRow}
         >
-          {ARTWORK_TYPES.map((type) => (
+          {artworkTypes.map((type) => (
             <TouchableOpacity
               key={type}
               style={[
