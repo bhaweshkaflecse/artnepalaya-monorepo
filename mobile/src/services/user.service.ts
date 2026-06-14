@@ -91,4 +91,9 @@ export const userService = {
     });
     return response.data;
   },
+
+  getFollowStatus: async (userId: string): Promise<{ isFollowing: boolean }> => {
+    const response = await api.get(`/users/${userId}/follow/status`);
+    return response.data.data;
+  },
 };

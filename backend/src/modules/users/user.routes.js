@@ -23,6 +23,7 @@ router.get('/:userId/followers', controller.getFollowers);
 router.get('/:userId/following', controller.getFollowing);
 
 // === Follow Routes (require auth) ===
+router.get('/:userId/follow/status', authGuard, controller.getFollowStatus);
 router.post('/:userId/follow', authGuard, controller.followUser);
 router.delete('/:userId/follow', authGuard, controller.unfollowUser);
 

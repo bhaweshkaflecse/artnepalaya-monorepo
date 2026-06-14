@@ -16,7 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { Post, postService } from '../../services/post.service';
-import { getPrimaryImageUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
 import { ReportModal } from '../common/ReportModal';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest, logout } from '../../store/slices/authSlice';
@@ -194,17 +194,23 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       {/* Image with single-tap (PostDetail) and double-tap (like) */}
       <TouchableWithoutFeedback onPress={handleImageTap}>
         <View style={styles.imageWrapper}>
-          {getPrimaryImageUrl(post.media) ? (
-            <Image
-              source={{ uri: getPrimaryImageUrl(post.media) }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.imagePlaceholder}>
-              <Feather name="image" size={48} color={darkColors.textSecondary} />
-            </View>
-          )}
+          {(() => {
+            const isVideo = post.media?.[0]?.type === 'video';
+            const imageUrl = isVideo && post.media[0]?.url
+              ? getVideoThumbnailUrl(post.media[0].url)
+              : getPrimaryImageUrl(post.media);
+            return imageUrl ? (
+              <Image
+                source={{ uri: imageUrl }}
+                style={styles.image}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Feather name="image" size={48} color={darkColors.textSecondary} />
+              </View>
+            );
+          })()}
           {/* Video play icon overlay */}
           {post.media?.[0]?.type === 'video' && (
             <View style={styles.videoOverlay}>

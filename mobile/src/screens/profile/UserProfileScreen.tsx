@@ -18,6 +18,8 @@ import { lightColors } from '../../theme/colors';
 import { userService, User } from '../../services/user.service';
 import { Post } from '../../services/post.service';
 import { getPrimaryImageUrl } from '../../utils/media';
+import { useAppSelector } from '../../store';
+import { selectIsGuest } from '../../store/slices/authSlice';
 
 type UserProfileRouteProp = RouteProp<AppStackParamList, 'UserProfile'>;
 
@@ -25,6 +27,7 @@ export const UserProfileScreen = () => {
   const route = useRoute<UserProfileRouteProp>();
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { userId } = route.params;
+  const isGuest = useAppSelector(selectIsGuest);
 
   const [profile, setProfile] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -42,6 +45,16 @@ export const UserProfileScreen = () => {
       const data = await userService.getPublicProfile(userId);
       setProfile(data);
       setFollowersCount(data.stats?.followers ?? 0);
+
+      // Hydrate follow state if user is authenticated
+      if (!isGuest) {
+        try {
+          const status = await userService.getFollowStatus(userId);
+          setIsFollowing(status.isFollowing);
+        } catch (_e) {
+          // Silently fail - default to not following
+        }
+      }
     } catch (error) {
       console.warn('[UserProfileScreen] Failed to load profile:', error);
     } finally {

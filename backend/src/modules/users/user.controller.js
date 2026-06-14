@@ -133,3 +133,12 @@ export const getFollowing = async (req, res, next) => {
     next(err);
   }
 };
+
+export const getFollowStatus = async (req, res, next) => {
+  try {
+    const isFollowing = await userService.isFollowing(req.user.id, req.params.userId);
+    res.status(200).json({ success: true, data: { isFollowing } });
+  } catch (err) {
+    next(err);
+  }
+};

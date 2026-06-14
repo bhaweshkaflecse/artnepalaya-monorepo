@@ -164,6 +164,14 @@ export const ExploreScreen = () => {
             <Feather name="image" size={24} color={darkColors.textSecondary} />
           </View>
         )}
+        {/* Artist username overlay */}
+        {item.authorId?.username && (
+          <View style={styles.artistOverlay}>
+            <Text style={styles.artistOverlayText} numberOfLines={1}>
+              @{item.authorId.username}
+            </Text>
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
@@ -360,5 +368,19 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: darkColors.textSecondary,
+  },
+  artistOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  artistOverlayText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#FFFFFF',
   },
 });

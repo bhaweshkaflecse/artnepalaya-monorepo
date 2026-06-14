@@ -89,27 +89,44 @@ export const NotificationsScreen = () => {
     }
   };
 
+  const handleNotificationPress = async (notification: Notification) => {
+    if (notification.isRead) return;
+    try {
+      await notificationService.markOneAsRead(notification._id);
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === notification._id ? { ...n, isRead: true } : n))
+      );
+    } catch (_e) {
+      // Silently fail
+    }
+  };
+
   const renderNotification = ({ item }: { item: Notification }) => (
-    <View style={[styles.notificationItem, !item.isRead && styles.unreadItem]}>
-      <View style={styles.senderAvatar}>
-        {item.senderId?.avatarUrl ? (
-          <Image source={{ uri: item.senderId.avatarUrl }} style={styles.avatarImage} />
-        ) : (
-          <Feather
-            name={item.type === 'AdminBroadcast' ? 'bell' : 'user'}
-            size={18}
-            color={darkColors.textSecondary}
-          />
-        )}
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => handleNotificationPress(item)}
+    >
+      <View style={[styles.notificationItem, !item.isRead && styles.unreadItem]}>
+        <View style={styles.senderAvatar}>
+          {item.senderId?.avatarUrl ? (
+            <Image source={{ uri: item.senderId.avatarUrl }} style={styles.avatarImage} />
+          ) : (
+            <Feather
+              name={item.type === 'AdminBroadcast' ? 'bell' : 'user'}
+              size={18}
+              color={darkColors.textSecondary}
+            />
+          )}
+        </View>
+        <View style={styles.notificationContent}>
+          <Text style={styles.notificationText} numberOfLines={2}>
+            {getNotificationMessage(item)}
+          </Text>
+          <Text style={styles.notificationTime}>{getTimeAgo(item.createdAt)}</Text>
+        </View>
+        {!item.isRead && <View style={styles.unreadDot} />}
       </View>
-      <View style={styles.notificationContent}>
-        <Text style={styles.notificationText} numberOfLines={2}>
-          {getNotificationMessage(item)}
-        </Text>
-        <Text style={styles.notificationTime}>{getTimeAgo(item.createdAt)}</Text>
-      </View>
-      {!item.isRead && <View style={styles.unreadDot} />}
-    </View>
+    </TouchableOpacity>
   );
 
   return (

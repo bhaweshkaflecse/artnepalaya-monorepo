@@ -46,6 +46,10 @@ export const notificationService = {
     await api.put('/notifications/read');
   },
 
+  markOneAsRead: async (notificationId: string): Promise<void> => {
+    await api.put(`/notifications/${notificationId}/read`);
+  },
+
   registerPushToken: async (token: string): Promise<void> => {
     await api.post('/users/me/push-token', { token });
   },
