@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -36,6 +37,12 @@ export const ProfileScreen = () => {
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
   const [metrics, setMetrics] = useState<UserMetrics>({ totalPosts: 0, totalLikes: 0, totalSaves: 0 });
 
+  // Followers/Following modal state
+  const [listModalVisible, setListModalVisible] = useState(false);
+  const [listModalTitle, setListModalTitle] = useState<'Followers' | 'Following'>('Followers');
+  const [listModalData, setListModalData] = useState<Array<{ _id: string; username: string; avatarUrl?: string }>>([]);
+  const [listModalLoading, setListModalLoading] = useState(false);
+
   useEffect(() => {
     if (isGuest) return;
     dispatch(fetchProfile());
@@ -56,6 +63,45 @@ export const ProfileScreen = () => {
       dispatch(fetchSavedPosts());
     }
   }, [activeTab, isGuest, dispatch]);
+
+  const openFollowersList = useCallback(async () => {
+    const userId = profile?._id || authUser?.id;
+    if (!userId) return;
+    setListModalTitle('Followers');
+    setListModalData([]);
+    setListModalLoading(true);
+    setListModalVisible(true);
+    try {
+      const response = await userService.getFollowers(userId);
+      setListModalData(response.data || []);
+    } catch (_e) {
+      // Silently fail
+    } finally {
+      setListModalLoading(false);
+    }
+  }, [profile, authUser]);
+
+  const openFollowingList = useCallback(async () => {
+    const userId = profile?._id || authUser?.id;
+    if (!userId) return;
+    setListModalTitle('Following');
+    setListModalData([]);
+    setListModalLoading(true);
+    setListModalVisible(true);
+    try {
+      const response = await userService.getFollowing(userId);
+      setListModalData(response.data || []);
+    } catch (_e) {
+      // Silently fail
+    } finally {
+      setListModalLoading(false);
+    }
+  }, [profile, authUser]);
+
+  const handleListItemPress = (itemUserId: string) => {
+    setListModalVisible(false);
+    navigation.navigate('UserProfile', { userId: itemUserId });
+  };
 
   const displayUser = profile || (authUser ? {
     _id: authUser.id,
@@ -199,13 +245,13 @@ export const ProfileScreen = () => {
 
                   {/* Stats */}
                   <View style={styles.statsContainer}>
-                    <TouchableOpacity style={styles.statBox} onPress={() => navigation.navigate('UserProfile', { userId: displayUser?._id })}>
+                    <TouchableOpacity style={styles.statBox} onPress={openFollowersList} activeOpacity={0.7}>
                       <Text style={styles.statNum}>
                         {displayUser?.stats?.followers ?? 0}
                       </Text>
                       <Text style={styles.statLabel}>Followers</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.statBox} onPress={() => navigation.navigate('UserProfile', { userId: displayUser?._id })}>
+                    <TouchableOpacity style={styles.statBox} onPress={openFollowingList} activeOpacity={0.7}>
                       <Text style={styles.statNum}>
                         {displayUser?.stats?.following ?? 0}
                       </Text>
@@ -282,6 +328,57 @@ export const ProfileScreen = () => {
           )
         }
       />
+
+      {/* Followers/Following Modal */}
+      <Modal
+        visible={listModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setListModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{listModalTitle}</Text>
+              <TouchableOpacity onPress={() => setListModalVisible(false)} style={styles.modalCloseBtn}>
+                <Feather name="x" size={22} color={lightColors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            {listModalLoading ? (
+              <View style={styles.modalLoadingContainer}>
+                <ActivityIndicator size="large" color={lightColors.accent} />
+              </View>
+            ) : listModalData.length === 0 ? (
+              <View style={styles.modalEmptyContainer}>
+                <Feather name="users" size={36} color={lightColors.textSecondary} />
+                <Text style={styles.modalEmptyText}>No {listModalTitle.toLowerCase()} yet</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={listModalData}
+                keyExtractor={(item) => item._id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.modalUserItem}
+                    onPress={() => handleListItemPress(item._id)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.modalUserAvatar}>
+                      {item.avatarUrl ? (
+                        <Image source={{ uri: item.avatarUrl }} style={styles.modalUserAvatarImage} />
+                      ) : (
+                        <Feather name="user" size={16} color={lightColors.textSecondary} />
+                      )}
+                    </View>
+                    <Text style={styles.modalUsername}>{item.username}</Text>
+                    <Feather name="chevron-right" size={16} color={lightColors.textSecondary} />
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -506,5 +603,76 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: lightColors.accent,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: lightColors.background,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '70%',
+    paddingBottom: 32,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: lightColors.border,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: lightColors.textPrimary,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalLoadingContainer: {
+    paddingVertical: 48,
+    alignItems: 'center',
+  },
+  modalEmptyContainer: {
+    paddingVertical: 48,
+    alignItems: 'center',
+  },
+  modalEmptyText: {
+    fontSize: 14,
+    color: lightColors.textSecondary,
+    marginTop: 8,
+  },
+  modalUserItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: lightColors.border,
+  },
+  modalUserAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: lightColors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    overflow: 'hidden',
+  },
+  modalUserAvatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  modalUsername: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: lightColors.textPrimary,
   },
 });

@@ -48,7 +48,8 @@ export const getUserPosts = async (req, res, next) => {
       return invalidIdResponse(res);
     }
     const { page, limit } = req.query; // Already parsed to Numbers by Zod
-    const result = await userService.getUserPosts(req.params.userId, page, limit);
+    const viewerId = req.user?.id;
+    const result = await userService.getUserPosts(req.params.userId, page, limit, viewerId);
     
     res.status(200).json({ 
       success: true, 

@@ -32,12 +32,12 @@ const fileFilter = (req, file, cb) => {
 export const secureUpload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024, files: 6 },
+  limits: { fileSize: 100 * 1024 * 1024, files: 6 },
 });
 
 export const handleUploadErrors = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') return next(Object.assign(new Error('File is too large (max 10MB)'), { status: 400 }));
+    if (err.code === 'LIMIT_FILE_SIZE') return next(Object.assign(new Error('File is too large (max 100MB)'), { status: 400 }));
     if (err.code === 'LIMIT_FILE_COUNT') return next(Object.assign(new Error('Maximum 6 files allowed (5 images + 1 video)'), { status: 400 }));
   }
   next(err);

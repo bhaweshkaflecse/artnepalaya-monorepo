@@ -18,7 +18,7 @@ router.use(authGuard);
 // Note: secureUpload handles the files in memory BEFORE Zod validates the rest of the body!
 router.post(
   '/', 
-  secureUpload.array('media', 3), 
+  secureUpload.array('media', 6), 
   handleUploadErrors, 
   validate(validation.createPostSchema), 
   controller.createPost

@@ -49,7 +49,7 @@ export const updateUserProfile = async (userId, updateData) => {
 };
 
 // === Fetch User Posts (Offset Pagination) ===
-export const getUserPosts = async (userId, page, limit) => {
+export const getUserPosts = async (userId, page, limit, viewerId) => {
   const skip = (page - 1) * limit;
 
   const [posts, totalItems] = await Promise.all([
@@ -60,6 +60,27 @@ export const getUserPosts = async (userId, page, limit) => {
       .lean(),
     Post.countDocuments({ authorId: userId })
   ]);
+
+  // Hydrate like/save state for authenticated viewer
+  if (viewerId && posts.length > 0) {
+    const postIds = posts.map(p => p._id);
+    const [likes, saves] = await Promise.all([
+      Like.find({ userId: viewerId, postId: { $in: postIds } }).select('postId').lean(),
+      Save.find({ userId: viewerId, postId: { $in: postIds } }).select('postId').lean(),
+    ]);
+    const likedSet = new Set(likes.map(l => l.postId.toString()));
+    const savedSet = new Set(saves.map(s => s.postId.toString()));
+
+    posts.forEach(post => {
+      post.isLikedByMe = likedSet.has(post._id.toString());
+      post.isSavedByMe = savedSet.has(post._id.toString());
+    });
+  } else {
+    posts.forEach(post => {
+      post.isLikedByMe = false;
+      post.isSavedByMe = false;
+    });
+  }
 
   const totalPages = Math.ceil(totalItems / limit);
 

@@ -16,6 +16,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { notificationService, Notification } from '../../services/notification.service';
+import { useAppSelector, useAppDispatch } from '../../store';
+import { selectIsGuest, logout } from '../../store/slices/authSlice';
 
 type FilterType = 'all' | 'unread' | 'read';
 
@@ -55,11 +57,43 @@ const getNotificationMessage = (notification: Notification): string => {
 
 export const NotificationsScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const dispatch = useAppDispatch();
+  const isGuest = useAppSelector(selectIsGuest);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  // Guest mode - show static info screen
+  if (isGuest) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Feather name="arrow-left" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Notifications</Text>
+          <View style={{ width: 28 }} />
+        </View>
+        <View style={styles.guestContainer}>
+          <Feather name="bell" size={56} color={darkColors.textSecondary} />
+          <Text style={styles.guestTitle}>Notifications are available for registered users.</Text>
+          <Text style={styles.guestSubtext}>Stay updated with:</Text>
+          <View style={styles.guestBulletList}>
+            <Text style={styles.guestBullet}>{'\u2022'} Likes on your artwork</Text>
+            <Text style={styles.guestBullet}>{'\u2022'} New followers</Text>
+            <Text style={styles.guestBullet}>{'\u2022'} Featured alerts</Text>
+            <Text style={styles.guestBullet}>{'\u2022'} Community updates</Text>
+          </View>
+          <TouchableOpacity style={styles.guestSignInBtn} onPress={() => dispatch(logout())} activeOpacity={0.7}>
+            <Feather name="log-in" size={18} color="#FFFFFF" />
+            <Text style={styles.guestSignInText}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const fetchNotifications = useCallback(async (filter: FilterType) => {
     try {
@@ -349,5 +383,50 @@ const styles = StyleSheet.create({
     color: darkColors.textSecondary,
     marginTop: 4,
     textAlign: 'center',
+  },
+  guestContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  guestTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginTop: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  guestSubtext: {
+    fontSize: 14,
+    color: darkColors.textSecondary,
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  guestBulletList: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+    paddingLeft: 24,
+  },
+  guestBullet: {
+    fontSize: 14,
+    color: darkColors.textSecondary,
+    lineHeight: 24,
+  },
+  guestSignInBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: darkColors.accent,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 28,
+    gap: 8,
+  },
+  guestSignInText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });

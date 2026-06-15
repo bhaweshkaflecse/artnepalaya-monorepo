@@ -199,6 +199,16 @@ export const CreateScreen = () => {
       return;
     }
 
+    // Total media size validation (100MB limit)
+    const totalSize = mediaItems.reduce((sum, item) => sum + (item.fileSize || 0), 0);
+    if (totalSize > 100 * 1024 * 1024) {
+      Alert.alert(
+        'Size Limit Exceeded',
+        'Media size exceeds 100MB. Please compress your video or choose smaller files.'
+      );
+      return;
+    }
+
     setIsPublishing(true);
 
     try {

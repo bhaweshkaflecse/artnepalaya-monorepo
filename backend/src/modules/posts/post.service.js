@@ -29,6 +29,9 @@ export const createPost = async (userId, postData) => {
 
   const post = await Post.create({ authorId: userId, ...postData });
 
+  // Invalidate all feed caches after successful post creation
+  invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));
+
   // Trigger Tags (Fire and forget)
   if (post.tags && post.tags.length > 0) {
     tagService.incrementTags(post.tags).catch(err => console.error('Tag increment failed:', err));
