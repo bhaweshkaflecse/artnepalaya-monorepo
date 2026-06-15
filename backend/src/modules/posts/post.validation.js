@@ -56,6 +56,30 @@ export const createPostSchema = z.object({
   })
 });
 
+export const updatePostSchema = z.object({
+  body: z.object({
+    caption: z.string().max(2200).optional(),
+    isHumanMade: z.preprocess(
+      (val) => val === 'true' || val === true,
+      z.boolean()
+    ).optional(),
+    isNsfw: z.preprocess(
+      (val) => val === 'true' || val === true,
+      z.boolean()
+    ).optional(),
+    tags: z.preprocess(
+      (val) => {
+        if (!val) return undefined;
+        if (typeof val === 'string') {
+          try { return JSON.parse(val); } catch (e) { return [val]; }
+        }
+        return val;
+      },
+      z.array(z.string().toLowerCase()).max(15).optional()
+    ).optional()
+  })
+});
+
 export const feedPaginationSchema = z.object({
   query: z.object({
     cursor: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid cursor").optional(),

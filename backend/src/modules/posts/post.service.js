@@ -1,7 +1,9 @@
+import { v2 as cloudinary } from 'cloudinary';
 import { Post } from './post.model.js';
 import { Like, Save } from './post-interaction.model.js';
 import { Notification } from '../notifications/notification.model.js';
 import { FeaturedPost } from '../admin/featured.model.js';
+import { Report } from '../reports/report.model.js';
 import * as tagService from '../tags/tag.service.js';
 import * as notificationService from '../notifications/notification.service.js';
 
@@ -253,12 +255,19 @@ export const deletePost = async (postId, userId, userRole) => {
     throw Object.assign(new Error('You do not have permission to delete this post'), { status: 403 });
   }
 
+  // Clean up Cloudinary assets
+  const destroyPromises = post.media.map(m =>
+    cloudinary.uploader.destroy(m.providerId, { resource_type: m.type === 'video' ? 'video' : 'image' }).catch(err => console.error('Cloudinary destroy failed:', err))
+  );
+  await Promise.all(destroyPromises);
+
   await Promise.all([
     Post.findByIdAndDelete(postId),
     Like.deleteMany({ postId }),
     Save.deleteMany({ postId }),
     Notification.deleteMany({ postId }),
     FeaturedPost.findOneAndDelete({ postId }),
+    Report.deleteMany({ targetId: postId }),
   ]);
 
   invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));

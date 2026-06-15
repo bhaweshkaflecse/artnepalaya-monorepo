@@ -26,7 +26,7 @@ router.post(
 );
 
 // === Edit / Delete ===
-router.put('/:postId', controller.updatePost);
+router.put('/:postId', validate(validation.updatePostSchema), controller.updatePost);
 router.delete('/:postId', controller.deletePost);
 
 // === Interactions ===
