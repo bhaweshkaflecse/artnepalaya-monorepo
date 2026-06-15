@@ -18,14 +18,14 @@ import multer from 'multer';
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  if (['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)) {
+  if (['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'].includes(file.mimetype)) {
     file.isAppVideo = false;
     cb(null, true);
   } else if (['video/mp4', 'video/quicktime'].includes(file.mimetype)) {
     file.isAppVideo = true;
     cb(null, true);
   } else {
-    cb(Object.assign(new Error('Only JPG, PNG, WEBP, GIF, MP4, and MOV allowed'), { status: 400 }), false);
+    cb(Object.assign(new Error('Only JPG, PNG, WEBP, GIF, HEIC, HEIF, MP4, and MOV allowed'), { status: 400 }), false);
   }
 };
 

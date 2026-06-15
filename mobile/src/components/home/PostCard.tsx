@@ -54,10 +54,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const showLoginAlert = () => {
     Alert.alert(
       'Login Required',
-      'Guest accounts cannot like or save artworks. Create an account or sign in to unlock community features.',
+      'Login to like and save artwork.',
       [
-        { text: 'Continue Browsing', style: 'cancel' },
-        { text: 'Sign In', onPress: () => { dispatch(logout()); } },
+        { text: 'Maybe Later', style: 'cancel' },
+        { text: 'Login', onPress: () => { dispatch(logout()); } },
       ]
     );
   };

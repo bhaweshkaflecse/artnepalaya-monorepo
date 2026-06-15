@@ -168,8 +168,8 @@ export const PostDetailScreen = () => {
     if (isGuest) {
       Alert.alert(
         'Login Required',
-        'Guest accounts cannot like or save artworks. Create an account or sign in to unlock community features.',
-        [{ text: 'Continue Browsing', style: 'cancel' }, { text: 'Sign In', onPress: () => dispatch(logout()) }]
+        'Login to like artwork.',
+        [{ text: 'Maybe Later', style: 'cancel' }, { text: 'Login', onPress: () => dispatch(logout()) }]
       );
       return;
     }
@@ -191,8 +191,8 @@ export const PostDetailScreen = () => {
     if (isGuest) {
       Alert.alert(
         'Login Required',
-        'Guest accounts cannot like or save artworks. Create an account or sign in to unlock community features.',
-        [{ text: 'Continue Browsing', style: 'cancel' }, { text: 'Sign In', onPress: () => dispatch(logout()) }]
+        'Login to save artwork.',
+        [{ text: 'Maybe Later', style: 'cancel' }, { text: 'Login', onPress: () => dispatch(logout()) }]
       );
       return;
     }

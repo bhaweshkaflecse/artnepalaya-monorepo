@@ -19,6 +19,7 @@ import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
 import { getPrimaryImageUrl } from '../../utils/media';
+import { api } from '../../services/api';
 
 const CATEGORIES = ['All', 'Painting', 'Digital Art', 'Thangka', 'Sculpture', 'Illustration', 'Photography'];
 
@@ -123,6 +124,15 @@ export const ExploreScreen = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Search logging: debounce 500ms, fire when searchQuery has 3+ chars
+  useEffect(() => {
+    if (searchQuery.length < 3) return;
+    const timer = setTimeout(() => {
+      api.get('/tags', { params: { q: searchQuery } }).catch(() => {});
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
