@@ -37,18 +37,33 @@ export const createPost = async (userId, postData) => {
   return post;
 };
 
-export const getSinglePost = async (postId) => {
+export const getSinglePost = async (postId, userId) => {
   const post = await Post.findById(postId).populate('authorId', 'username avatarUrl role isVerified verifiedType').lean();
   if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
+
+  // Hydrate like/save state for authenticated user
+  if (userId) {
+    const [liked, saved] = await Promise.all([
+      Like.exists({ userId, postId: post._id }),
+      Save.exists({ userId, postId: post._id }),
+    ]);
+    post.isLikedByMe = !!liked;
+    post.isSavedByMe = !!saved;
+  } else {
+    post.isLikedByMe = false;
+    post.isSavedByMe = false;
+  }
+
   return post;
 };
 
 export const getFeed = async (userId, cursor, limit) => {
   limit = limit || 15;
 
-  const cacheKey = `feed:ranked:${userId || 'guest'}:${cursor || 'start'}:${limit}`;
+  // Cache stores base posts without per-user state
+  const cacheKey = `feed:ranked:${cursor || 'start'}:${limit}`;
 
-  return await getOrSetCache(cacheKey, 300, async () => {
+  const baseFeed = await getOrSetCache(cacheKey, 300, async () => {
     const query = cursor ? { _id: { $lt: cursor } } : {};
     const fetchLimit = limit * 2;
 
@@ -92,6 +107,29 @@ export const getFeed = async (userId, cursor, limit) => {
     paginatedPosts.forEach(p => delete p._score);
     return { data: paginatedPosts, meta: { nextCursor, hasNextPage } };
   });
+
+  // Per-user like/save hydration (not cached)
+  if (userId && baseFeed.data.length > 0) {
+    const postIds = baseFeed.data.map(p => p._id);
+    const [likes, saves] = await Promise.all([
+      Like.find({ userId, postId: { $in: postIds } }).select('postId').lean(),
+      Save.find({ userId, postId: { $in: postIds } }).select('postId').lean(),
+    ]);
+    const likedSet = new Set(likes.map(l => l.postId.toString()));
+    const savedSet = new Set(saves.map(s => s.postId.toString()));
+
+    baseFeed.data.forEach(post => {
+      post.isLikedByMe = likedSet.has(post._id.toString());
+      post.isSavedByMe = savedSet.has(post._id.toString());
+    });
+  } else {
+    baseFeed.data.forEach(post => {
+      post.isLikedByMe = false;
+      post.isSavedByMe = false;
+    });
+  }
+
+  return baseFeed;
 };
 
 // === INTERACTIONS ===

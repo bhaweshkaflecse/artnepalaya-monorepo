@@ -199,18 +199,18 @@ export const ProfileScreen = () => {
 
                   {/* Stats */}
                   <View style={styles.statsContainer}>
-                    <View style={styles.statBox}>
+                    <TouchableOpacity style={styles.statBox} onPress={() => navigation.navigate('UserProfile', { userId: displayUser?._id })}>
                       <Text style={styles.statNum}>
                         {displayUser?.stats?.followers ?? 0}
                       </Text>
                       <Text style={styles.statLabel}>Followers</Text>
-                    </View>
-                    <View style={styles.statBox}>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.statBox} onPress={() => navigation.navigate('UserProfile', { userId: displayUser?._id })}>
                       <Text style={styles.statNum}>
                         {displayUser?.stats?.following ?? 0}
                       </Text>
                       <Text style={styles.statLabel}>Following</Text>
-                    </View>
+                    </TouchableOpacity>
                   </View>
 
                   {/* Metrics Row */}

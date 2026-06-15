@@ -22,6 +22,7 @@ const uploadBufferToCloudinary = (buffer, isVideo) => {
 // --- UPDATED CONTROLLER ---
 export const createPost = async (req, res, next) => {
   try {
+    console.log('[CREATE_POST] HIT - user:', req.user?.id, 'files:', req.files?.length || 0);
     const postData = req.body;
     let uploadedFiles = [];
     
@@ -58,7 +59,7 @@ export const getSinglePost = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
       return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid post ID format' } });
     }
-    const post = await postService.getSinglePost(req.params.postId);
+    const post = await postService.getSinglePost(req.params.postId, req.user?.id || null);
     res.status(200).json({ success: true, data: post });
   } catch (err) {
     if (err.status === 404) return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: err.message }});

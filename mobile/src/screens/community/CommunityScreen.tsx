@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import * as SecureStore from 'expo-secure-store';
 import { communityService } from '../../services/community.service';
 import { useAppSelector } from '../../store';
 import { selectIsGuest } from '../../store/slices/authSlice';
@@ -63,8 +64,17 @@ const CommunityContent = () => {
   const navigation = useNavigation();
   const isGuest = useAppSelector(selectIsGuest);
   const [isJoining, setIsJoining] = useState(false);
+  const [hasJoined, setHasJoined] = useState(false);
+
+  useEffect(() => {
+    SecureStore.getItemAsync('communityWaitlistJoined').then((val) => {
+      if (val === 'true') setHasJoined(true);
+    });
+  }, []);
 
   const handleJoinWaitlist = async () => {
+    if (hasJoined) return;
+
     if (isGuest) {
       Alert.alert(
         'Login Required',
@@ -81,10 +91,17 @@ const CommunityContent = () => {
     try {
       const result = await communityService.joinWaitlist();
       Alert.alert('Success', result.message || 'You have been added to the waitlist!');
+      setHasJoined(true);
+      await SecureStore.setItemAsync('communityWaitlistJoined', 'true');
     } catch (error: any) {
       const message =
         error?.response?.data?.message || 'Something went wrong. Please try again.';
-      Alert.alert('Error', message);
+      // If already on waitlist, treat as success
+      if (message.toLowerCase().includes('already') || message.toLowerCase().includes('waitlist')) {
+        setHasJoined(true);
+        await SecureStore.setItemAsync('communityWaitlistJoined', 'true');
+      }
+      Alert.alert('Info', message);
     } finally {
       setIsJoining(false);
     }
@@ -138,14 +155,14 @@ const CommunityContent = () => {
       </ScrollView>
 
       <TouchableOpacity
-        style={[styles.waitlistButton, isJoining && styles.waitlistButtonDisabled]}
+        style={[styles.waitlistButton, (isJoining || hasJoined) && styles.waitlistButtonDisabled]}
         onPress={handleJoinWaitlist}
-        disabled={isJoining}
+        disabled={isJoining || hasJoined}
         activeOpacity={0.8}
       >
-        <Feather name="bell" size={18} color="#FFFFFF" style={styles.buttonIcon} />
+        <Feather name={hasJoined ? "check" : "bell"} size={18} color="#FFFFFF" style={styles.buttonIcon} />
         <Text style={styles.waitlistButtonText}>
-          {isJoining ? 'Joining...' : 'Notify Me When Available'}
+          {hasJoined ? "\u2713 You're on the waitlist" : isJoining ? 'Joining...' : 'Notify Me When Available'}
         </Text>
       </TouchableOpacity>
     </>

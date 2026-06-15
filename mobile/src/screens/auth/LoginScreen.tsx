@@ -17,6 +17,7 @@ import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { useAppDispatch } from '../../store';
 import { setCredentials, setGuest } from '../../store/slices/authSlice';
+import { fetchAuthConfig } from '../../store/slices/appSlice';
 import { api } from '../../services/api';
 import { authService } from '../../services/auth.service';
 import { AnimatedBackground } from '../../components/common/AnimatedBackground';
@@ -43,6 +44,11 @@ export const LoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [devLoading, setDevLoading] = useState(false);
   const [devError, setDevError] = useState<string | null>(null);
+
+  // Fetch fresh auth background media on mount
+  useEffect(() => {
+    dispatch(fetchAuthConfig());
+  }, [dispatch]);
 
   /**
    * IMPORTANT: Google OAuth in Expo Go (SDK 50)

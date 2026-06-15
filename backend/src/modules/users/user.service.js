@@ -1,6 +1,6 @@
 import { User } from './user.model.js';
 import { Post } from '../posts/post.model.js';
-import { Save } from '../posts/post-interaction.model.js';
+import { Like, Save } from '../posts/post-interaction.model.js';
 import { Follow } from './follow.model.js';
 import * as notificationService from '../notifications/notification.service.js';
 
@@ -86,6 +86,17 @@ export const getSavedPosts = async (userId, page, limit) => {
   // Reorder posts to match save order (newest saved first)
   const postMap = new Map(posts.map(p => [p._id.toString(), p]));
   const orderedPosts = postIds.map(id => postMap.get(id.toString())).filter(Boolean);
+
+  // Hydrate like/save state - all saved posts are isSavedByMe: true
+  if (orderedPosts.length > 0) {
+    const likes = await Like.find({ userId, postId: { $in: postIds } }).select('postId').lean();
+    const likedSet = new Set(likes.map(l => l.postId.toString()));
+    orderedPosts.forEach(post => {
+      post.isSavedByMe = true;
+      post.isLikedByMe = likedSet.has(post._id.toString());
+    });
+  }
+
   const totalItems = await Save.countDocuments({ userId });
   return { data: orderedPosts, meta: { currentPage: page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
 };

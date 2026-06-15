@@ -262,7 +262,10 @@ export const CreateScreen = () => {
 
       Alert.alert('Success', 'Artwork published successfully!');
       resetForm();
-    } catch (_e) {
+    } catch (e: any) {
+      console.log('[PUBLISH] ERROR STATUS:', e?.response?.status);
+      console.log('[PUBLISH] ERROR DATA:', JSON.stringify(e?.response?.data));
+      console.log('[PUBLISH] ERROR MESSAGE:', e?.message);
       Alert.alert('Error', 'Failed to publish artwork. Please try again.');
     } finally {
       setIsPublishing(false);
