@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authGuard } from '../../middlewares/authGuard.js';
+import { optionalAuth } from '../../middlewares/optionalAuth.js';
 import { validate } from '../../middlewares/validator.js';
 import * as controller from './user.controller.js';
 import * as validation from './user.validation.js';
@@ -18,7 +19,7 @@ router.delete('/me/push-token', authGuard, controller.removePushToken);
 // === Public User Routes (no auth required) ===
 // (Order matters! These must go AFTER '/me' so Express doesn't think "me" is a userId)
 router.get('/:userId', controller.getPublicProfile);
-router.get('/:userId/posts', validate(validation.paginationSchema), controller.getUserPosts);
+router.get('/:userId/posts', optionalAuth, validate(validation.paginationSchema), controller.getUserPosts);
 router.get('/:userId/metrics', authGuard, controller.getUserMetrics);
 router.get('/:userId/followers', controller.getFollowers);
 router.get('/:userId/following', controller.getFollowing);

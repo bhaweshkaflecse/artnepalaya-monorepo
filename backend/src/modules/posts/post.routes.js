@@ -9,7 +9,7 @@ import * as controller from './post.controller.js';
 const router = Router();
 
 // === Public Routes (no auth required) ===
-router.get('/feed', validate(validation.feedPaginationSchema), controller.getFeed);
+router.get('/feed', optionalAuth, validate(validation.feedPaginationSchema), controller.getFeed);
 router.get('/:postId', optionalAuth, controller.getSinglePost);
 
 // Protect all routes below

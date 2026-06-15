@@ -26,6 +26,7 @@ import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
 import { ReportModal } from '../../components/common/ReportModal';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest, logout } from '../../store/slices/authSlice';
+import { toggleLike, toggleSave } from '../../store/slices/feedSlice';
 
 type PostDetailRouteProp = RouteProp<{ PostDetail: { postId: string } }, 'PostDetail'>;
 
@@ -181,6 +182,7 @@ export const PostDetailScreen = () => {
     if (!post) return;
     const newValue = !isLiked;
     setIsLiked(newValue);
+    dispatch(toggleLike(post._id));
     try {
       if (newValue) {
         await postService.likePost(post._id);
@@ -189,6 +191,7 @@ export const PostDetailScreen = () => {
       }
     } catch {
       setIsLiked(!newValue);
+      dispatch(toggleLike(post._id));
     }
   };
 
@@ -204,6 +207,7 @@ export const PostDetailScreen = () => {
     if (!post) return;
     const newValue = !isSaved;
     setIsSaved(newValue);
+    dispatch(toggleSave(post._id));
     try {
       if (newValue) {
         await postService.savePost(post._id);
@@ -212,6 +216,7 @@ export const PostDetailScreen = () => {
       }
     } catch {
       setIsSaved(!newValue);
+      dispatch(toggleSave(post._id));
     }
   };
 
