@@ -13,6 +13,9 @@ const postSchema = new mongoose.Schema({
   
   // Strings match our fast Feed algorithm perfectly!
   tags: { type: [String], index: true }, 
+
+  // Artwork type categorization
+  artworkType: { type: [String], default: [] },
   
   // AI Declaration Flag - Must be true for Artnepalaya
   isHumanMade: { type: Boolean, required: true },

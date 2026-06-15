@@ -19,6 +19,7 @@ export interface Post {
   media: PostMedia[];
   caption?: string;
   tags: string[];
+  artworkType?: string[];
   likesCount: number;
   savesCount: number;
   isHumanMade?: boolean;
@@ -96,7 +97,7 @@ export const postService = {
     });
   },
 
-  updatePost: async (postId: string, data: { caption?: string; tags?: string[]; isHumanMade?: boolean; isNsfw?: boolean }): Promise<Post> => {
+  updatePost: async (postId: string, data: { caption?: string; tags?: string[]; artworkType?: string[]; isHumanMade?: boolean; isNsfw?: boolean }): Promise<Post> => {
     const response = await api.put(`/posts/${postId}`, data);
     return response.data.data;
   },

@@ -67,6 +67,7 @@ export const updatePostSchema = z.object({
       (val) => val === 'true' || val === true,
       z.boolean()
     ).optional(),
+    artworkType: z.array(z.string()).max(5).optional(),
     tags: z.preprocess(
       (val) => {
         if (!val) return undefined;

@@ -240,6 +240,10 @@ export const updatePost = async (postId, userId, userRole, updateData) => {
     allowedFields.isNsfw = updateData.isNsfw;
   }
 
+  if (updateData.artworkType !== undefined) {
+    allowedFields.artworkType = updateData.artworkType;
+  }
+
   const updatedPost = await Post.findByIdAndUpdate(postId, { $set: allowedFields }, { new: true });
 
   invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));

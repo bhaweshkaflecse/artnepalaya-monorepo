@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,9 @@ import { Feather } from '@expo/vector-icons';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
+import { api } from '../../services/api';
+
+const FALLBACK_TYPES = ['Painting', 'Digital Art', 'Photography', 'Sculpture', 'Mixed Media', 'Illustration', 'Thangka'];
 
 type EditPostRouteProp = RouteProp<{ EditPost: { postId: string; post: Post } }, 'EditPost'>;
 
@@ -27,6 +30,20 @@ export const EditPostScreen = () => {
   const [isHumanMade, setIsHumanMade] = useState(post.isHumanMade ?? true);
   const [isNsfw, setIsNsfw] = useState((post as any).isNsfw ?? false);
   const [isSaving, setIsSaving] = useState(false);
+  const [artworkTypes, setArtworkTypes] = useState<string[]>(FALLBACK_TYPES);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>((post as any).artworkType || []);
+
+  useEffect(() => {
+    api.get('/config/artwork-types')
+      .then((res) => {
+        if (res.data?.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+          setArtworkTypes(res.data.data);
+        }
+      })
+      .catch(() => {
+        // Use fallback types on error
+      });
+  }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -39,6 +56,7 @@ export const EditPostScreen = () => {
       await postService.updatePost(postId, {
         caption,
         tags: tagsArray,
+        artworkType: selectedTypes,
         isHumanMade,
         isNsfw,
       });
@@ -96,6 +114,22 @@ export const EditPostScreen = () => {
             placeholder="art, digital, nepal (comma-separated)"
             placeholderTextColor={darkColors.textSecondary}
           />
+        </View>
+
+        {/* Artwork Type */}
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Artwork Type</Text>
+          <View style={styles.chipContainer}>
+            {artworkTypes.map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[styles.chip, selectedTypes.includes(type) && styles.chipActive]}
+                onPress={() => setSelectedTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}
+              >
+                <Text style={[styles.chipText, selectedTypes.includes(type) && styles.chipTextActive]}>{type}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Human Made Toggle */}
@@ -240,5 +274,31 @@ const styles = StyleSheet.create({
   checkboxActive: {
     backgroundColor: darkColors.accent,
     borderColor: darkColors.accent,
+  },
+  chipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: darkColors.border,
+    backgroundColor: darkColors.surface,
+  },
+  chipActive: {
+    borderColor: darkColors.accent,
+    backgroundColor: 'rgba(255, 59, 48, 0.15)',
+  },
+  chipText: {
+    fontSize: 13,
+    color: darkColors.textSecondary,
+    fontWeight: '500',
+  },
+  chipTextActive: {
+    color: darkColors.accent,
+    fontWeight: '600',
   },
 });
