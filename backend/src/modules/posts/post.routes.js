@@ -25,6 +25,10 @@ router.post(
   controller.createPost
 );
 
+// === Edit / Delete ===
+router.put('/:postId', controller.updatePost);
+router.delete('/:postId', controller.deletePost);
+
 // === Interactions ===
 router.post('/:postId/likes', controller.likePost);
 router.delete('/:postId/likes', controller.unlikePost);

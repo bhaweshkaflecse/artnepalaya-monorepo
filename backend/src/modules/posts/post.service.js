@@ -1,5 +1,7 @@
 import { Post } from './post.model.js';
 import { Like, Save } from './post-interaction.model.js';
+import { Notification } from '../notifications/notification.model.js';
+import { FeaturedPost } from '../admin/featured.model.js';
 import * as tagService from '../tags/tag.service.js';
 import * as notificationService from '../notifications/notification.service.js';
 
@@ -195,5 +197,71 @@ export const addSave = async (userId, postId) => {
 export const removeSave = async (userId, postId) => {
   const deletedSave = await Save.findOneAndDelete({ userId, postId });
   if (deletedSave) await Post.updateOne({ _id: postId }, { $inc: { savesCount: -1 } });
+  return true;
+};
+
+// === CREATOR MANAGEMENT ===
+export const updatePost = async (postId, userId, userRole, updateData) => {
+  const post = await Post.findById(postId);
+  if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
+
+  if (post.authorId.toString() !== userId && userRole !== 'Admin') {
+    throw Object.assign(new Error('You do not have permission to edit this post'), { status: 403 });
+  }
+
+  // Only allow updating these fields
+  const allowedFields = {};
+
+  if (updateData.caption !== undefined) {
+    allowedFields.caption = updateData.caption;
+  }
+
+  if (updateData.tags !== undefined) {
+    let tagsArray = [];
+    if (typeof updateData.tags === 'string') {
+      try {
+        tagsArray = JSON.parse(updateData.tags);
+      } catch (e) {
+        tagsArray = [updateData.tags];
+      }
+    } else if (Array.isArray(updateData.tags)) {
+      tagsArray = updateData.tags;
+    }
+    allowedFields.tags = tagsArray.map(t => t.toLowerCase().trim());
+  }
+
+  if (updateData.isHumanMade !== undefined) {
+    allowedFields.isHumanMade = updateData.isHumanMade;
+  }
+
+  if (updateData.isNsfw !== undefined) {
+    allowedFields.isNsfw = updateData.isNsfw;
+  }
+
+  const updatedPost = await Post.findByIdAndUpdate(postId, { $set: allowedFields }, { new: true });
+
+  invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));
+
+  return updatedPost;
+};
+
+export const deletePost = async (postId, userId, userRole) => {
+  const post = await Post.findById(postId);
+  if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
+
+  if (post.authorId.toString() !== userId && userRole !== 'Admin') {
+    throw Object.assign(new Error('You do not have permission to delete this post'), { status: 403 });
+  }
+
+  await Promise.all([
+    Post.findByIdAndDelete(postId),
+    Like.deleteMany({ postId }),
+    Save.deleteMany({ postId }),
+    Notification.deleteMany({ postId }),
+    FeaturedPost.findOneAndDelete({ postId }),
+  ]);
+
+  invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));
+
   return true;
 };

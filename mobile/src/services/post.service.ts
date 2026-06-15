@@ -95,4 +95,13 @@ export const postService = {
       details,
     });
   },
+
+  updatePost: async (postId: string, data: { caption?: string; tags?: string[]; isHumanMade?: boolean; isNsfw?: boolean }): Promise<Post> => {
+    const response = await api.put(`/posts/${postId}`, data);
+    return response.data.data;
+  },
+
+  deletePost: async (postId: string): Promise<void> => {
+    await api.delete(`/posts/${postId}`);
+  },
 };

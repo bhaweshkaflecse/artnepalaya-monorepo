@@ -122,3 +122,31 @@ export const unsavePost = async (req, res, next) => {
     res.status(200).json({ success: true, message: "Post unsaved" });
   } catch (err) { next(err); }
 };
+
+export const updatePost = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid post ID format' } });
+    }
+    const updatedPost = await postService.updatePost(req.params.postId, req.user.id, req.user.role, req.body);
+    res.status(200).json({ success: true, message: 'Post updated successfully', data: updatedPost });
+  } catch (err) {
+    if (err.status === 403) return res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: err.message } });
+    if (err.status === 404) return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: err.message } });
+    next(err);
+  }
+};
+
+export const deletePost = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid post ID format' } });
+    }
+    await postService.deletePost(req.params.postId, req.user.id, req.user.role);
+    res.status(200).json({ success: true, message: 'Post deleted successfully' });
+  } catch (err) {
+    if (err.status === 403) return res.status(403).json({ success: false, error: { code: 'FORBIDDEN', message: err.message } });
+    if (err.status === 404) return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: err.message } });
+    next(err);
+  }
+};

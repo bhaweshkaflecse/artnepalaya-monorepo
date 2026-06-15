@@ -3,16 +3,19 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { MainTabs } from './MainTabs';
 import { PostDetailScreen } from '../screens/post/PostDetailScreen';
+import { EditPostScreen } from '../screens/post/EditPostScreen';
 import { NotificationsScreen } from '../screens/notifications/NotificationsScreen';
 import { EditProfileScreen } from '../screens/profile/EditProfileScreen';
 import { SettingsScreen } from '../screens/profile/SettingsScreen';
 import { UserProfileScreen } from '../screens/profile/UserProfileScreen';
 import { CmsPageScreen } from '../screens/settings/CmsPageScreen';
 import { setupNotificationListeners } from '../services/pushNotification.service';
+import { Post } from '../services/post.service';
 
 export type AppStackParamList = {
   MainTabs: undefined;
   PostDetail: { postId: string };
+  EditPost: { postId: string; post: Post };
   Notifications: undefined;
   EditProfile: undefined;
   Settings: undefined;
@@ -38,6 +41,7 @@ export const AppStack = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+      <Stack.Screen name="EditPost" component={EditPostScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />

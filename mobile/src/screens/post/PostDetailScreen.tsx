@@ -25,7 +25,7 @@ import { postService, Post } from '../../services/post.service';
 import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
 import { ReportModal } from '../../components/common/ReportModal';
 import { useAppSelector, useAppDispatch } from '../../store';
-import { selectIsGuest, logout } from '../../store/slices/authSlice';
+import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice';
 import { toggleLike, toggleSave } from '../../store/slices/feedSlice';
 
 type PostDetailRouteProp = RouteProp<{ PostDetail: { postId: string } }, 'PostDetail'>;
@@ -42,12 +42,16 @@ export const PostDetailScreen = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [shouldPlay, setShouldPlay] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const isGuest = useAppSelector(selectIsGuest);
+  const currentUser = useAppSelector(selectUser);
   const dispatch = useAppDispatch();
+
+  const isOwnPost = post && currentUser && post.authorId._id === currentUser.id;
 
   // Video player state
   const [isBuffering, setIsBuffering] = useState(false);
@@ -259,12 +263,65 @@ export const PostDetailScreen = () => {
           <Feather name="arrow-left" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Post</Text>
-        <TouchableOpacity onPress={() => setShowReportModal(true)} style={styles.menuBtn}>
+        <TouchableOpacity
+          onPress={() => {
+            if (isOwnPost) {
+              setShowOptionsMenu(!showOptionsMenu);
+            } else {
+              setShowReportModal(true);
+            }
+          }}
+          style={styles.menuBtn}
+        >
           <Feather name="more-horizontal" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView}>
+      {/* Owner Options Menu */}
+      {showOptionsMenu && (
+        <View style={styles.optionsMenu}>
+          <TouchableOpacity
+            style={styles.optionsMenuItem}
+            onPress={() => {
+              setShowOptionsMenu(false);
+              navigation.navigate('EditPost' as never, { postId: post!._id, post } as never);
+            }}
+          >
+            <Feather name="edit-2" size={18} color="#FFFFFF" />
+            <Text style={styles.optionsMenuText}>Edit Artwork</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.optionsMenuItem, styles.optionsMenuItemLast]}
+            onPress={() => {
+              setShowOptionsMenu(false);
+              Alert.alert(
+                'Delete Artwork?',
+                'This action cannot be undone.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        await postService.deletePost(post!._id);
+                        navigation.goBack();
+                      } catch {
+                        Alert.alert('Error', 'Failed to delete post.');
+                      }
+                    },
+                  },
+                ]
+              );
+            }}
+          >
+            <Feather name="trash-2" size={18} color="#FF3B30" />
+            <Text style={[styles.optionsMenuText, { color: '#FF3B30' }]}>Delete Artwork</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <ScrollView style={styles.scrollView} onScrollBeginDrag={() => setShowOptionsMenu(false)}>
         {/* Author info */}
         <TouchableOpacity
           style={styles.authorRow}
@@ -630,5 +687,36 @@ const styles = StyleSheet.create({
   },
   dotInactive: {
     backgroundColor: 'rgba(255,255,255,0.4)',
+  },
+  optionsMenu: {
+    position: 'absolute',
+    top: 56,
+    right: 16,
+    backgroundColor: darkColors.surface,
+    borderRadius: 12,
+    paddingVertical: 4,
+    minWidth: 180,
+    zIndex: 100,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  optionsMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: darkColors.border,
+  },
+  optionsMenuItemLast: {
+    borderBottomWidth: 0,
+  },
+  optionsMenuText: {
+    fontSize: 15,
+    color: '#FFFFFF',
+    marginLeft: 12,
   },
 });
