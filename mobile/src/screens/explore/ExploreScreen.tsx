@@ -21,7 +21,7 @@ import { postService, Post } from '../../services/post.service';
 import { getPrimaryImageUrl } from '../../utils/media';
 import { api } from '../../services/api';
 
-const CATEGORIES = ['All', 'Painting', 'Digital Art', 'Thangka', 'Sculpture', 'Illustration', 'Photography'];
+const FALLBACK_CATEGORIES = ['All', 'Painting', 'Digital Art', 'Thangka', 'Sculpture', 'Illustration', 'Photography'];
 
 const SkeletonGridItem: React.FC<{ index: number }> = ({ index }) => {
   const animatedValue = useRef(new Animated.Value(0)).current;
@@ -84,6 +84,7 @@ const ExploreSkeleton: React.FC = () => {
 export const ExploreScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [activeCategory, setActiveCategory] = useState('All');
+  const [categories, setCategories] = useState<string[]>(FALLBACK_CATEGORIES);
   const [searchQuery, setSearchQuery] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -124,6 +125,22 @@ export const ExploreScreen = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Fetch dynamic artwork types for category pills
+  useEffect(() => {
+    const fetchArtworkTypes = async () => {
+      try {
+        const response = await api.get('/config/artwork-types');
+        const data = response.data.data;
+        if (data && Array.isArray(data) && data.length > 0) {
+          setCategories(['All', ...data.map((t: { name: string }) => t.name)]);
+        }
+      } catch (_e) {
+        // Fallback to hardcoded values if API fails
+      }
+    };
+    fetchArtworkTypes();
+  }, []);
 
   // Search logging: debounce 500ms, fire when searchQuery has 3+ chars
   useEffect(() => {
@@ -214,7 +231,7 @@ export const ExploreScreen = () => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryScroll}
         >
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <TouchableOpacity
               key={cat}
               style={[

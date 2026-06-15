@@ -268,6 +268,7 @@ export const CreateScreen = () => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 120000,
       });
 
       Alert.alert('Success', 'Artwork published successfully!');

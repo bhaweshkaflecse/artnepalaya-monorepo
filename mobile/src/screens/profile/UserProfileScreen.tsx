@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Modal,
+  Alert,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -19,8 +20,8 @@ import { lightColors } from '../../theme/colors';
 import { userService, User } from '../../services/user.service';
 import { Post } from '../../services/post.service';
 import { getPrimaryImageUrl } from '../../utils/media';
-import { useAppSelector } from '../../store';
-import { selectIsGuest } from '../../store/slices/authSlice';
+import { useAppSelector, useAppDispatch } from '../../store';
+import { selectIsGuest, logout } from '../../store/slices/authSlice';
 
 type UserProfileRouteProp = RouteProp<AppStackParamList, 'UserProfile'>;
 
@@ -29,6 +30,7 @@ export const UserProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { userId } = route.params;
   const isGuest = useAppSelector(selectIsGuest);
+  const dispatch = useAppDispatch();
 
   const [profile, setProfile] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -79,6 +81,17 @@ export const UserProfileScreen = () => {
   };
 
   const handleFollow = async () => {
+    if (isGuest) {
+      Alert.alert(
+        'Login Required',
+        'Login to follow artists.',
+        [
+          { text: 'Maybe Later', style: 'cancel' },
+          { text: 'Login', onPress: () => { dispatch(logout()); } },
+        ]
+      );
+      return;
+    }
     try {
       if (isFollowing) {
         await userService.unfollowUser(userId);

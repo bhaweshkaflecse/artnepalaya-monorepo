@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -33,6 +33,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [isLiked, setIsLiked] = useState(post.isLikedByMe || false);
   const [isSaved, setIsSaved] = useState(post.isSavedByMe || false);
   const [showReportModal, setShowReportModal] = useState(false);
+
+  useEffect(() => { setIsLiked(post.isLikedByMe || false); }, [post.isLikedByMe]);
+  useEffect(() => { setIsSaved(post.isSavedByMe || false); }, [post.isSavedByMe]);
 
   // Single/double-tap detection
   const lastTap = useRef<number>(0);
