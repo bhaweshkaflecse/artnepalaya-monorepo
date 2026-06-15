@@ -38,8 +38,9 @@ export const CreateScreen = () => {
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
-  const [artworkType, setArtworkType] = useState<string>('');
+  const [artworkType, setArtworkType] = useState<string[]>([]);
   const [artworkTypes, setArtworkTypes] = useState<string[]>(FALLBACK_ARTWORK_TYPES);
+  const [customArtworkType, setCustomArtworkType] = useState('');
   const [isHumanMade, setIsHumanMade] = useState(false);
   const [isNsfw, setIsNsfw] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -152,11 +153,18 @@ export const CreateScreen = () => {
     });
   };
 
+  const toggleArtworkType = (type: string) => {
+    setArtworkType((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
+
   const resetForm = () => {
     setMediaItems([]);
     setDescription('');
     setTags('');
-    setArtworkType('');
+    setArtworkType([]);
+    setCustomArtworkType('');
     setIsHumanMade(false);
     setIsNsfw(false);
   };
@@ -254,8 +262,12 @@ export const CreateScreen = () => {
         });
       }
 
-      if (artworkType) {
-        formData.append('artworkType', artworkType);
+      if (artworkType.length > 0) {
+        const typesToSend = [...artworkType];
+        if (artworkType.includes('Other') && customArtworkType.trim()) {
+          typesToSend.push(customArtworkType.trim());
+        }
+        formData.append('artworkType', JSON.stringify(typesToSend.filter((t) => t !== 'Other')));
       }
 
       formData.append('isHumanMade', 'true');
@@ -328,7 +340,7 @@ export const CreateScreen = () => {
             <View style={styles.placeholder}>
               <Feather name="image" size={32} color={lightColors.textSecondary} />
               <Text style={styles.placeholderText}>Tap to select artwork</Text>
-              <Text style={styles.placeholderSubtext}>JPG, PNG up to 10MB (max {MAX_IMAGES} images, {MAX_VIDEOS} video)</Text>
+              <Text style={styles.placeholderSubtext}>{'Up to 5 images and 1 video\nMaximum total size: 100MB'}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -377,6 +389,11 @@ export const CreateScreen = () => {
           </ScrollView>
         )}
 
+        {/* Media guidance text */}
+        <Text style={styles.mediaGuidanceText}>
+          You may need to select images and video separately.
+        </Text>
+
         {/* Description */}
         <TextInput
           style={styles.input}
@@ -409,16 +426,14 @@ export const CreateScreen = () => {
               key={type}
               style={[
                 styles.chip,
-                artworkType === type && styles.chipActive,
+                artworkType.includes(type) && styles.chipActive,
               ]}
-              onPress={() =>
-                setArtworkType(artworkType === type ? '' : type)
-              }
+              onPress={() => toggleArtworkType(type)}
             >
               <Text
                 style={[
                   styles.chipText,
-                  artworkType === type && styles.chipTextActive,
+                  artworkType.includes(type) && styles.chipTextActive,
                 ]}
               >
                 {type}
@@ -426,6 +441,18 @@ export const CreateScreen = () => {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Custom Artwork Type Input */}
+        {artworkType.includes('Other') && (
+          <TextInput
+            style={styles.customTypeInput}
+            placeholder="Specify your artwork type..."
+            placeholderTextColor={lightColors.textSecondary}
+            value={customArtworkType}
+            onChangeText={setCustomArtworkType}
+            maxLength={50}
+          />
+        )}
 
         {/* AI Declaration */}
         <View style={styles.aiDeclarationContainer}>
@@ -538,6 +565,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: lightColors.textSecondary,
     fontSize: 12,
+    textAlign: 'center',
   },
   mediaCount: {
     fontSize: 13,
@@ -644,6 +672,23 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: lightColors.accent,
     fontWeight: '600',
+  },
+  customTypeInput: {
+    borderWidth: 1,
+    borderColor: lightColors.border,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: lightColors.textPrimary,
+    backgroundColor: lightColors.surface,
+    marginBottom: 16,
+  },
+  mediaGuidanceText: {
+    fontSize: 12,
+    color: lightColors.textSecondary,
+    marginBottom: 16,
+    fontStyle: 'italic',
   },
   aiDeclarationContainer: {
     flexDirection: 'row',
