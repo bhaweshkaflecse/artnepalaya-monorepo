@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authGuard } from '../../middlewares/authGuard.js';
+import { optionalAuth } from '../../middlewares/optionalAuth.js';
 import { validate } from '../../middlewares/validator.js';
 import { secureUpload, handleUploadErrors } from '../../middlewares/upload.js';
 import * as validation from './post.validation.js';
@@ -9,7 +10,7 @@ const router = Router();
 
 // === Public Routes (no auth required) ===
 router.get('/feed', validate(validation.feedPaginationSchema), controller.getFeed);
-router.get('/:postId', controller.getSinglePost);
+router.get('/:postId', optionalAuth, controller.getSinglePost);
 
 // Protect all routes below
 router.use(authGuard);

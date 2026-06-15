@@ -4,6 +4,8 @@ import {
   Text,
   Image,
   ScrollView,
+  FlatList,
+  Dimensions,
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
@@ -27,6 +29,8 @@ import { selectIsGuest, logout } from '../../store/slices/authSlice';
 
 type PostDetailRouteProp = RouteProp<{ PostDetail: { postId: string } }, 'PostDetail'>;
 
+const { width: screenWidth } = Dimensions.get('window');
+
 export const PostDetailScreen = () => {
   const route = useRoute<PostDetailRouteProp>();
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
@@ -39,6 +43,7 @@ export const PostDetailScreen = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [shouldPlay, setShouldPlay] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const isGuest = useAppSelector(selectIsGuest);
   const dispatch = useAppDispatch();
@@ -276,104 +281,127 @@ export const PostDetailScreen = () => {
           </View>
         </TouchableOpacity>
 
-        {/* Image/Video with double-tap to like */}
-        {(() => {
-          const isVideo = post.media?.[0]?.type === 'video';
-          if (isVideo && post.media[0]?.url) {
-            // Social-media style video player - tap to play/pause, no native controls
-            return (
-              <TouchableWithoutFeedback onPress={handleVideoTap}>
-                <View style={styles.imageWrapper}>
-                  <Video
-                    ref={videoRef}
-                    source={{ uri: post.media[0].url }}
-                    style={styles.postImage}
-                    resizeMode={ResizeMode.COVER}
-                    shouldPlay={shouldPlay}
-                    posterSource={{ uri: getVideoThumbnailUrl(post.media[0].url) }}
-                    usePoster
-                    onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
-                      if (status.isLoaded) {
-                        setIsVideoPlaying(status.isPlaying);
-                        setIsBuffering(status.isBuffering);
-                        if (status.durationMillis && status.durationMillis > 0) {
-                          setDurationMs(status.durationMillis);
-                          setPlaybackProgress(
-                            status.positionMillis / status.durationMillis
-                          );
-                        }
-                      }
-                    }}
-                  />
-                  {/* Initial play icon - shown before video starts */}
-                  {!shouldPlay && (
-                    <View style={styles.videoOverlay} pointerEvents="none">
-                      <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
+        {/* Media Carousel */}
+        <View>
+          <FlatList
+            data={post.media}
+            keyExtractor={(item, index) => `${item.url}-${index}`}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={screenWidth}
+            decelerationRate="fast"
+            onMomentumScrollEnd={(e) => {
+              const index = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
+              setCurrentIndex(index);
+            }}
+            renderItem={({ item }) => {
+              if (item.type === 'video' && item.url) {
+                return (
+                  <TouchableWithoutFeedback onPress={handleVideoTap}>
+                    <View style={[styles.imageWrapper, { width: screenWidth }]}>
+                      <Video
+                        ref={videoRef}
+                        source={{ uri: item.url }}
+                        style={styles.postImage}
+                        resizeMode={ResizeMode.COVER}
+                        shouldPlay={shouldPlay}
+                        posterSource={{ uri: getVideoThumbnailUrl(item.url) }}
+                        usePoster
+                        onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
+                          if (status.isLoaded) {
+                            setIsVideoPlaying(status.isPlaying);
+                            setIsBuffering(status.isBuffering);
+                            if (status.durationMillis && status.durationMillis > 0) {
+                              setDurationMs(status.durationMillis);
+                              setPlaybackProgress(
+                                status.positionMillis / status.durationMillis
+                              );
+                            }
+                          }
+                        }}
+                      />
+                      {!shouldPlay && (
+                        <View style={styles.videoOverlay} pointerEvents="none">
+                          <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
+                        </View>
+                      )}
+                      {shouldPlay && !isVideoPlaying && (
+                        <Animated.View
+                          style={[styles.videoOverlay, { opacity: pauseIconOpacity }]}
+                          pointerEvents="none"
+                        >
+                          <Ionicons name="pause" size={48} color="rgba(255,255,255,0.85)" />
+                        </Animated.View>
+                      )}
+                      {isBuffering && shouldPlay && (
+                        <View style={styles.videoOverlay} pointerEvents="none">
+                          <ActivityIndicator size="large" color="#FFFFFF" />
+                        </View>
+                      )}
+                      {shouldPlay && (
+                        <View style={styles.progressBarContainer}>
+                          <View
+                            style={[
+                              styles.progressBarFill,
+                              { width: `${playbackProgress * 100}%` },
+                            ]}
+                          />
+                        </View>
+                      )}
                     </View>
-                  )}
-                  {/* Pause icon - fades out after 500ms */}
-                  {shouldPlay && !isVideoPlaying && (
+                  </TouchableWithoutFeedback>
+                );
+              }
+              // Image item
+              const imageUrl = item.url;
+              return (
+                <TouchableWithoutFeedback onPress={handleImageDoubleTap}>
+                  <View style={[styles.imageWrapper, { width: screenWidth }]}>
+                    {imageUrl ? (
+                      <Image
+                        source={{ uri: imageUrl }}
+                        style={styles.postImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.imagePlaceholder}>
+                        <Feather name="image" size={48} color={darkColors.textSecondary} />
+                      </View>
+                    )}
+                    {/* Heart animation overlay */}
                     <Animated.View
-                      style={[styles.videoOverlay, { opacity: pauseIconOpacity }]}
+                      style={[
+                        styles.heartOverlay,
+                        {
+                          transform: [{ scale: heartScale }],
+                          opacity: heartOpacity,
+                        },
+                      ]}
                       pointerEvents="none"
                     >
-                      <Ionicons name="pause" size={48} color="rgba(255,255,255,0.85)" />
+                      <Ionicons name="heart" size={80} color="#FFFFFF" />
                     </Animated.View>
-                  )}
-                  {/* Buffering spinner */}
-                  {isBuffering && shouldPlay && (
-                    <View style={styles.videoOverlay} pointerEvents="none">
-                      <ActivityIndicator size="large" color="#FFFFFF" />
-                    </View>
-                  )}
-                  {/* Progress bar */}
-                  {shouldPlay && (
-                    <View style={styles.progressBarContainer}>
-                      <View
-                        style={[
-                          styles.progressBarFill,
-                          { width: `${playbackProgress * 100}%` },
-                        ]}
-                      />
-                    </View>
-                  )}
-                </View>
-              </TouchableWithoutFeedback>
-            );
-          }
-          // Image: keep double-tap behavior
-          const imageUrl = getPrimaryImageUrl(post.media);
-          return (
-            <TouchableWithoutFeedback onPress={handleImageDoubleTap}>
-              <View style={styles.imageWrapper}>
-                {imageUrl ? (
-                  <Image
-                    source={{ uri: imageUrl }}
-                    style={styles.postImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.imagePlaceholder}>
-                    <Feather name="image" size={48} color={darkColors.textSecondary} />
                   </View>
-                )}
-                {/* Heart animation overlay */}
-                <Animated.View
+                </TouchableWithoutFeedback>
+              );
+            }}
+          />
+          {/* Pagination Dots */}
+          {post.media.length > 1 && (
+            <View style={styles.paginationDots}>
+              {post.media.map((_, index) => (
+                <View
+                  key={index}
                   style={[
-                    styles.heartOverlay,
-                    {
-                      transform: [{ scale: heartScale }],
-                      opacity: heartOpacity,
-                    },
+                    styles.dot,
+                    index === currentIndex ? styles.dotActive : styles.dotInactive,
                   ]}
-                  pointerEvents="none"
-                >
-                  <Ionicons name="heart" size={80} color="#FFFFFF" />
-                </Animated.View>
-              </View>
-            </TouchableWithoutFeedback>
-          );
-        })()}
+                />
+              ))}
+            </View>
+          )}
+        </View>
 
         {/* Actions */}
         <View style={styles.actions}>
@@ -579,5 +607,23 @@ const styles = StyleSheet.create({
     color: darkColors.textSecondary,
     marginRight: 8,
     marginBottom: 4,
+  },
+  paginationDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 3,
+  },
+  dotActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  dotInactive: {
+    backgroundColor: 'rgba(255,255,255,0.4)',
   },
 });

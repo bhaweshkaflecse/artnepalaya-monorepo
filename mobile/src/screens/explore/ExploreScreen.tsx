@@ -18,7 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
-import { getPrimaryImageUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
 import { api } from '../../services/api';
 
 const FALLBACK_CATEGORIES = ['All', 'Painting', 'Digital Art', 'Thangka', 'Sculpture', 'Illustration', 'Photography'];
@@ -175,7 +175,8 @@ export const ExploreScreen = () => {
   });
 
   const renderItem = ({ item, index }: { item: Post; index: number }) => {
-    const imageUrl = getPrimaryImageUrl(item.media);
+    const firstMedia = item.media?.[0];
+    const imageUrl = firstMedia?.type === 'video' ? getVideoThumbnailUrl(firstMedia.url) : getPrimaryImageUrl(item.media);
     const height = index % 2 === 0 ? 220 : 160;
 
     return (

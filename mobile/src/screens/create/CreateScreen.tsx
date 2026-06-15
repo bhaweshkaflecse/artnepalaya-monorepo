@@ -44,6 +44,7 @@ export const CreateScreen = () => {
   const [isHumanMade, setIsHumanMade] = useState(false);
   const [isNsfw, setIsNsfw] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     const fetchArtworkTypes = async () => {
@@ -86,7 +87,7 @@ export const CreateScreen = () => {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.All,
         allowsMultipleSelection: true,
-        selectionLimit: MAX_IMAGES - currentImages,
+        selectionLimit: Math.max(1, 6 - mediaItems.length),
         quality: 0.8,
       });
 
@@ -218,6 +219,7 @@ export const CreateScreen = () => {
     }
 
     setIsPublishing(true);
+    setUploadProgress(0);
 
     try {
       const formData = new FormData();
@@ -281,6 +283,11 @@ export const CreateScreen = () => {
           'Content-Type': 'multipart/form-data',
         },
         timeout: 120000,
+        onUploadProgress: (progressEvent: any) => {
+          if (progressEvent.total) {
+            setUploadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+          }
+        },
       });
 
       Alert.alert('Success', 'Artwork published successfully!');
@@ -292,6 +299,7 @@ export const CreateScreen = () => {
       Alert.alert('Error', 'Failed to publish artwork. Please try again.');
     } finally {
       setIsPublishing(false);
+      setUploadProgress(0);
     }
   };
 
@@ -307,7 +315,12 @@ export const CreateScreen = () => {
           disabled={!canPublish}
         >
           {isPublishing ? (
-            <ActivityIndicator size="small" color={lightColors.accent} />
+            <View style={{ alignItems: 'center' }}>
+              <ActivityIndicator size="small" color={lightColors.accent} />
+              <Text style={{ fontSize: 11, color: lightColors.accent, marginTop: 2 }}>
+                Uploading... {uploadProgress}%
+              </Text>
+            </View>
           ) : (
             <Text style={[styles.publishBtn, !canPublish && styles.disabledText]}>
               Publish
