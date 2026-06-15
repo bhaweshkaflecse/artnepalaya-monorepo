@@ -59,9 +59,10 @@ export const getSinglePost = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
       return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid post ID format' } });
     }
-    const post = await postService.getSinglePost(req.params.postId, req.user?.id || null);
+    const post = await postService.getSinglePost(req.params.postId, req.user?.id || null, req.user?.showMatureContent || false);
     res.status(200).json({ success: true, data: post });
   } catch (err) {
+    if (err.status === 403) return res.status(403).json({ success: false, error: { code: 'NSFW_RESTRICTED', message: err.message } });
     if (err.status === 404) return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: err.message }});
     next(err);
   }

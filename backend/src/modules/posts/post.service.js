@@ -40,9 +40,15 @@ export const createPost = async (userId, postData) => {
   return post;
 };
 
-export const getSinglePost = async (postId, userId) => {
+export const getSinglePost = async (postId, userId, showMatureContent = false) => {
   const post = await Post.findById(postId).populate('authorId', 'username avatarUrl role isVerified verifiedType').lean();
   if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
+
+  // NSFW Protection: Block access if post is NSFW and viewer hasn't opted in (author always allowed)
+  const isAuthor = userId && post.authorId && post.authorId._id.toString() === userId.toString();
+  if (post.isNsfw && !showMatureContent && !isAuthor) {
+    throw Object.assign(new Error('This content is marked as mature. Enable mature content in settings to view.'), { status: 403 });
+  }
 
   // Hydrate like/save state for authenticated user
   if (userId) {
