@@ -19,6 +19,7 @@ export interface User {
   stats: UserStats;
   isAdult?: boolean;
   nsfwBlurEnabled?: boolean;
+  showMatureContent?: boolean;
   status?: string;
   isVerified?: boolean;
   verifiedType?: string | null;

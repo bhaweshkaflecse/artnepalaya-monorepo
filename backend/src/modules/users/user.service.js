@@ -34,7 +34,7 @@ export const updateUserProfile = async (userId, updateData) => {
   }
 
   // Define exactly what the user is allowed to change (mapped to our Zod schema)
-  const allowedUpdates = ['username', 'fullName', 'avatarUrl', 'dob', 'role', 'subRoles', 'interests', 'bio', 'nsfwBlurEnabled'];
+  const allowedUpdates = ['username', 'fullName', 'avatarUrl', 'dob', 'role', 'subRoles', 'interests', 'bio', 'nsfwBlurEnabled', 'showMatureContent'];
   
   allowedUpdates.forEach((field) => {
     if (updateData[field] !== undefined) {

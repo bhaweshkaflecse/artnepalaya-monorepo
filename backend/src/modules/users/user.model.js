@@ -84,6 +84,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    showMatureContent: {
+      type: Boolean,
+      default: false,
+    },
     pushTokens: [
       {
         type: String,

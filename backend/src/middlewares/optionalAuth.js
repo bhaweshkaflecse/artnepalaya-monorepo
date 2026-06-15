@@ -22,9 +22,9 @@ export const optionalAuth = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET);
 
-    const user = await User.findById(decoded.id).select('_id role status username email').lean();
+    const user = await User.findById(decoded.id).select('_id role status username email showMatureContent').lean();
     if (user && user.status !== 'banned' && user.status !== 'suspended') {
-      req.user = { id: user._id.toString(), role: user.role, username: user.username, email: user.email };
+      req.user = { id: user._id.toString(), role: user.role, username: user.username, email: user.email, showMatureContent: user.showMatureContent || false };
     } else {
       req.user = null;
     }

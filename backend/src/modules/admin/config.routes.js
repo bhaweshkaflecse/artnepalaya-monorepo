@@ -4,6 +4,7 @@ import { CmsPage } from './cmsPage.model.js';
 import { GlobalPopup } from './globalPopup.model.js';
 import { FeaturedPost } from './featured.model.js';
 import { ArtworkType } from './artworkType.model.js';
+import { optionalAuth } from '../../middlewares/optionalAuth.js';
 
 const router = Router();
 
@@ -43,8 +44,8 @@ router.get('/global-popup', async (req, res, next) => {
   }
 });
 
-// Public featured posts endpoint - no auth required
-router.get('/featured', async (req, res, next) => {
+// Public featured posts endpoint - optionalAuth for NSFW filtering
+router.get('/featured', optionalAuth, async (req, res, next) => {
   try {
     const now = new Date();
     const featured = await FeaturedPost.find({
@@ -61,9 +62,15 @@ router.get('/featured', async (req, res, next) => {
       .lean();
 
     // Filter out entries where the post no longer exists
-    const data = featured
+    let data = featured
       .filter((f) => f.postId != null)
       .map((f) => f.postId);
+
+    // NSFW Protection: Exclude NSFW posts for guests and users without mature content opt-in
+    const showMatureContent = req.user?.showMatureContent || false;
+    if (!req.user || !showMatureContent) {
+      data = data.filter((post) => !post.isNsfw);
+    }
 
     res.status(200).json({ success: true, data });
   } catch (err) {

@@ -60,14 +60,24 @@ export const getSinglePost = async (postId, userId) => {
   return post;
 };
 
-export const getFeed = async (userId, cursor, limit) => {
+export const getFeed = async (userId, cursor, limit, showMatureContent) => {
   limit = limit || 15;
 
+  // Determine if NSFW content should be filtered
+  const filterNsfw = !userId || !showMatureContent;
+
   // Cache stores base posts without per-user state
-  const cacheKey = `feed:ranked:${cursor || 'start'}:${limit}`;
+  const nsfwKey = filterNsfw ? 'safe' : 'all';
+  const cacheKey = `feed:ranked:${nsfwKey}:${cursor || 'start'}:${limit}`;
 
   const baseFeed = await getOrSetCache(cacheKey, 300, async () => {
     const query = cursor ? { _id: { $lt: cursor } } : {};
+
+    // NSFW Protection: Exclude NSFW posts for guests and users without mature content opt-in
+    if (filterNsfw) {
+      query.isNsfw = { $ne: true };
+    }
+
     const fetchLimit = limit * 2;
 
     let posts = await Post.find(query)

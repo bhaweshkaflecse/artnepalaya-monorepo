@@ -38,7 +38,11 @@ export const SettingsScreen = () => {
   const [nsfwBlurEnabled, setNsfwBlurEnabled] = useState(
     (profile as any)?.nsfwBlurEnabled ?? true
   );
+  const [showMatureContent, setShowMatureContent] = useState(
+    (profile as any)?.showMatureContent ?? false
+  );
   const [showNsfwModal, setShowNsfwModal] = useState(false);
+  const [showMatureModal, setShowMatureModal] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -99,6 +103,38 @@ export const SettingsScreen = () => {
     setShowNsfwModal(false);
   };
 
+  const handleMatureContentToggle = async (value: boolean) => {
+    if (value) {
+      // User is turning ON mature content - show warning dialog
+      setShowMatureModal(true);
+      return;
+    }
+
+    // Turning OFF mature content - no confirmation needed
+    setShowMatureContent(false);
+    try {
+      await userService.updateProfile({ showMatureContent: false } as any);
+    } catch (_e) {
+      setShowMatureContent(true);
+      Alert.alert('Error', 'Failed to update setting. Please try again.');
+    }
+  };
+
+  const handleConfirmMatureContent = async () => {
+    setShowMatureModal(false);
+    setShowMatureContent(true);
+    try {
+      await userService.updateProfile({ showMatureContent: true } as any);
+    } catch (_e) {
+      setShowMatureContent(false);
+      Alert.alert('Error', 'Failed to update setting. Please try again.');
+    }
+  };
+
+  const handleCancelMatureContent = () => {
+    setShowMatureModal(false);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* Header */}
@@ -127,6 +163,23 @@ export const SettingsScreen = () => {
             thumbColor="#FFFFFF"
           />
         </View>
+
+        {!isGuest && (
+          <View style={[styles.settingRow, { marginTop: 12 }]}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Show Mature Content (18+)</Text>
+              <Text style={styles.settingDesc}>
+                Allow mature/NSFW content to appear in your feed and explore
+              </Text>
+            </View>
+            <Switch
+              value={showMatureContent}
+              onValueChange={handleMatureContentToggle}
+              trackColor={{ false: lightColors.border, true: '#DC2626' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+        )}
 
         {/* About Section */}
         <Text style={styles.sectionTitle}>About</Text>
@@ -169,6 +222,30 @@ export const SettingsScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalCancelBtn} onPress={handleCancelNsfw}>
               <Text style={styles.modalCancelText}>Keep Filter On</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Show Mature Content Warning Modal */}
+      <Modal
+        visible={showMatureModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelMatureContent}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Feather name="alert-triangle" size={28} color="#DC2626" style={styles.modalIcon} />
+            <Text style={styles.modalTitle}>Enable Mature Content</Text>
+            <Text style={styles.modalBody}>
+              {'You are about to enable mature content in your feed and explore.\n\nBy continuing you confirm:\n\n\u2022 You are at least 18 years old\n\u2022 You understand that explicit content will appear\n\u2022 You agree to ArtNepalaya Terms and Privacy Policy'}
+            </Text>
+            <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleConfirmMatureContent}>
+              <Text style={styles.modalConfirmText}>I Am 18+ - Enable</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalCancelBtn} onPress={handleCancelMatureContent}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
