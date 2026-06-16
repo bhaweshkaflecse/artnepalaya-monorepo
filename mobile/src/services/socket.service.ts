@@ -11,6 +11,13 @@ export function connectSocket(token: string, serverUrl: string): void {
     return;
   }
 
+  // Clean up any existing disconnected socket to prevent orphans and duplicate listeners
+  if (socket) {
+    socket.removeAllListeners();
+    socket.disconnect();
+    socket = null;
+  }
+
   socket = io(serverUrl, {
     auth: { token },
     transports: ['websocket'],

@@ -41,9 +41,11 @@ export const AppStack = () => {
     return cleanup;
   }, [navigation]);
 
-  // Connect/disconnect socket based on auth state
+  // Connect/disconnect socket based on auth state (not token refreshes)
+  const isAuthenticated = !!accessToken;
+
   useEffect(() => {
-    if (accessToken) {
+    if (isAuthenticated && accessToken) {
       // Derive socket server URL by stripping '/api/v1' from the API URL
       const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8080/api/v1';
       const serverUrl = apiUrl.replace(/\/api\/v1\/?$/, '');
@@ -55,7 +57,7 @@ export const AppStack = () => {
     return () => {
       disconnectSocket();
     };
-  }, [accessToken]);
+  }, [isAuthenticated]);
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
