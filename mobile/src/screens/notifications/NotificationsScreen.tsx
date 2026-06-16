@@ -17,7 +17,7 @@ import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { notificationService, Notification } from '../../services/notification.service';
 import { useAppSelector, useAppDispatch } from '../../store';
-import { selectIsGuest, logout } from '../../store/slices/authSlice';
+import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice';
 
 type FilterType = 'all' | 'unread' | 'read';
 
@@ -59,6 +59,7 @@ export const NotificationsScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const dispatch = useAppDispatch();
   const isGuest = useAppSelector(selectIsGuest);
+  const currentUser = useAppSelector(selectUser);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -149,7 +150,11 @@ export const NotificationsScreen = () => {
       navigation.navigate('PostDetail', { postId });
     } else if (notification.senderId?._id && (notification.type === 'Follow' || notification.type === 'Like' || notification.type === 'Save')) {
       // Navigate to the sender's profile for Follow, or if no postId for Like/Save
-      navigation.navigate('UserProfile', { userId: notification.senderId._id });
+      if (currentUser && notification.senderId._id === currentUser.id) {
+        navigation.navigate('MainTabs' as any, { screen: 'Profile' } as any);
+      } else {
+        navigation.navigate('UserProfile', { userId: notification.senderId._id });
+      }
     } else {
       // Toggle expand/collapse text for other types (AdminBroadcast, System)
       setExpandedIds((prev) => {

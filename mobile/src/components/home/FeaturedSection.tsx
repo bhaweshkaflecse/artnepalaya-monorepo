@@ -8,6 +8,8 @@ import { Post } from '../../services/post.service';
 import { getPrimaryImageUrl } from '../../utils/media';
 import { Feather } from '@expo/vector-icons';
 import { FeaturedSkeleton } from '../common/SkeletonLoader';
+import { useAppSelector } from '../../store';
+import { selectUser } from '../../store/slices/authSlice';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.82;
@@ -20,6 +22,7 @@ interface FeaturedProps {
 
 export const FeaturedSection: React.FC<FeaturedProps> = ({ posts, loading }) => {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const currentUser = useAppSelector(selectUser);
 
   if (loading) {
     return (
@@ -48,7 +51,13 @@ export const FeaturedSection: React.FC<FeaturedProps> = ({ posts, loading }) => 
       <View style={styles.overlay}>
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('UserProfile', { userId: item.authorId._id })}
+          onPress={() => {
+            if (currentUser && item.authorId._id === currentUser.id) {
+              navigation.navigate('MainTabs' as any, { screen: 'Profile' } as any);
+            } else {
+              navigation.navigate('UserProfile', { userId: item.authorId._id });
+            }
+          }}
         >
           <Text style={styles.artist} numberOfLines={1}>
             {item.authorId.username}

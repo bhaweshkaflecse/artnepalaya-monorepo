@@ -315,6 +315,8 @@ export const PostDetailScreen = () => {
                     onPress: async () => {
                       try {
                         await postService.deletePost(post!._id);
+                        dispatch(removeFeedPost(post!._id));
+                        dispatch(removeUserPost(post!._id));
                         navigation.goBack();
                       } catch {
                         Alert.alert('Error', 'Failed to delete post.');
@@ -336,7 +338,13 @@ export const PostDetailScreen = () => {
         <TouchableOpacity
           style={styles.authorRow}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate('UserProfile', { userId: post.authorId._id })}
+          onPress={() => {
+            if (currentUser && post.authorId._id === currentUser.id) {
+              navigation.navigate('MainTabs' as any, { screen: 'Profile' } as any);
+            } else {
+              navigation.navigate('UserProfile', { userId: post.authorId._id });
+            }
+          }}
         >
           <View style={styles.avatarContainer}>
             {post.authorId.avatarUrl ? (

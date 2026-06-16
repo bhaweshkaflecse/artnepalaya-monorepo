@@ -16,8 +16,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { lightColors } from '../../theme/colors';
 import { api } from '../../services/api';
-import { useAppSelector } from '../../store';
+import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest } from '../../store/slices/authSlice';
+import { fetchFeed } from '../../store/slices/feedSlice';
 
 const MAX_IMAGES = 5;
 const MAX_VIDEOS = 1;
@@ -34,6 +35,7 @@ const FALLBACK_ARTWORK_TYPES = [
 export const CreateScreen = () => {
   const navigation = useNavigation();
   const isGuest = useAppSelector(selectIsGuest);
+  const dispatch = useAppDispatch();
   const [mediaItems, setMediaItems] = useState<Array<{ uri: string; type: 'image' | 'video'; fileSize?: number }>>([]);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [description, setDescription] = useState('');
@@ -292,6 +294,7 @@ export const CreateScreen = () => {
 
       Alert.alert('Success', 'Artwork published successfully!');
       resetForm();
+      dispatch(fetchFeed());
     } catch (e: any) {
       console.log('[PUBLISH] ERROR STATUS:', e?.response?.status);
       console.log('[PUBLISH] ERROR DATA:', JSON.stringify(e?.response?.data));

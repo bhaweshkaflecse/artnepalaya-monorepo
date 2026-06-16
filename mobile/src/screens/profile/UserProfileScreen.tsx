@@ -21,7 +21,7 @@ import { userService, User } from '../../services/user.service';
 import { Post } from '../../services/post.service';
 import { getPrimaryImageUrl } from '../../utils/media';
 import { useAppSelector, useAppDispatch } from '../../store';
-import { selectIsGuest, logout } from '../../store/slices/authSlice';
+import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice';
 
 type UserProfileRouteProp = RouteProp<AppStackParamList, 'UserProfile'>;
 
@@ -30,6 +30,7 @@ export const UserProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { userId } = route.params;
   const isGuest = useAppSelector(selectIsGuest);
+  const currentUser = useAppSelector(selectUser);
   const dispatch = useAppDispatch();
 
   const [profile, setProfile] = useState<User | null>(null);
@@ -83,6 +84,7 @@ export const UserProfileScreen = () => {
   };
 
   const handleFollow = async () => {
+    if (currentUser && userId === currentUser.id) return;
     if (isGuest) {
       Alert.alert(
         'Login Required',
@@ -150,6 +152,7 @@ export const UserProfileScreen = () => {
     try {
       const response = await userService.getFollowing(userId);
       setListModalData(response.data || []);
+      setFollowingCount(response.data?.length ?? followingCount);
     } catch (_e) {
       // Silently fail
     } finally {
@@ -159,7 +162,11 @@ export const UserProfileScreen = () => {
 
   const handleListItemPress = (itemUserId: string) => {
     setListModalVisible(false);
-    navigation.push('UserProfile', { userId: itemUserId });
+    if (currentUser && itemUserId === currentUser.id) {
+      navigation.navigate('MainTabs' as any, { screen: 'Profile' } as any);
+    } else {
+      navigation.push('UserProfile', { userId: itemUserId });
+    }
   };
 
   const renderPostThumbnail = ({ item }: { item: Post }) => {
@@ -254,15 +261,17 @@ export const UserProfileScreen = () => {
             </View>
 
             {/* Follow/Unfollow Button */}
-            <TouchableOpacity
-              style={[styles.followBtn, isFollowing && styles.followingBtn]}
-              onPress={handleFollow}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
-                {isFollowing ? 'Following' : 'Follow'}
-              </Text>
-            </TouchableOpacity>
+            {!(currentUser && userId === currentUser.id) && (
+              <TouchableOpacity
+                style={[styles.followBtn, isFollowing && styles.followingBtn]}
+                onPress={handleFollow}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
+                  {isFollowing ? 'Following' : 'Follow'}
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {/* Posts section divider */}
             <View style={styles.postsDivider}>

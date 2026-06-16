@@ -15,6 +15,8 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
 import { api } from '../../services/api';
+import { useAppDispatch } from '../../store';
+import { fetchFeed } from '../../store/slices/feedSlice';
 
 const FALLBACK_TYPES = ['Painting', 'Digital Art', 'Photography', 'Sculpture', 'Mixed Media', 'Illustration', 'Thangka'];
 
@@ -23,6 +25,7 @@ type EditPostRouteProp = RouteProp<{ EditPost: { postId: string; post: Post } },
 export const EditPostScreen = () => {
   const route = useRoute<EditPostRouteProp>();
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
   const { postId, post } = route.params;
 
   const [caption, setCaption] = useState(post.caption || '');
@@ -62,6 +65,7 @@ export const EditPostScreen = () => {
       });
 
       Alert.alert('Success', 'Post updated successfully');
+      dispatch(fetchFeed());
       navigation.goBack();
     } catch {
       Alert.alert('Error', 'Failed to update post. Please try again.');
