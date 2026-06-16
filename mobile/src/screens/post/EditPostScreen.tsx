@@ -16,7 +16,8 @@ import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
 import { api } from '../../services/api';
 import { useAppDispatch } from '../../store';
-import { fetchFeed } from '../../store/slices/feedSlice';
+import { fetchFeed, updatePost as updateFeedPost } from '../../store/slices/feedSlice';
+import { updatePost as updateUserPost } from '../../store/slices/userSlice';
 
 const FALLBACK_TYPES = ['Painting', 'Digital Art', 'Photography', 'Sculpture', 'Mixed Media', 'Illustration', 'Thangka'];
 
@@ -63,6 +64,10 @@ export const EditPostScreen = () => {
         isHumanMade,
         isNsfw,
       });
+
+      const editedData = { caption, tags: tagsArray, artworkType: selectedTypes, isHumanMade, isNsfw };
+      dispatch(updateFeedPost({ postId, data: editedData }));
+      dispatch(updateUserPost({ postId, data: editedData }));
 
       Alert.alert('Success', 'Post updated successfully');
       dispatch(fetchFeed());

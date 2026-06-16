@@ -58,6 +58,14 @@ export const UserProfileScreen = () => {
       setFollowersCount(data.stats?.followers ?? 0);
       setFollowingCount(data.stats?.following ?? 0);
 
+      // Verify following count from actual data
+      try {
+        const followingResponse = await userService.getFollowing(userId, 1, 1);
+        if (followingResponse.meta?.totalItems !== undefined) {
+          setFollowingCount(followingResponse.meta.totalItems);
+        }
+      } catch (_e) { /* use stats count as fallback */ }
+
       // Hydrate follow state if user is authenticated
       if (!isGuest) {
         try {
