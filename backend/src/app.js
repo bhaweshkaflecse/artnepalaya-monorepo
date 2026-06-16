@@ -16,6 +16,12 @@ import communityRoutes from './modules/community/community.routes.js';
 
 const app = express();
 
+// Temporary request logging for debugging nginx routing
+app.use((req, res, next) => {
+  console.log('[REQUEST]', req.method, req.originalUrl);
+  next();
+});
+
 // Trust the first proxy (Nginx) so rate limiter sees real client IP
 app.set('trust proxy', 1);
 
