@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Fix 5 bugs: Settings hydration, verification badges, 404 handling, admin search, remove blur toggle; plus getUserPosts populate fix",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. SettingsScreen.tsx - Import fetchProfile from '../../store/slices/userSlice'. After each successful updateProfile() call (there are 4: handleNsfwToggle true, handleConfirmNsfw, handleMatureContentToggle false, handleConfirmMatureContent), dispatch(fetchProfile()) to refresh Redux state.",
     "2. SettingsScreen.tsx - Remove the entire 'Blur 18+ Content' toggle: remove the nsfwBlurEnabled state, the handleNsfwToggle function, the handleConfirmNsfw function, the handleCancelNsfw function, the first settingRow with the Switch for nsfwBlurEnabled, and the 'Adult Content Confirmation Modal' (showNsfwModal). Keep only showMatureContent/handleMatureContentToggle/handleConfirmMatureContent.",
@@ -32,5 +32,5 @@
     "Visually verify TypeScript files have correct syntax (no build available)"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All backend JS files pass node --check syntax validation. TypeScript files verified visually. INTEGRATIONS_ONLY network prevents npm install/build. The fetchUsers useCallback in Users.tsx now takes (pageNum, search) params so the useEffect dependency array includes searchQuery for automatic refetch."
 }
