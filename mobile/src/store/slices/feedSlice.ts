@@ -10,6 +10,7 @@ interface FeedState {
   isLoadingFeatured: boolean;
   isLoadingMore: boolean;
   error: string | null;
+  newPostsAvailable: boolean;
 }
 
 const initialState: FeedState = {
@@ -21,6 +22,7 @@ const initialState: FeedState = {
   isLoadingFeatured: false,
   isLoadingMore: false,
   error: null,
+  newPostsAvailable: false,
 };
 
 export const fetchFeed = createAsyncThunk(
@@ -76,6 +78,9 @@ const feedSlice = createSlice({
   name: 'feed',
   initialState,
   reducers: {
+    setNewPostsAvailable(state, action: PayloadAction<boolean>) {
+      state.newPostsAvailable = action.payload;
+    },
     toggleLike(state, action: PayloadAction<string>) {
       const postId = action.payload;
       const post = state.feedPosts.find((p) => p._id === postId);
@@ -114,6 +119,7 @@ const feedSlice = createSlice({
         state.feedPosts = action.payload.data;
         state.cursor = action.payload.meta.nextCursor;
         state.hasNextPage = action.payload.meta.hasNextPage;
+        state.newPostsAvailable = false;
       })
       .addCase(fetchFeed.rejected, (state, action) => {
         state.isLoadingFeed = false;
@@ -148,5 +154,5 @@ const feedSlice = createSlice({
   },
 });
 
-export const { toggleLike, toggleSave, removePost, updatePost } = feedSlice.actions;
+export const { setNewPostsAvailable, toggleLike, toggleSave, removePost, updatePost } = feedSlice.actions;
 export default feedSlice.reducer;

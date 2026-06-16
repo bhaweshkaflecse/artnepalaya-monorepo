@@ -16,7 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { incrementGuestViews, logout } from '../../store/slices/authSlice';
-import { fetchFeed, fetchMoreFeed, fetchFeatured } from '../../store/slices/feedSlice';
+import { fetchFeed, fetchMoreFeed, fetchFeatured, setNewPostsAvailable } from '../../store/slices/feedSlice';
 import { PostCard } from '../../components/home/PostCard';
 import { FeaturedSection } from '../../components/home/FeaturedSection';
 import { PostCardSkeleton } from '../../components/common/SkeletonLoader';
@@ -31,6 +31,7 @@ export const HomeScreen = () => {
   const { feedPosts, featuredPosts, isLoadingFeed, isLoadingFeatured, isLoadingMore, hasNextPage } =
     useAppSelector((state) => state.feed);
   const { isGuest, guestPostsViewed } = useAppSelector((state) => state.auth);
+  const newPostsAvailable = useAppSelector((state) => state.feed.newPostsAvailable);
 
   const viewedPostIds = useRef<Set<string>>(new Set()).current;
   const [modalDismissed, setModalDismissed] = useState(false);
@@ -104,6 +105,15 @@ export const HomeScreen = () => {
           )}
         </TouchableOpacity>
       </View>
+      {newPostsAvailable && (
+        <TouchableOpacity
+          style={styles.newPostsBanner}
+          onPress={() => dispatch(fetchFeed())}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.newPostsBannerText}>New posts available - tap to refresh</Text>
+        </TouchableOpacity>
+      )}
       <FeaturedSection posts={featuredPosts} loading={isLoadingFeatured} />
       <View style={styles.dividerContainer}>
         <Text style={styles.dividerText}>Latest Artworks</Text>
@@ -271,5 +281,19 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '700',
+  },
+  newPostsBanner: {
+    backgroundColor: '#1D4ED8',
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  newPostsBannerText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

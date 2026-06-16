@@ -3,6 +3,8 @@ import { Post } from '../posts/post.model.js';
 import { Like, Save } from '../posts/post-interaction.model.js';
 import { Follow } from './follow.model.js';
 import * as notificationService from '../notifications/notification.service.js';
+import { emitToUser } from '../../realtime/emitter.js';
+import { EVENTS } from '../../realtime/events.js';
 
 // === Fetch Profile ===
 export const getUserProfile = async (userId, isPublic = false) => {
@@ -157,6 +159,11 @@ export const followUser = async (currentUserId, targetUserId) => {
       User.findByIdAndUpdate(targetUserId, { $inc: { 'stats.followers': 1 } }),
       User.findByIdAndUpdate(currentUserId, { $inc: { 'stats.following': 1 } })
     ]);
+
+    // Emit realtime event to both follower and target
+    emitToUser(currentUserId, EVENTS.FOLLOW_CREATED, { followerId: currentUserId, followingId: targetUserId });
+    emitToUser(targetUserId, EVENTS.FOLLOW_CREATED, { followerId: currentUserId, followingId: targetUserId });
+
     notificationService.createNotification({
       recipientId: targetUserId,
       senderId: currentUserId,
@@ -178,6 +185,10 @@ export const unfollowUser = async (currentUserId, targetUserId) => {
       User.findByIdAndUpdate(targetUserId, { $inc: { 'stats.followers': -1 } }),
       User.findByIdAndUpdate(currentUserId, { $inc: { 'stats.following': -1 } })
     ]);
+
+    // Emit realtime event to both follower and target
+    emitToUser(currentUserId, EVENTS.FOLLOW_DELETED, { followerId: currentUserId, followingId: targetUserId });
+    emitToUser(targetUserId, EVENTS.FOLLOW_DELETED, { followerId: currentUserId, followingId: targetUserId });
   }
   return true;
 };

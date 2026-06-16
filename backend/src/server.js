@@ -5,6 +5,7 @@ import { createClient } from 'redis';
 import app from './app.js';
 import { env } from './config/env.js';
 import { initCloudinary } from './config/cloudinary.js';
+import { initSocketServer } from './realtime/socketServer.js';
 
 const { Pool } = pkg;
 
@@ -41,6 +42,10 @@ async function startServer() {
     // 5. Start HTTP Server
     server.listen(env.PORT, () => {
       console.log(`🚀 Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
+
+      // 6. Initialize Socket.IO
+      initSocketServer(server, env.REDIS_URL);
+      console.log('✅ Socket.IO Initialized (Realtime Events)');
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

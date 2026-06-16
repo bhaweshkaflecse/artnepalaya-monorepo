@@ -1,6 +1,8 @@
 import { Notification } from './notification.model.js';
 import { User } from '../users/user.model.js';
 import { sendPushNotifications } from '../../shared/utils/pushNotifications.js';
+import { emitToUser } from '../../realtime/emitter.js';
+import { EVENTS } from '../../realtime/events.js';
 
 export const createNotification = async (payload) => {
   const { recipientId, senderId, postId, type, message } = payload;
@@ -13,9 +15,21 @@ export const createNotification = async (payload) => {
       { $set: { isRead: false, createdAt: new Date() } },
       { new: true }
     );
-    if (existing) return existing;
+    if (existing) {
+      // Emit unread count to recipient
+      const unreadCount = await Notification.countDocuments({ recipientId, isRead: false });
+      emitToUser(recipientId.toString(), EVENTS.NOTIFICATION_COUNT_CHANGED, { unreadCount });
+      return existing;
+    }
   }
-  return Notification.create({ recipientId, senderId, postId, type, message });
+
+  const notification = await Notification.create({ recipientId, senderId, postId, type, message });
+
+  // Emit unread count to recipient
+  const unreadCount = await Notification.countDocuments({ recipientId, isRead: false });
+  emitToUser(recipientId.toString(), EVENTS.NOTIFICATION_COUNT_CHANGED, { unreadCount });
+
+  return notification;
 };
 
 export const getUserNotifications = async (userId, page, limit, filter = 'all') => {
