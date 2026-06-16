@@ -78,7 +78,9 @@ export const updatePostSchema = z.object({
       },
       z.array(z.string().toLowerCase()).max(15).optional()
     ).optional()
-  })
+  }),
+  params: z.record(z.string()).optional(),
+  query: z.any().optional()
 });
 
 export const feedPaginationSchema = z.object({
