@@ -102,6 +102,9 @@ export const UserProfileScreen = () => {
         setIsFollowing(true);
         setFollowersCount((prev) => prev + 1);
       }
+      // Refresh actual count from server
+      const freshProfile = await userService.getPublicProfile(userId);
+      setFollowersCount(freshProfile.stats?.followers ?? followersCount);
     } catch (error) {
       console.warn('[UserProfileScreen] Follow action failed:', error);
     }

@@ -46,7 +46,9 @@ export const authenticateWithGoogle = async (idToken, deviceId) => {
   }
 
   const tokens = await generateTokens(user._id, user.role, deviceId);
-  return { user, ...tokens };
+  const userData = user.toObject();
+  userData.id = userData._id.toString();
+  return { user: userData, ...tokens };
 };
 
 export const sendOtp = async (phoneNumber) => {
@@ -116,5 +118,6 @@ export const authenticateAdmin = async (email, password) => {
 
   const tokens = await generateTokens(user._id.toString(), user.role, 'admin-panel');
   const { passwordHash, ...safeUser } = user;
+  safeUser.id = safeUser._id.toString();
   return { user: safeUser, ...tokens };
 };
