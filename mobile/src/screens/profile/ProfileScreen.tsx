@@ -100,6 +100,10 @@ export const ProfileScreen = () => {
 
   const handleListItemPress = (itemUserId: string) => {
     setListModalVisible(false);
+    if (authUser && itemUserId === authUser.id) {
+      // Already on own profile, just close modal
+      return;
+    }
     navigation.navigate('UserProfile', { userId: itemUserId });
   };
 

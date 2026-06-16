@@ -19,8 +19,9 @@ import { Post, postService } from '../../services/post.service';
 import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
 import { ReportModal } from '../common/ReportModal';
 import { useAppSelector, useAppDispatch } from '../../store';
-import { selectIsGuest, logout } from '../../store/slices/authSlice';
-import { toggleLike, toggleSave } from '../../store/slices/feedSlice';
+import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice';
+import { toggleLike, toggleSave, removePost as removeFeedPost } from '../../store/slices/feedSlice';
+import { removePost as removeUserPost } from '../../store/slices/userSlice';
 
 interface PostCardProps {
   post: Post;
@@ -30,9 +31,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const isGuest = useAppSelector(selectIsGuest);
+  const currentUser = useAppSelector(selectUser);
   const [isLiked, setIsLiked] = useState(post.isLikedByMe || false);
   const [isSaved, setIsSaved] = useState(post.isSavedByMe || false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+
+  const isOwnPost = currentUser && post.authorId._id === currentUser.id;
 
   useEffect(() => { setIsLiked(post.isLikedByMe || false); }, [post.isLikedByMe]);
   useEffect(() => { setIsSaved(post.isSavedByMe || false); }, [post.isSavedByMe]);
@@ -122,7 +127,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   };
 
   const navigateToProfile = () => {
-    navigation.navigate('UserProfile', { userId: post.authorId._id });
+    if (currentUser && post.authorId._id === currentUser.id) {
+      navigation.navigate('MainTabs' as any, { screen: 'Profile' } as any);
+    } else {
+      navigation.navigate('UserProfile', { userId: post.authorId._id });
+    }
   };
 
   const handleLike = async () => {
@@ -203,10 +212,64 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
             </Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setShowReportModal(true)} style={styles.moreBtn}>
+        <TouchableOpacity
+          onPress={() => {
+            if (isOwnPost) {
+              setShowOptionsMenu(!showOptionsMenu);
+            } else {
+              setShowReportModal(true);
+            }
+          }}
+          style={styles.moreBtn}
+        >
           <Feather name="more-horizontal" size={20} color={darkColors.textSecondary} />
         </TouchableOpacity>
       </View>
+
+      {/* Owner Options Menu */}
+      {showOptionsMenu && (
+        <View style={styles.optionsMenu}>
+          <TouchableOpacity
+            style={styles.optionsMenuItem}
+            onPress={() => {
+              setShowOptionsMenu(false);
+              navigation.navigate('EditPost' as never, { postId: post._id, post } as never);
+            }}
+          >
+            <Feather name="edit-2" size={18} color="#FFFFFF" />
+            <Text style={styles.optionsMenuText}>Edit Artwork</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.optionsMenuItem, styles.optionsMenuItemLast]}
+            onPress={() => {
+              setShowOptionsMenu(false);
+              Alert.alert(
+                'Delete Artwork?',
+                'This action cannot be undone.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        await postService.deletePost(post._id);
+                        dispatch(removeFeedPost(post._id));
+                        dispatch(removeUserPost(post._id));
+                      } catch {
+                        Alert.alert('Error', 'Failed to delete post.');
+                      }
+                    },
+                  },
+                ]
+              );
+            }}
+          >
+            <Feather name="trash-2" size={18} color="#FF3B30" />
+            <Text style={[styles.optionsMenuText, { color: '#FF3B30' }]}>Delete Artwork</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Image with single-tap (PostDetail) and double-tap (like) */}
       <TouchableWithoutFeedback onPress={handleImageTap}>
@@ -421,6 +484,37 @@ const styles = StyleSheet.create({
   },
   moreBtn: {
     padding: 12,
+  },
+  optionsMenu: {
+    position: 'absolute',
+    top: 48,
+    right: 12,
+    backgroundColor: darkColors.surface,
+    borderRadius: 12,
+    paddingVertical: 4,
+    minWidth: 180,
+    zIndex: 100,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  optionsMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: darkColors.border,
+  },
+  optionsMenuItemLast: {
+    borderBottomWidth: 0,
+  },
+  optionsMenuText: {
+    fontSize: 15,
+    color: '#FFFFFF',
+    marginLeft: 12,
   },
   badgesContainer: {
     flexDirection: 'row',
