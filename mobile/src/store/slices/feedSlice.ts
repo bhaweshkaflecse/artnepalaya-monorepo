@@ -92,6 +92,9 @@ const feedSlice = createSlice({
         post.savesCount += post.isSavedByMe ? 1 : -1;
       }
     },
+    removePost(state, action: PayloadAction<string>) {
+      state.feedPosts = state.feedPosts.filter((p) => p._id !== action.payload);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -139,5 +142,5 @@ const feedSlice = createSlice({
   },
 });
 
-export const { toggleLike, toggleSave } = feedSlice.actions;
+export const { toggleLike, toggleSave, removePost } = feedSlice.actions;
 export default feedSlice.reducer;

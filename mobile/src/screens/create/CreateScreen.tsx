@@ -296,7 +296,26 @@ export const CreateScreen = () => {
       console.log('[PUBLISH] ERROR STATUS:', e?.response?.status);
       console.log('[PUBLISH] ERROR DATA:', JSON.stringify(e?.response?.data));
       console.log('[PUBLISH] ERROR MESSAGE:', e?.message);
-      Alert.alert('Error', 'Failed to publish artwork. Please try again.');
+      console.log('[PUBLISH] ERROR CODE:', e?.code);
+
+      let userMessage = 'Failed to publish artwork. Please try again.';
+
+      if (e?.message === 'Network Error' || e?.code === 'ERR_NETWORK') {
+        userMessage = 'No internet connection. Please check your network and try again.';
+      } else if (e?.code === 'ECONNABORTED' || e?.message?.includes('timeout')) {
+        userMessage = 'Upload timed out. Please try again with smaller files or a better connection.';
+      } else if (e?.response?.status === 401) {
+        userMessage = 'Your session has expired. Please log in again.';
+      } else if (e?.response?.status === 400) {
+        const apiMessage = e?.response?.data?.error?.message;
+        userMessage = apiMessage || 'Invalid post data. Please check your content and try again.';
+      } else if (e?.response?.status === 413) {
+        userMessage = 'Files are too large. Please reduce file sizes and try again.';
+      } else if (e?.response?.status >= 500) {
+        userMessage = 'ArtNepalaya servers are temporarily unavailable. Please try again later.';
+      }
+
+      Alert.alert('Publish Failed', userMessage);
     } finally {
       setIsPublishing(false);
       setUploadProgress(0);

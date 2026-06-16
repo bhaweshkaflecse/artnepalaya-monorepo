@@ -37,7 +37,7 @@ export const EditPostScreen = () => {
     api.get('/config/artwork-types')
       .then((res) => {
         if (res.data?.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
-          setArtworkTypes(res.data.data);
+          setArtworkTypes(res.data.data.map((t: any) => t.name || t));
         }
       })
       .catch(() => {

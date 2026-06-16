@@ -26,7 +26,7 @@ import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
 import { ReportModal } from '../../components/common/ReportModal';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice';
-import { toggleLike, toggleSave } from '../../store/slices/feedSlice';
+import { toggleLike, toggleSave, removePost } from '../../store/slices/feedSlice';
 
 type PostDetailRouteProp = RouteProp<{ PostDetail: { postId: string } }, 'PostDetail'>;
 
@@ -167,6 +167,7 @@ export const PostDetailScreen = () => {
         setIsSaved(data.isSavedByMe || false);
       } catch (error: any) {
         if (error?.response?.status === 404) {
+          dispatch(removePost(postId));
           Alert.alert('Unavailable', 'This post is no longer available.');
           setTimeout(() => navigation.goBack(), 1500);
         } else if (error?.response?.status === 403) {

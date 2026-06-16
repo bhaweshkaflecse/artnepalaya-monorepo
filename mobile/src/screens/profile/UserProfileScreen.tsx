@@ -37,6 +37,7 @@ export const UserProfileScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
   // Followers/Following modal state
   const [listModalVisible, setListModalVisible] = useState(false);
@@ -54,6 +55,7 @@ export const UserProfileScreen = () => {
       const data = await userService.getPublicProfile(userId);
       setProfile(data);
       setFollowersCount(data.stats?.followers ?? 0);
+      setFollowingCount(data.stats?.following ?? 0);
 
       // Hydrate follow state if user is authenticated
       if (!isGuest) {
@@ -105,6 +107,7 @@ export const UserProfileScreen = () => {
       // Refresh actual count from server
       const freshProfile = await userService.getPublicProfile(userId);
       setFollowersCount(freshProfile.stats?.followers ?? followersCount);
+      setFollowingCount(freshProfile.stats?.following ?? followingCount);
     } catch (error) {
       console.warn('[UserProfileScreen] Follow action failed:', error);
     }
@@ -244,7 +247,7 @@ export const UserProfileScreen = () => {
               </TouchableOpacity>
               <TouchableOpacity style={styles.statBox} onPress={openFollowingList} activeOpacity={0.7}>
                 <Text style={styles.statNum}>
-                  {profile?.stats?.following ?? 0}
+                  {followingCount}
                 </Text>
                 <Text style={styles.statLabel}>Following</Text>
               </TouchableOpacity>
