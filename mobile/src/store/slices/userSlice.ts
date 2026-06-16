@@ -55,6 +55,17 @@ const userSlice = createSlice({
       state.myPosts = state.myPosts.filter((p) => p._id !== action.payload);
       state.savedPosts = state.savedPosts.filter((p) => p._id !== action.payload);
     },
+    updatePost(state, action: PayloadAction<{ postId: string; data: Partial<Post> }>) {
+      const { postId, data } = action.payload;
+      const myIdx = state.myPosts.findIndex((p) => p._id === postId);
+      if (myIdx !== -1) {
+        state.myPosts[myIdx] = { ...state.myPosts[myIdx], ...data };
+      }
+      const savedIdx = state.savedPosts.findIndex((p) => p._id === postId);
+      if (savedIdx !== -1) {
+        state.savedPosts[savedIdx] = { ...state.savedPosts[savedIdx], ...data };
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -98,5 +109,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { clearUserState, setProfile, removePost } = userSlice.actions;
+export const { clearUserState, setProfile, removePost, updatePost } = userSlice.actions;
 export default userSlice.reducer;

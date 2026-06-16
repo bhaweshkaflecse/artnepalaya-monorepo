@@ -95,6 +95,12 @@ const feedSlice = createSlice({
     removePost(state, action: PayloadAction<string>) {
       state.feedPosts = state.feedPosts.filter((p) => p._id !== action.payload);
     },
+    updatePost(state, action: PayloadAction<{ postId: string; data: Partial<Post> }>) {
+      const idx = state.feedPosts.findIndex((p) => p._id === action.payload.postId);
+      if (idx !== -1) {
+        state.feedPosts[idx] = { ...state.feedPosts[idx], ...action.payload.data };
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -142,5 +148,5 @@ const feedSlice = createSlice({
   },
 });
 
-export const { toggleLike, toggleSave, removePost } = feedSlice.actions;
+export const { toggleLike, toggleSave, removePost, updatePost } = feedSlice.actions;
 export default feedSlice.reducer;

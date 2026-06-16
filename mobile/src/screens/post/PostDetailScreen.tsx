@@ -16,7 +16,7 @@ import {
   Animated,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { useRoute, useNavigation, useFocusEffect, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { AppStackParamList } from '../../navigation/AppStack';
@@ -159,30 +159,33 @@ export const PostDetailScreen = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchPost = async () => {
-      try {
-        const data = await postService.getPostById(postId);
-        setPost(data);
-        setIsLiked(data.isLikedByMe || false);
-        setIsSaved(data.isSavedByMe || false);
-      } catch (error: any) {
-        if (error?.response?.status === 404) {
-          dispatch(removeFeedPost(postId));
-          dispatch(removeUserPost(postId));
-          Alert.alert('Unavailable', 'This post is no longer available.');
-          setTimeout(() => navigation.goBack(), 1500);
-        } else if (error?.response?.status === 403) {
-          Alert.alert('Restricted', 'This content is marked as mature and is not available with your current settings.');
-        } else {
-          Alert.alert('Error', 'Failed to load post.');
+  useFocusEffect(
+    useCallback(() => {
+      const fetchPost = async () => {
+        try {
+          const data = await postService.getPostById(postId);
+          setPost(data);
+          setIsLiked(data.isLikedByMe || false);
+          setIsSaved(data.isSavedByMe || false);
+        } catch (error: any) {
+          if (error?.response?.status === 404) {
+            dispatch(removeFeedPost(postId));
+            dispatch(removeUserPost(postId));
+            Alert.alert('Unavailable', 'This post is no longer available.');
+            setTimeout(() => navigation.goBack(), 1500);
+          } else if (error?.response?.status === 403) {
+            Alert.alert('Restricted', 'This content is marked as mature and is not available with your current settings.');
+          } else {
+            Alert.alert('Error', 'Failed to load post.');
+          }
+        } finally {
+          setIsLoading(false);
         }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchPost();
-  }, [postId]);
+      };
+      setIsLoading(true);
+      fetchPost();
+    }, [postId])
+  );
 
   const handleLike = async () => {
     if (isGuest) {
