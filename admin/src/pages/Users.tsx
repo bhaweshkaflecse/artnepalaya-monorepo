@@ -38,12 +38,12 @@ export const Users = () => {
   const [verifyModal, setVerifyModal] = useState<{ userId: string; username: string } | null>(null);
   const [verifyType, setVerifyType] = useState<string>('artist');
 
-  const fetchUsers = useCallback(async (pageNum: number) => {
+  const fetchUsers = useCallback(async (pageNum: number, search: string) => {
     setLoading(true);
     setError(null);
     try {
       const res = await api.get('/admin/users', {
-        params: { page: pageNum, limit: 50 },
+        params: { page: pageNum, limit: 50, search: search || undefined },
       });
       setUsers(res.data.data);
       setMeta(res.data.meta);
@@ -55,8 +55,8 @@ export const Users = () => {
   }, []);
 
   useEffect(() => {
-    fetchUsers(page);
-  }, [page, fetchUsers]);
+    fetchUsers(page, searchQuery);
+  }, [page, searchQuery, fetchUsers]);
 
   const handleStatusChange = async (userId: string, status: string) => {
     setActionLoading(userId);
@@ -118,15 +118,6 @@ export const Users = () => {
     }
   };
 
-  const filteredUsers = users.filter((user) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      user.username?.toLowerCase().includes(query) ||
-      user.email?.toLowerCase().includes(query)
-    );
-  });
-
   return (
     <div className="space-y-5">
       {error && <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm border border-red-100">{error}</div>}
@@ -137,7 +128,7 @@ export const Users = () => {
             type="text"
             placeholder="Search by username or email..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
             className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all"
           />
         </div>
@@ -177,14 +168,14 @@ export const Users = () => {
                   <td className="px-5 py-3.5"><div className="h-4 w-24 animate-pulse bg-gray-100 rounded" /></td>
                 </tr>
               ))
-            ) : filteredUsers.length === 0 ? (
+            ) : users.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-5 py-12 text-center text-gray-400">
                   No users found.
                 </td>
               </tr>
             ) : (
-              filteredUsers.map((user) => (
+              users.map((user) => (
                 <tr key={user._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors duration-100">
                   <td className="px-5 py-3.5">
                     {user.avatarUrl ? (

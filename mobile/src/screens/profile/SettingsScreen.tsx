@@ -18,6 +18,7 @@ import { lightColors } from '../../theme/colors';
 import { userService } from '../../services/user.service';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { logout, selectIsGuest } from '../../store/slices/authSlice';
+import { fetchProfile } from '../../store/slices/userSlice';
 
 type SettingsNavProp = NativeStackNavigationProp<{
   CmsPage: { slug: string; title: string };
@@ -35,13 +36,9 @@ export const SettingsScreen = () => {
   const profile = useAppSelector((state) => state.user.profile);
   const isGuest = useAppSelector(selectIsGuest);
   const dispatch = useAppDispatch();
-  const [nsfwBlurEnabled, setNsfwBlurEnabled] = useState(
-    (profile as any)?.nsfwBlurEnabled ?? true
-  );
   const [showMatureContent, setShowMatureContent] = useState(
     (profile as any)?.showMatureContent ?? false
   );
-  const [showNsfwModal, setShowNsfwModal] = useState(false);
   const [showMatureModal, setShowMatureModal] = useState(false);
 
   const handleLogout = () => {
@@ -63,46 +60,6 @@ export const SettingsScreen = () => {
     );
   };
 
-  const handleNsfwToggle = async (value: boolean) => {
-    if (!value) {
-      // User is turning OFF the filter - show confirmation modal
-      setShowNsfwModal(true);
-      return;
-    }
-
-    // Turning ON the filter - no confirmation needed
-    setNsfwBlurEnabled(true);
-    if (isGuest) {
-      await SecureStore.setItemAsync('nsfwBlurEnabled', 'true');
-    } else {
-      try {
-        await userService.updateProfile({ nsfwBlurEnabled: true } as any);
-      } catch (_e) {
-        setNsfwBlurEnabled(false);
-        Alert.alert('Error', 'Failed to update setting. Please try again.');
-      }
-    }
-  };
-
-  const handleConfirmNsfw = async () => {
-    setShowNsfwModal(false);
-    setNsfwBlurEnabled(false);
-    if (isGuest) {
-      await SecureStore.setItemAsync('nsfwBlurEnabled', 'false');
-    } else {
-      try {
-        await userService.updateProfile({ nsfwBlurEnabled: false } as any);
-      } catch (_e) {
-        setNsfwBlurEnabled(true);
-        Alert.alert('Error', 'Failed to update setting. Please try again.');
-      }
-    }
-  };
-
-  const handleCancelNsfw = () => {
-    setShowNsfwModal(false);
-  };
-
   const handleMatureContentToggle = async (value: boolean) => {
     if (value) {
       // User is turning ON mature content - show warning dialog
@@ -114,6 +71,7 @@ export const SettingsScreen = () => {
     setShowMatureContent(false);
     try {
       await userService.updateProfile({ showMatureContent: false } as any);
+      dispatch(fetchProfile());
     } catch (_e) {
       setShowMatureContent(true);
       Alert.alert('Error', 'Failed to update setting. Please try again.');
@@ -125,6 +83,7 @@ export const SettingsScreen = () => {
     setShowMatureContent(true);
     try {
       await userService.updateProfile({ showMatureContent: true } as any);
+      dispatch(fetchProfile());
     } catch (_e) {
       setShowMatureContent(false);
       Alert.alert('Error', 'Failed to update setting. Please try again.');
@@ -149,23 +108,9 @@ export const SettingsScreen = () => {
       <ScrollView contentContainerStyle={styles.content}>
         {/* Content Preferences */}
         <Text style={styles.sectionTitle}>Content Preferences</Text>
-        <View style={styles.settingRow}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>Blur 18+ Content</Text>
-            <Text style={styles.settingDesc}>
-              Blur potentially sensitive or mature content in your feed
-            </Text>
-          </View>
-          <Switch
-            value={nsfwBlurEnabled}
-            onValueChange={handleNsfwToggle}
-            trackColor={{ false: lightColors.border, true: lightColors.accent }}
-            thumbColor="#FFFFFF"
-          />
-        </View>
 
         {!isGuest && (
-          <View style={[styles.settingRow, { marginTop: 12 }]}>
+          <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Show Mature Content (18+)</Text>
               <Text style={styles.settingDesc}>
@@ -202,30 +147,6 @@ export const SettingsScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-
-      {/* Adult Content Confirmation Modal */}
-      <Modal
-        visible={showNsfwModal}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCancelNsfw}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Feather name="alert-triangle" size={28} color="#DC2626" style={styles.modalIcon} />
-            <Text style={styles.modalTitle}>Adult Content Confirmation</Text>
-            <Text style={styles.modalBody}>
-              {'You are about to disable the 18+ content filter.\n\nBy continuing you confirm:\n\n\u2022 You are at least 18 years old\n\u2022 You agree to ArtNepalaya Terms and Privacy Policy\n\u2022 Adult content may appear in your feed'}
-            </Text>
-            <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleConfirmNsfw}>
-              <Text style={styles.modalConfirmText}>I Am 18+</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalCancelBtn} onPress={handleCancelNsfw}>
-              <Text style={styles.modalCancelText}>Keep Filter On</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
 
       {/* Show Mature Content Warning Modal */}
       <Modal

@@ -1,0 +1,25 @@
+{
+  "project_type": "Monorepo: Node.js Express backend, Expo React Native mobile, Vite React TypeScript admin",
+  "language": "JavaScript (backend), TypeScript (mobile, admin)",
+  "build_system": "npm for each sub-project, no monorepo tool",
+  "test_framework": "None apparent (no test files found)",
+  "build_command": "N/A - INTEGRATIONS_ONLY network, cannot npm install",
+  "test_command": "N/A - no test infrastructure",
+  "verification_instructions": "AST/syntax validation only since cannot run builds",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "N/A - INTEGRATIONS_ONLY network",
+  "environment_constraints": "INTEGRATIONS_ONLY network - cannot npm install, cannot build, cannot run tests. Only file modifications allowed.",
+  "contribution_requirements": "Branch fix/final-stabilization already checked out. Push to bhaweshkaflecse/artnepalaya-monorepo remote.",
+  "key_patterns": "Backend: ES modules with import/export, Mongoose models, service/controller pattern. Mobile: React Native functional components, Redux Toolkit with createAsyncThunk, Expo. Admin: Vite React with Tailwind CSS, axios api instance.",
+  "relevant_files": [
+    "mobile/src/screens/profile/SettingsScreen.tsx",
+    "mobile/src/screens/post/PostDetailScreen.tsx",
+    "mobile/src/screens/profile/UserProfileScreen.tsx",
+    "mobile/src/store/slices/userSlice.ts",
+    "backend/src/modules/users/user.service.js",
+    "backend/src/modules/admin/admin.service.js",
+    "backend/src/modules/admin/admin.controller.js",
+    "admin/src/pages/Users.tsx"
+  ],
+  "directory_structure": "backend/src/modules/ (users, admin, posts, notifications etc), mobile/src/screens/ (profile, post), mobile/src/store/slices/, admin/src/pages/"
+}
