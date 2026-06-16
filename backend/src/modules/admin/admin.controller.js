@@ -14,7 +14,7 @@ export const getDashboardStats = async (req, res, next) => {
 };
 
 export const getUsers = async (req, res, next) => {
-  try { res.status(200).json({ success: true, ...(await adminService.getUsers(req.query.page, req.query.limit)) }); } 
+  try { res.status(200).json({ success: true, ...(await adminService.getUsers(req.query.page, req.query.limit, req.query.search)) }); } 
   catch (err) { next(err); }
 };
 

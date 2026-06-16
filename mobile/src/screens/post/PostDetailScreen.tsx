@@ -165,8 +165,15 @@ export const PostDetailScreen = () => {
         setPost(data);
         setIsLiked(data.isLikedByMe || false);
         setIsSaved(data.isSavedByMe || false);
-      } catch (_e) {
-        Alert.alert('Error', 'Failed to load post.');
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          Alert.alert('Unavailable', 'This post is no longer available.');
+          setTimeout(() => navigation.goBack(), 1500);
+        } else if (error?.response?.status === 403) {
+          Alert.alert('Restricted', 'This content is marked as mature and is not available with your current settings.');
+        } else {
+          Alert.alert('Error', 'Failed to load post.');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -336,7 +343,10 @@ export const PostDetailScreen = () => {
             )}
           </View>
           <View>
-            <Text style={styles.username}>{post.authorId.username}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.username}>{post.authorId.username}</Text>
+              {(post.authorId as any).isVerified && <Feather name="check-circle" size={14} color="#3B82F6" style={{ marginLeft: 4 }} />}
+            </View>
             <Text style={styles.timestamp}>
               {new Date(post.createdAt).toLocaleDateString()}
             </Text>

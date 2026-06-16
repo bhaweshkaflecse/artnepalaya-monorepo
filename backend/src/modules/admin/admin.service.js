@@ -19,11 +19,19 @@ export const getDashboardStats = async () => {
   return { totalUsers, totalPosts, pendingReports };
 };
 
-export const getUsers = async (page, limit) => {
+export const getUsers = async (page, limit, search) => {
   const skip = (page - 1) * limit;
+  const filter = {};
+  if (search) {
+    const safeSearch = escapeRegex(search);
+    filter.$or = [
+      { username: { $regex: safeSearch, $options: 'i' } },
+      { email: { $regex: safeSearch, $options: 'i' } }
+    ];
+  }
   const [users, totalItems] = await Promise.all([
-    User.find().select('-__v -googleId').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-    User.countDocuments()
+    User.find(filter).select('-__v -googleId').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    User.countDocuments(filter)
   ]);
   return { data: users, meta: { currentPage: page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
 };

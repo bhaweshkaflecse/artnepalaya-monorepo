@@ -216,7 +216,10 @@ export const UserProfileScreen = () => {
 
             {/* Name */}
             <Text style={styles.fullName}>{profile?.fullName || 'User'}</Text>
-            <Text style={styles.username}>@{profile?.username || 'username'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.username}>@{profile?.username || 'username'}</Text>
+              {profile?.isVerified && <Feather name="check-circle" size={14} color="#3B82F6" style={{ marginLeft: 4 }} />}
+            </View>
 
             {/* Bio */}
             {profile?.bio ? (

@@ -1,0 +1,7 @@
+{
+  "task_id": "task-final-stabilization-fixes",
+  "task_description": "Fix 5 bugs: Settings hydration after PUT, verification badges on PostDetail/UserProfile, deleted post 404 handling, admin user search server-side, remove blur toggle. Plus getUserPosts populate fix.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null
+}

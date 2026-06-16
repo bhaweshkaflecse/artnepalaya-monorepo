@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix 5 bugs: Settings hydration, verification badges, 404 handling, admin search, remove blur toggle; plus getUserPosts populate fix",
+  "status": "in_progress",
+  "steps": [
+    "1. SettingsScreen.tsx - Import fetchProfile from '../../store/slices/userSlice'. After each successful updateProfile() call (there are 4: handleNsfwToggle true, handleConfirmNsfw, handleMatureContentToggle false, handleConfirmMatureContent), dispatch(fetchProfile()) to refresh Redux state.",
+    "2. SettingsScreen.tsx - Remove the entire 'Blur 18+ Content' toggle: remove the nsfwBlurEnabled state, the handleNsfwToggle function, the handleConfirmNsfw function, the handleCancelNsfw function, the first settingRow with the Switch for nsfwBlurEnabled, and the 'Adult Content Confirmation Modal' (showNsfwModal). Keep only showMatureContent/handleMatureContentToggle/handleConfirmMatureContent.",
+    "3. PostDetailScreen.tsx - In the authorRow section, next to the username Text, add a verification badge: {(post.authorId as any).isVerified && <Feather name='check-circle' size={14} color='#3B82F6' style={{ marginLeft: 4 }} />}",
+    "4. PostDetailScreen.tsx - In the fetchPost useEffect catch block, detect 404 specifically: if error.response?.status === 404, Alert 'This post is no longer available' and navigation.goBack() after a brief setTimeout. If 403, show mature content message. Otherwise show generic error.",
+    "5. UserProfileScreen.tsx - After the username Text element (@{profile?.username || 'username'}), add a verification badge: {profile?.isVerified && <Feather name='check-circle' size={14} color='#3B82F6' style={{ marginLeft: 4 }} />}",
+    "6. backend/src/modules/users/user.service.js - In getUserPosts, add .populate('authorId', 'username avatarUrl role isVerified verifiedType') to the Post.find query chain, before .lean()",
+    "7. backend/src/modules/admin/admin.service.js - Update getUsers to accept a 'search' parameter. If search is provided, build a filter using $or on username and email with $regex (case-insensitive), using escapeRegex. Apply filter to both User.find() and User.countDocuments().",
+    "8. backend/src/modules/admin/admin.controller.js - In getUsers, pass req.query.search as the third argument to adminService.getUsers()",
+    "9. admin/src/pages/Users.tsx - Pass search query parameter to the API call (params: { page, limit: 50, search: searchQuery }). Remove the client-side filteredUsers filter logic. Use users directly in the table render. Reset page to 1 when searchQuery changes. Add debounce or direct refetch on search change."
+  ],
+  "acceptance_criteria": [
+    "SettingsScreen no longer has nsfwBlurEnabled state or blur toggle UI",
+    "SettingsScreen dispatches fetchProfile() after every successful profile update",
+    "PostDetailScreen shows blue check-circle icon next to verified authors",
+    "PostDetailScreen handles 404 with 'no longer available' message and navigates back",
+    "UserProfileScreen shows blue check-circle icon next to verified users",
+    "getUserPosts populates authorId with username, avatarUrl, role, isVerified, verifiedType",
+    "Admin getUsers accepts search param and filters server-side on username/email",
+    "Admin controller passes req.query.search to getUsers service",
+    "Admin Users.tsx sends search to API and no longer does client-side filtering"
+  ],
+  "verification": [
+    "Run: node --check backend/src/modules/users/user.service.js",
+    "Run: node --check backend/src/modules/admin/admin.service.js",
+    "Run: node --check backend/src/modules/admin/admin.controller.js",
+    "Visually verify TypeScript files have correct syntax (no build available)"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

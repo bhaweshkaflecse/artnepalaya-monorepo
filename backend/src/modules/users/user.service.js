@@ -57,6 +57,7 @@ export const getUserPosts = async (userId, page, limit, viewerId) => {
       .sort({ createdAt: -1 }) // Newest first
       .skip(skip)
       .limit(limit)
+      .populate('authorId', 'username avatarUrl role isVerified verifiedType')
       .lean(),
     Post.countDocuments({ authorId: userId })
   ]);
