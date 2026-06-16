@@ -66,6 +66,26 @@ const userSlice = createSlice({
         state.savedPosts[savedIdx] = { ...state.savedPosts[savedIdx], ...data };
       }
     },
+    incrementFollowers(state) {
+      if (state.profile && state.profile.stats) {
+        state.profile.stats.followers = (state.profile.stats.followers || 0) + 1;
+      }
+    },
+    decrementFollowers(state) {
+      if (state.profile && state.profile.stats) {
+        state.profile.stats.followers = Math.max(0, (state.profile.stats.followers || 0) - 1);
+      }
+    },
+    incrementFollowing(state) {
+      if (state.profile && state.profile.stats) {
+        state.profile.stats.following = (state.profile.stats.following || 0) + 1;
+      }
+    },
+    decrementFollowing(state) {
+      if (state.profile && state.profile.stats) {
+        state.profile.stats.following = Math.max(0, (state.profile.stats.following || 0) - 1);
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -109,5 +129,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { clearUserState, setProfile, removePost, updatePost } = userSlice.actions;
+export const { clearUserState, setProfile, removePost, updatePost, incrementFollowers, decrementFollowers, incrementFollowing, decrementFollowing } = userSlice.actions;
 export default userSlice.reducer;

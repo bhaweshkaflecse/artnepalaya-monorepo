@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { store } from '../store';
 import { setNewPostsAvailable, updatePost as updateFeedPost, removePost as removeFeedPost } from '../store/slices/feedSlice';
-import { updatePost as updateUserPost, removePost as removeUserPost } from '../store/slices/userSlice';
+import { updatePost as updateUserPost, removePost as removeUserPost, incrementFollowers, decrementFollowers, incrementFollowing, decrementFollowing } from '../store/slices/userSlice';
 import { setUnreadCount } from '../store/slices/appSlice';
 
 let socket: Socket | null = null;
@@ -39,12 +39,32 @@ export function connectSocket(token: string, serverUrl: string): void {
     store.dispatch(removeUserPost(data.postId));
   });
 
-  socket.on('follow.created', (_data) => {
-    /* no-op for now - profile screens handle locally */
+  socket.on('follow.created', (data: { followerId: string; followingId: string }) => {
+    const currentUserId = store.getState().auth.user?.id;
+    if (!currentUserId) return;
+
+    if (data.followerId === currentUserId) {
+      // I followed someone -> my following count +1
+      store.dispatch(incrementFollowing());
+    }
+    if (data.followingId === currentUserId) {
+      // Someone followed me -> my followers count +1
+      store.dispatch(incrementFollowers());
+    }
   });
 
-  socket.on('follow.deleted', (_data) => {
-    /* no-op for now */
+  socket.on('follow.deleted', (data: { followerId: string; followingId: string }) => {
+    const currentUserId = store.getState().auth.user?.id;
+    if (!currentUserId) return;
+
+    if (data.followerId === currentUserId) {
+      // I unfollowed someone -> my following count -1
+      store.dispatch(decrementFollowing());
+    }
+    if (data.followingId === currentUserId) {
+      // Someone unfollowed me -> my followers count -1
+      store.dispatch(decrementFollowers());
+    }
   });
 
   socket.on('notification.count.changed', (data) => {

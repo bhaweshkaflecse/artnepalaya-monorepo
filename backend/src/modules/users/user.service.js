@@ -160,7 +160,8 @@ export const followUser = async (currentUserId, targetUserId) => {
       User.findByIdAndUpdate(currentUserId, { $inc: { 'stats.following': 1 } })
     ]);
 
-    // Emit realtime event to target user
+    // Emit realtime event to both follower and target
+    emitToUser(currentUserId, EVENTS.FOLLOW_CREATED, { followerId: currentUserId, followingId: targetUserId });
     emitToUser(targetUserId, EVENTS.FOLLOW_CREATED, { followerId: currentUserId, followingId: targetUserId });
 
     notificationService.createNotification({
@@ -185,7 +186,8 @@ export const unfollowUser = async (currentUserId, targetUserId) => {
       User.findByIdAndUpdate(currentUserId, { $inc: { 'stats.following': -1 } })
     ]);
 
-    // Emit realtime event to target user
+    // Emit realtime event to both follower and target
+    emitToUser(currentUserId, EVENTS.FOLLOW_DELETED, { followerId: currentUserId, followingId: targetUserId });
     emitToUser(targetUserId, EVENTS.FOLLOW_DELETED, { followerId: currentUserId, followingId: targetUserId });
   }
   return true;
