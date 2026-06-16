@@ -487,6 +487,22 @@ export const PostDetailScreen = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Content Transparency Badges */}
+        {((post.isHumanMade === false) || (post as any).isNsfw === true) && (
+          <View style={styles.badgesContainer}>
+            {post.isHumanMade === false && (
+              <View style={styles.aiBadge}>
+                <Text style={styles.badgeText}>AI Generated</Text>
+              </View>
+            )}
+            {(post as any).isNsfw === true && (
+              <View style={styles.nsfwBadge}>
+                <Text style={styles.badgeText}>18+</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Caption */}
         {post.caption && (
           <View style={styles.captionContainer}>
@@ -718,5 +734,28 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FFFFFF',
     marginLeft: 12,
+  },
+  badgesContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+    gap: 6,
+  },
+  aiBadge: {
+    backgroundColor: '#6366F1',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  nsfwBadge: {
+    backgroundColor: '#DC2626',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
   },
 });

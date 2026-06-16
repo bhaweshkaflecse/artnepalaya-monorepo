@@ -200,6 +200,21 @@ export const ExploreScreen = () => {
             </Text>
           </View>
         )}
+        {/* Content transparency badge overlays */}
+        {(item.isHumanMade === false || (item as any).isNsfw === true) && (
+          <View style={styles.badgeOverlay}>
+            {item.isHumanMade === false && (
+              <View style={styles.aiBadgeSmall}>
+                <Text style={styles.badgeTextSmall}>AI</Text>
+              </View>
+            )}
+            {(item as any).isNsfw === true && (
+              <View style={styles.nsfwBadgeSmall}>
+                <Text style={styles.badgeTextSmall}>18+</Text>
+              </View>
+            )}
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
@@ -410,5 +425,29 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     color: '#FFFFFF',
+  },
+  badgeOverlay: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    flexDirection: 'row',
+    gap: 3,
+  },
+  aiBadgeSmall: {
+    backgroundColor: '#6366F1',
+    borderRadius: 8,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  nsfwBadgeSmall: {
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  badgeTextSmall: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
   },
 });

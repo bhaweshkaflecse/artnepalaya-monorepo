@@ -31,6 +31,16 @@ export const createPost = async (userId, postData) => {
     postData.tags = tagsArray.map(t => t.toLowerCase().trim());
   }
 
+  // Automatic AI tag enforcement: if post is not human-made, ensure "ai" tag exists
+  if (postData.isHumanMade === false || postData.isHumanMade === 'false') {
+    if (!postData.tags) {
+      postData.tags = [];
+    }
+    if (!postData.tags.includes('ai')) {
+      postData.tags.push('ai');
+    }
+  }
+
   const post = await Post.create({ authorId: userId, ...postData });
 
   // Invalidate all feed caches after successful post creation

@@ -23,6 +23,7 @@ export interface Post {
   likesCount: number;
   savesCount: number;
   isHumanMade?: boolean;
+  isNsfw?: boolean;
   isLikedByMe?: boolean;
   isSavedByMe?: boolean;
   createdAt: string;

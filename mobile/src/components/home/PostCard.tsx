@@ -271,6 +271,22 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         </TouchableOpacity>
       </View>
 
+      {/* Content Transparency Badges */}
+      {((post.isHumanMade === false) || (post as any).isNsfw === true) && (
+        <View style={styles.badgesContainer}>
+          {post.isHumanMade === false && (
+            <View style={styles.aiBadge}>
+              <Text style={styles.badgeText}>AI Generated</Text>
+            </View>
+          )}
+          {(post as any).isNsfw === true && (
+            <View style={styles.nsfwBadge}>
+              <Text style={styles.badgeText}>18+</Text>
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Caption and Tags */}
       <View style={styles.content}>
         {post.caption && (
@@ -405,5 +421,29 @@ const styles = StyleSheet.create({
   },
   moreBtn: {
     padding: 4,
+  },
+  badgesContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingTop: 4,
+    paddingBottom: 4,
+    gap: 6,
+  },
+  aiBadge: {
+    backgroundColor: '#6366F1',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  nsfwBadge: {
+    backgroundColor: '#DC2626',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
   },
 });

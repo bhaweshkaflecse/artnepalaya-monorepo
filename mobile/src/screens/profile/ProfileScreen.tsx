@@ -132,6 +132,21 @@ export const ProfileScreen = () => {
                 <Feather name="play" size={12} color="#FFFFFF" />
               </View>
             )}
+            {/* Content transparency badge overlays */}
+            {(item.isHumanMade === false || item.isNsfw === true) && (
+              <View style={styles.badgeOverlay}>
+                {item.isHumanMade === false && (
+                  <View style={styles.aiBadgeSmall}>
+                    <Text style={styles.badgeTextSmall}>AI</Text>
+                  </View>
+                )}
+                {item.isNsfw === true && (
+                  <View style={styles.nsfwBadgeSmall}>
+                    <Text style={styles.badgeTextSmall}>18+</Text>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
         ) : (
           <View style={styles.imagePlaceholder}>
@@ -674,5 +689,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: lightColors.textPrimary,
+  },
+  badgeOverlay: {
+    position: 'absolute',
+    top: 3,
+    left: 3,
+    flexDirection: 'row',
+    gap: 2,
+  },
+  aiBadgeSmall: {
+    backgroundColor: '#6366F1',
+    borderRadius: 7,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  nsfwBadgeSmall: {
+    backgroundColor: '#DC2626',
+    borderRadius: 7,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  badgeTextSmall: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    fontWeight: '700',
   },
 });
