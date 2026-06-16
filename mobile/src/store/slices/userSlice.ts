@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { userService, User } from '../../services/user.service';
 import { Post } from '../../services/post.service';
 import { logout } from './authSlice';
@@ -51,6 +51,10 @@ const userSlice = createSlice({
     setProfile(state, action) {
       state.profile = action.payload;
     },
+    removePost(state, action: PayloadAction<string>) {
+      state.myPosts = state.myPosts.filter((p) => p._id !== action.payload);
+      state.savedPosts = state.savedPosts.filter((p) => p._id !== action.payload);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -94,5 +98,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { clearUserState, setProfile } = userSlice.actions;
+export const { clearUserState, setProfile, removePost } = userSlice.actions;
 export default userSlice.reducer;

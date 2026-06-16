@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   moreBtn: {
-    padding: 4,
+    padding: 12,
   },
   badgesContainer: {
     flexDirection: 'row',
