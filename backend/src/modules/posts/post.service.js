@@ -6,6 +6,8 @@ import { FeaturedPost } from '../admin/featured.model.js';
 import { Report } from '../reports/report.model.js';
 import * as tagService from '../tags/tag.service.js';
 import * as notificationService from '../notifications/notification.service.js';
+import { emitToFeed } from '../../realtime/emitter.js';
+import { EVENTS } from '../../realtime/events.js';
 
 // THE FIX: Using our new functional cache imports!
 import { getOrSetCache, invalidateCache } from '../../shared/utils/cache.js'; 
@@ -45,6 +47,9 @@ export const createPost = async (userId, postData) => {
 
   // Invalidate all feed caches after successful post creation
   invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));
+
+  // Emit realtime event
+  emitToFeed(EVENTS.POST_CREATED, { postId: post._id.toString(), authorId: userId });
 
   // Trigger Tags (Fire and forget)
   if (post.tags && post.tags.length > 0) {
@@ -256,6 +261,9 @@ export const updatePost = async (postId, userId, userRole, updateData) => {
 
   const updatedPost = await Post.findByIdAndUpdate(postId, { $set: allowedFields }, { new: true });
 
+  // Emit realtime event
+  emitToFeed(EVENTS.POST_UPDATED, { postId, data: allowedFields });
+
   invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));
 
   return updatedPost;
@@ -283,6 +291,9 @@ export const deletePost = async (postId, userId, userRole) => {
     FeaturedPost.findOneAndDelete({ postId }),
     Report.deleteMany({ targetId: postId }),
   ]);
+
+  // Emit realtime event
+  emitToFeed(EVENTS.POST_DELETED, { postId });
 
   invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));
 

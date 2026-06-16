@@ -10,6 +10,9 @@ import { SettingsScreen } from '../screens/profile/SettingsScreen';
 import { UserProfileScreen } from '../screens/profile/UserProfileScreen';
 import { CmsPageScreen } from '../screens/settings/CmsPageScreen';
 import { setupNotificationListeners } from '../services/pushNotification.service';
+import { connectSocket, disconnectSocket } from '../services/socket.service';
+import { useAppSelector } from '../store';
+import { selectAccessToken } from '../store/slices/authSlice';
 import { Post } from '../services/post.service';
 
 export type AppStackParamList = {
@@ -27,6 +30,7 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 
 export const AppStack = () => {
   const navigation = useNavigation();
+  const accessToken = useAppSelector(selectAccessToken);
 
   useEffect(() => {
     const cleanup = setupNotificationListeners((response) => {
@@ -36,6 +40,22 @@ export const AppStack = () => {
 
     return cleanup;
   }, [navigation]);
+
+  // Connect/disconnect socket based on auth state
+  useEffect(() => {
+    if (accessToken) {
+      // Derive socket server URL by stripping '/api/v1' from the API URL
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8080/api/v1';
+      const serverUrl = apiUrl.replace(/\/api\/v1\/?$/, '');
+      connectSocket(accessToken, serverUrl);
+    } else {
+      disconnectSocket();
+    }
+
+    return () => {
+      disconnectSocket();
+    };
+  }, [accessToken]);
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

@@ -1,5 +1,5 @@
 // src/store/slices/appSlice.ts
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import * as SecureStore from 'expo-secure-store';
 import { configService, AuthMediaItem } from '../../services/config.service';
 
@@ -8,6 +8,7 @@ interface AppState {
   isAppReady: boolean;
   authBackgroundMedia: AuthMediaItem[];
   isLoadingConfig: boolean;
+  unreadNotificationCount: number;
 }
 
 const initialState: AppState = {
@@ -15,6 +16,7 @@ const initialState: AppState = {
   isAppReady: false,
   authBackgroundMedia: [],
   isLoadingConfig: false,
+  unreadNotificationCount: 0,
 };
 
 export const loadAppState = createAsyncThunk('app/loadAppState', async (_, { rejectWithValue }) => {
@@ -72,6 +74,9 @@ const appSlice = createSlice({
     setOnboardingComplete(state) {
       state.hasCompletedOnboarding = true;
     },
+    setUnreadCount(state, action: PayloadAction<number>) {
+      state.unreadNotificationCount = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -97,5 +102,5 @@ const appSlice = createSlice({
   },
 });
 
-export const { setOnboardingComplete } = appSlice.actions;
+export const { setOnboardingComplete, setUnreadCount } = appSlice.actions;
 export default appSlice.reducer;
