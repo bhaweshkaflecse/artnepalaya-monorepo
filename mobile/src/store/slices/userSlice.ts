@@ -66,6 +66,9 @@ const userSlice = createSlice({
         state.savedPosts[savedIdx] = { ...state.savedPosts[savedIdx], ...data };
       }
     },
+    prependPost(state, action: PayloadAction<Post>) {
+      state.myPosts = [action.payload, ...state.myPosts];
+    },
     incrementFollowers(state) {
       if (state.profile && state.profile.stats) {
         state.profile.stats.followers = (state.profile.stats.followers || 0) + 1;
@@ -129,5 +132,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { clearUserState, setProfile, removePost, updatePost, incrementFollowers, decrementFollowers, incrementFollowing, decrementFollowing } = userSlice.actions;
+export const { clearUserState, setProfile, removePost, updatePost, prependPost, incrementFollowers, decrementFollowers, incrementFollowing, decrementFollowing } = userSlice.actions;
 export default userSlice.reducer;

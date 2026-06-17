@@ -17,8 +17,9 @@ import { useNavigation } from '@react-navigation/native';
 import { lightColors } from '../../theme/colors';
 import { api } from '../../services/api';
 import { useAppSelector, useAppDispatch } from '../../store';
-import { selectIsGuest } from '../../store/slices/authSlice';
+import { selectIsGuest, selectUser } from '../../store/slices/authSlice';
 import { fetchFeed } from '../../store/slices/feedSlice';
+import { fetchMyPosts } from '../../store/slices/userSlice';
 
 const MAX_IMAGES = 5;
 const MAX_VIDEOS = 1;
@@ -35,6 +36,7 @@ const FALLBACK_ARTWORK_TYPES = [
 export const CreateScreen = () => {
   const navigation = useNavigation();
   const isGuest = useAppSelector(selectIsGuest);
+  const currentUser = useAppSelector(selectUser);
   const dispatch = useAppDispatch();
   const [mediaItems, setMediaItems] = useState<Array<{ uri: string; type: 'image' | 'video'; fileSize?: number }>>([]);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
@@ -295,6 +297,9 @@ export const CreateScreen = () => {
       Alert.alert('Success', 'Artwork published successfully!');
       resetForm();
       dispatch(fetchFeed());
+      if (currentUser?.id) {
+        dispatch(fetchMyPosts(currentUser.id));
+      }
     } catch (e: any) {
       console.log('[PUBLISH] ERROR STATUS:', e?.response?.status);
       console.log('[PUBLISH] ERROR DATA:', JSON.stringify(e?.response?.data));

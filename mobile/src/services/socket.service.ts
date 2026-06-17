@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { store } from '../store';
 import { setNewPostsAvailable, updatePost as updateFeedPost, removePost as removeFeedPost } from '../store/slices/feedSlice';
-import { updatePost as updateUserPost, removePost as removeUserPost, incrementFollowers, decrementFollowers, incrementFollowing, decrementFollowing } from '../store/slices/userSlice';
+import { updatePost as updateUserPost, removePost as removeUserPost, fetchMyPosts, incrementFollowers, decrementFollowers, incrementFollowing, decrementFollowing } from '../store/slices/userSlice';
 import { setUnreadCount } from '../store/slices/appSlice';
 
 let socket: Socket | null = null;
@@ -32,8 +32,13 @@ export function connectSocket(token: string, serverUrl: string): void {
     console.log('[Socket] Disconnected');
   });
 
-  socket.on('post.created', (_data) => {
+  socket.on('post.created', (data: { postId: string; authorId: string }) => {
     store.dispatch(setNewPostsAvailable(true));
+    // If I created this post, refresh my posts list
+    const currentUserId = store.getState().auth.user?.id;
+    if (data.authorId === currentUserId) {
+      store.dispatch(fetchMyPosts(currentUserId));
+    }
   });
 
   socket.on('post.updated', (data) => {
