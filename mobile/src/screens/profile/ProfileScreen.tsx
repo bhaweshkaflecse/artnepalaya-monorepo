@@ -53,7 +53,6 @@ export const ProfileScreen = () => {
   useEffect(() => {
     if (isGuest) return;
     const userId = profile?._id || authUser?.id;
-    console.log('[ProfileScreen] fetchMyPosts userId:', userId, 'profile._id:', profile?._id, 'authUser.id:', authUser?.id);
     if (userId) {
       dispatch(fetchMyPosts(userId));
       userService.getUserMetrics(userId).then(setMetrics).catch(() => {});
