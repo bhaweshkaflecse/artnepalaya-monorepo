@@ -48,28 +48,30 @@ export function connectSocket(token: string, serverUrl: string): void {
 
   socket.on('follow.created', (data: { followerId: string; followingId: string }) => {
     const currentUserId = store.getState().auth.user?.id;
+    console.log('[Socket] follow.created received:', data, 'currentUserId:', currentUserId);
     if (!currentUserId) return;
 
     if (data.followerId === currentUserId) {
-      // I followed someone -> my following count +1
+      console.log('[Socket] Dispatching incrementFollowing');
       store.dispatch(incrementFollowing());
     }
     if (data.followingId === currentUserId) {
-      // Someone followed me -> my followers count +1
+      console.log('[Socket] Dispatching incrementFollowers');
       store.dispatch(incrementFollowers());
     }
   });
 
   socket.on('follow.deleted', (data: { followerId: string; followingId: string }) => {
     const currentUserId = store.getState().auth.user?.id;
+    console.log('[Socket] follow.deleted received:', data, 'currentUserId:', currentUserId);
     if (!currentUserId) return;
 
     if (data.followerId === currentUserId) {
-      // I unfollowed someone -> my following count -1
+      console.log('[Socket] Dispatching decrementFollowing');
       store.dispatch(decrementFollowing());
     }
     if (data.followingId === currentUserId) {
-      // Someone unfollowed me -> my followers count -1
+      console.log('[Socket] Dispatching decrementFollowers');
       store.dispatch(decrementFollowers());
     }
   });

@@ -70,23 +70,31 @@ const userSlice = createSlice({
       state.myPosts = [action.payload, ...state.myPosts];
     },
     incrementFollowers(state) {
-      if (state.profile && state.profile.stats) {
+      if (state.profile) {
+        if (!state.profile.stats) state.profile.stats = { followers: 0, following: 0 };
         state.profile.stats.followers = (state.profile.stats.followers || 0) + 1;
+        console.log('[Redux] incrementFollowers →', state.profile.stats.followers);
       }
     },
     decrementFollowers(state) {
-      if (state.profile && state.profile.stats) {
+      if (state.profile) {
+        if (!state.profile.stats) state.profile.stats = { followers: 0, following: 0 };
         state.profile.stats.followers = Math.max(0, (state.profile.stats.followers || 0) - 1);
+        console.log('[Redux] decrementFollowers →', state.profile.stats.followers);
       }
     },
     incrementFollowing(state) {
-      if (state.profile && state.profile.stats) {
+      if (state.profile) {
+        if (!state.profile.stats) state.profile.stats = { followers: 0, following: 0 };
         state.profile.stats.following = (state.profile.stats.following || 0) + 1;
+        console.log('[Redux] incrementFollowing →', state.profile.stats.following);
       }
     },
     decrementFollowing(state) {
-      if (state.profile && state.profile.stats) {
+      if (state.profile) {
+        if (!state.profile.stats) state.profile.stats = { followers: 0, following: 0 };
         state.profile.stats.following = Math.max(0, (state.profile.stats.following || 0) - 1);
+        console.log('[Redux] decrementFollowing →', state.profile.stats.following);
       }
     },
   },
