@@ -10,6 +10,7 @@ services:
       - ./nginx/certs:/etc/nginx/ssl:ro
     depends_on:
       - backend
+      - admin
     networks:
       - artnepalaya-net
     restart: unless-stopped
@@ -26,6 +27,8 @@ services:
     depends_on:
       mongodb:
         condition: service_started
+      postgresql:
+        condition: service_started
       redis:
         condition: service_started
     networks:
@@ -35,6 +38,14 @@ services:
       resources:
         limits:
           memory: 1G
+
+  admin:
+    build:
+      context: ../admin
+    container_name: art_admin
+    networks:
+      - artnepalaya-net
+    restart: unless-stopped
 
   mongodb:
     image: mongo:7.0
@@ -47,7 +58,19 @@ services:
     networks:
       - artnepalaya-net
     restart: unless-stopped
-    # NO ports exposed - only accessible on internal network
+
+  postgresql:
+    image: postgres:16-alpine
+    container_name: art_postgresql
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    networks:
+      - artnepalaya-net
+    restart: unless-stopped
 
   redis:
     image: redis:7.2-alpine
@@ -58,7 +81,6 @@ services:
     networks:
       - artnepalaya-net
     restart: unless-stopped
-    # NO ports exposed - only accessible on internal network
 
 networks:
   artnepalaya-net:
@@ -66,4 +88,5 @@ networks:
 
 volumes:
   mongodb_data:
+  postgresql_data:
   redis_data:
