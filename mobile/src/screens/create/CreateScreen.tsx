@@ -18,7 +18,8 @@ import { lightColors } from '../../theme/colors';
 import { api } from '../../services/api';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest } from '../../store/slices/authSlice';
-import { fetchFeed } from '../../store/slices/feedSlice';
+import { prependPost as prependFeedPost } from '../../store/slices/feedSlice';
+import { prependPost as prependMyPost } from '../../store/slices/userSlice';
 
 const MAX_IMAGES = 5;
 const MAX_VIDEOS = 1;
@@ -280,7 +281,7 @@ export const CreateScreen = () => {
         formData.append('isNsfw', 'true');
       }
 
-      await api.post('/posts', formData, {
+      const response = await api.post('/posts', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -294,7 +295,11 @@ export const CreateScreen = () => {
 
       Alert.alert('Success', 'Artwork published successfully!');
       resetForm();
-      dispatch(fetchFeed());
+      const newPost = response.data.data;
+      if (newPost) {
+        dispatch(prependFeedPost(newPost));
+        dispatch(prependMyPost(newPost));
+      }
     } catch (e: any) {
       console.log('[PUBLISH] ERROR STATUS:', e?.response?.status);
       console.log('[PUBLISH] ERROR DATA:', JSON.stringify(e?.response?.data));
