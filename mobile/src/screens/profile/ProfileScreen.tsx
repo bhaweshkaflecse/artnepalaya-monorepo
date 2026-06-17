@@ -50,14 +50,16 @@ export const ProfileScreen = () => {
     dispatch(fetchProfile());
   }, [dispatch, isGuest]);
 
+  const profileId = profile?._id;
+
   useEffect(() => {
     if (isGuest) return;
-    const userId = profile?._id || authUser?.id;
+    const userId = profileId || authUser?.id;
     if (userId) {
       dispatch(fetchMyPosts(userId));
       userService.getUserMetrics(userId).then(setMetrics).catch(() => {});
     }
-  }, [dispatch, profile, authUser, isGuest]);
+  }, [dispatch, profileId, authUser?.id, isGuest]);
 
   useEffect(() => {
     if (activeTab === 'saved' && !isGuest) {
