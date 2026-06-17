@@ -18,6 +18,8 @@ export function connectSocket(token: string, serverUrl: string): void {
     socket = null;
   }
 
+  console.log('[Socket] Attempting connection to:', serverUrl);
+
   socket = io(serverUrl, {
     auth: { token },
     transports: ['websocket'],
@@ -30,6 +32,10 @@ export function connectSocket(token: string, serverUrl: string): void {
 
   socket.on('disconnect', () => {
     console.log('[Socket] Disconnected');
+  });
+
+  socket.on('connect_error', (err) => {
+    console.error('[Socket] Connection error:', err.message);
   });
 
   socket.on('post.created', (_data) => {
