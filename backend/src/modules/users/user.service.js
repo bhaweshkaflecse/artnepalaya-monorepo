@@ -161,6 +161,7 @@ export const followUser = async (currentUserId, targetUserId) => {
     ]);
 
     // Emit realtime event to both follower and target
+    console.log('[FOLLOW] Emitting FOLLOW_CREATED to currentUser:', currentUserId, 'and target:', targetUserId);
     emitToUser(currentUserId, EVENTS.FOLLOW_CREATED, { followerId: currentUserId, followingId: targetUserId });
     emitToUser(targetUserId, EVENTS.FOLLOW_CREATED, { followerId: currentUserId, followingId: targetUserId });
 
@@ -187,6 +188,7 @@ export const unfollowUser = async (currentUserId, targetUserId) => {
     ]);
 
     // Emit realtime event to both follower and target
+    console.log('[FOLLOW] Emitting FOLLOW_DELETED to currentUser:', currentUserId, 'and target:', targetUserId);
     emitToUser(currentUserId, EVENTS.FOLLOW_DELETED, { followerId: currentUserId, followingId: targetUserId });
     emitToUser(targetUserId, EVENTS.FOLLOW_DELETED, { followerId: currentUserId, followingId: targetUserId });
   }
