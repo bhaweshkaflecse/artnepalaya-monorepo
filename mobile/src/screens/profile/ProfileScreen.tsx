@@ -34,6 +34,8 @@ export const ProfileScreen = () => {
   const isGuest = useAppSelector(selectIsGuest);
   const guestUsername = useAppSelector(selectGuestUsername);
   const { profile, myPosts, savedPosts, isLoading } = useAppSelector((state) => state.user);
+  const profileFollowers = useAppSelector((state) => state.user.profile?.stats?.followers ?? 0);
+  const profileFollowing = useAppSelector((state) => state.user.profile?.stats?.following ?? 0);
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
   const [metrics, setMetrics] = useState<UserMetrics>({ totalPosts: 0, totalLikes: 0, totalSaves: 0 });
 
@@ -266,13 +268,13 @@ export const ProfileScreen = () => {
                   <View style={styles.statsContainer}>
                     <TouchableOpacity style={styles.statBox} onPress={openFollowersList} activeOpacity={0.7}>
                       <Text style={styles.statNum}>
-                        {displayUser?.stats?.followers ?? 0}
+                        {profileFollowers}
                       </Text>
                       <Text style={styles.statLabel}>Followers</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.statBox} onPress={openFollowingList} activeOpacity={0.7}>
                       <Text style={styles.statNum}>
-                        {displayUser?.stats?.following ?? 0}
+                        {profileFollowing}
                       </Text>
                       <Text style={styles.statLabel}>Following</Text>
                     </TouchableOpacity>

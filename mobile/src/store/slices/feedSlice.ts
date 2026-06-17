@@ -97,6 +97,10 @@ const feedSlice = createSlice({
         post.savesCount += post.isSavedByMe ? 1 : -1;
       }
     },
+    prependPost(state, action: PayloadAction<Post>) {
+      state.feedPosts = [action.payload, ...state.feedPosts];
+      state.newPostsAvailable = false;
+    },
     removePost(state, action: PayloadAction<string>) {
       state.feedPosts = state.feedPosts.filter((p) => p._id !== action.payload);
     },
@@ -154,5 +158,5 @@ const feedSlice = createSlice({
   },
 });
 
-export const { setNewPostsAvailable, toggleLike, toggleSave, removePost, updatePost } = feedSlice.actions;
+export const { setNewPostsAvailable, toggleLike, toggleSave, prependPost, removePost, updatePost } = feedSlice.actions;
 export default feedSlice.reducer;
