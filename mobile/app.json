@@ -21,13 +21,13 @@
       "supportsTablet": true
     },
     "android": {
-  "package": "com.artnepalaya.mobile",
-  "usesCleartextTraffic": true,
-  "adaptiveIcon": {
-    "foregroundImage": "./assets/adaptive-icon.png",
-    "backgroundColor": "#000000"
-  }
-},
+      "package": "com.artnepalaya.mobile",
+      "usesCleartextTraffic": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      }
+    },
     "web": {
       "favicon": "./assets/favicon.png"
     },

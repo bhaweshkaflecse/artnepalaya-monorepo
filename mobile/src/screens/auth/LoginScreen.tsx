@@ -66,6 +66,8 @@ export const LoginScreen = () => {
   // Only use the web client ID in Expo Go to force the Expo auth proxy flow
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: GOOGLE_WEB_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || undefined,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || undefined,
   });
 
   // Debug: log request configuration to verify correct redirect and response type
