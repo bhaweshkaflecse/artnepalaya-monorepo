@@ -271,9 +271,8 @@ export const LoginScreen = () => {
             <Text style={styles.skipText}>Skip for now</Text>
           </TouchableOpacity>
 
-          {/* Dev Login - only visible in development */}
-          {__DEV__ && (
-            <View style={styles.devLoginContainer}>
+          {/* Temporary QA Login */}
+<View style={styles.devLoginContainer}>
               {devError && (
                 <Text style={styles.devErrorText}>{devError}</Text>
               )}
@@ -289,7 +288,6 @@ export const LoginScreen = () => {
                 )}
               </TouchableOpacity>
             </View>
-          )}
         </View>
       </SafeAreaView>
     </View>
