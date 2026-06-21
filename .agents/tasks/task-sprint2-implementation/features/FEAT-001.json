@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Soft Delete + Recycle Bin: Add deletedAt field to Post model, modify all post queries to filter out soft-deleted posts, change creator DELETE to soft-delete, add admin restore/permanent-delete endpoints, and add Trash tab to admin Posts page",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. Add `deletedAt: { type: Date, default: null }` field to post schema in backend/src/modules/posts/post.model.js",
     "2. In backend/src/modules/posts/post.service.js: Add `deletedAt: null` to the feed query in getFeed (line ~111 where query is built). Add `deletedAt: null` check in getSinglePost after finding the post (throw 404 if deletedAt is set, unless accessed by admin). The feed query object should include `{ deletedAt: null }` alongside other filters.",
@@ -36,5 +36,5 @@
     "Run `node --check backend/src/modules/admin/admin.routes.js` to verify syntax"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 13 steps implemented successfully. node --check passes on all modified backend files (requires NODE_OPTIONS=\"\" due to sandbox preload module issue). Post model has deletedAt field, feed/profile/saved queries filter soft-deleted posts, creator deletePost now soft-deletes, admin deletePost does full cascade with Cloudinary cleanup, admin restore endpoint added, admin Posts.tsx has Active/Trash tabs with restore and permanent delete buttons."
 }
