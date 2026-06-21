@@ -4,13 +4,20 @@ import { Like, Save } from './post-interaction.model.js';
 import { Notification } from '../notifications/notification.model.js';
 import { FeaturedPost } from '../admin/featured.model.js';
 import { Report } from '../reports/report.model.js';
+import { User } from '../users/user.model.js';
 import * as tagService from '../tags/tag.service.js';
 import * as notificationService from '../notifications/notification.service.js';
 import { emitToFeed } from '../../realtime/emitter.js';
 import { EVENTS } from '../../realtime/events.js';
 
 // THE FIX: Using our new functional cache imports!
-import { getOrSetCache, invalidateCache } from '../../shared/utils/cache.js'; 
+import { getOrSetCache, invalidateCache } from '../../shared/utils/cache.js';
+
+// Helper: Get IDs of banned/suspended users for query-level filtering
+const getInactiveUserIds = async () => {
+  const users = await User.find({ status: { $in: ['banned', 'suspended'] } }).select('_id').lean();
+  return users.map(u => u._id);
+}; 
 
 export const createPost = async (userId, postData) => {
   // BULLETPROOF TAGS FIX: Handle both Strings (from form-data) and Arrays
@@ -60,8 +67,13 @@ export const createPost = async (userId, postData) => {
 };
 
 export const getSinglePost = async (postId, userId, showMatureContent = false) => {
-  const post = await Post.findById(postId).populate('authorId', 'username avatarUrl role isVerified verifiedType').lean();
+  const post = await Post.findById(postId).populate('authorId', 'username avatarUrl role isVerified verifiedType status').lean();
   if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
+
+  // Hide posts from banned/suspended authors
+  if (post.authorId && (post.authorId.status === 'banned' || post.authorId.status === 'suspended')) {
+    throw Object.assign(new Error('Post not found'), { status: 404 });
+  }
 
   // NSFW Protection: Block access if post is NSFW and viewer hasn't opted in (author always allowed)
   const isAuthor = userId && post.authorId && post.authorId._id.toString() === userId.toString();
@@ -97,6 +109,10 @@ export const getFeed = async (userId, cursor, limit, showMatureContent) => {
 
   const baseFeed = await getOrSetCache(cacheKey, 300, async () => {
     const query = cursor ? { _id: { $lt: cursor } } : {};
+
+    // Exclude posts from banned/suspended users
+    const inactiveIds = await getInactiveUserIds();
+    query.authorId = { $nin: inactiveIds };
 
     // NSFW Protection: Exclude NSFW posts for guests and users without mature content opt-in
     if (filterNsfw) {

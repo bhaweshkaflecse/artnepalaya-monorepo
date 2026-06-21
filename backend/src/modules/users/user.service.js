@@ -52,6 +52,12 @@ export const updateUserProfile = async (userId, updateData) => {
 
 // === Fetch User Posts (Offset Pagination) ===
 export const getUserPosts = async (userId, page, limit, viewerId) => {
+  // Check if target user is banned/suspended - return empty results if so
+  const targetUser = await User.findById(userId).select('status').lean();
+  if (!targetUser || targetUser.status === 'banned' || targetUser.status === 'suspended') {
+    return { data: [], meta: { currentPage: page, limit, totalItems: 0, totalPages: 0, hasNextPage: false } };
+  }
+
   const skip = (page - 1) * limit;
 
   const [posts, totalItems] = await Promise.all([
@@ -106,23 +112,27 @@ export const getSavedPosts = async (userId, page, limit) => {
   const skip = (page - 1) * limit;
   const saves = await Save.find({ userId }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
   const postIds = saves.map(s => s.postId);
-  const posts = await Post.find({ _id: { $in: postIds } }).populate('authorId', 'username avatarUrl role isVerified verifiedType').lean();
+  const posts = await Post.find({ _id: { $in: postIds } }).populate('authorId', 'username avatarUrl role isVerified verifiedType status').lean();
   // Reorder posts to match save order (newest saved first)
   const postMap = new Map(posts.map(p => [p._id.toString(), p]));
   const orderedPosts = postIds.map(id => postMap.get(id.toString())).filter(Boolean);
 
+  // Filter out posts from banned/suspended authors
+  const activePosts = orderedPosts.filter(p => p.authorId && p.authorId.status === 'active');
+
   // Hydrate like/save state - all saved posts are isSavedByMe: true
-  if (orderedPosts.length > 0) {
-    const likes = await Like.find({ userId, postId: { $in: postIds } }).select('postId').lean();
+  if (activePosts.length > 0) {
+    const activePostIds = activePosts.map(p => p._id);
+    const likes = await Like.find({ userId, postId: { $in: activePostIds } }).select('postId').lean();
     const likedSet = new Set(likes.map(l => l.postId.toString()));
-    orderedPosts.forEach(post => {
+    activePosts.forEach(post => {
       post.isSavedByMe = true;
       post.isLikedByMe = likedSet.has(post._id.toString());
     });
   }
 
   const totalItems = await Save.countDocuments({ userId });
-  return { data: orderedPosts, meta: { currentPage: page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
+  return { data: activePosts, meta: { currentPage: page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
 };
 
 // === Push Token Management ===

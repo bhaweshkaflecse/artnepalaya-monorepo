@@ -56,7 +56,7 @@ router.get('/featured', optionalAuth, async (req, res, next) => {
         path: 'postId',
         populate: {
           path: 'authorId',
-          select: '_id username avatarUrl'
+          select: '_id username avatarUrl status'
         }
       })
       .lean();
@@ -71,6 +71,9 @@ router.get('/featured', optionalAuth, async (req, res, next) => {
     if (!req.user || !showMatureContent) {
       data = data.filter((post) => !post.isNsfw);
     }
+
+    // Filter out posts from banned/suspended authors
+    data = data.filter((post) => post.authorId && post.authorId.status === 'active');
 
     res.status(200).json({ success: true, data });
   } catch (err) {
