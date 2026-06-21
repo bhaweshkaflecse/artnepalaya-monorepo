@@ -5,7 +5,7 @@ const cmsPageSchema = new mongoose.Schema({
     type: String,
     unique: true,
     required: true,
-    enum: ['privacy-policy', 'about-us', 'terms-conditions', 'community-guidelines']
+    enum: ['privacy-policy', 'about-us', 'terms-conditions', 'community-guidelines', 'creator-listing-policy', 'copyright-policy']
   },
   title: { type: String, required: true },
   content: { type: String, required: true },

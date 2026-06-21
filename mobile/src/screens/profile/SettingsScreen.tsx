@@ -29,6 +29,8 @@ const CMS_PAGES = [
   { title: 'About Us', slug: 'about-us' },
   { title: 'Terms & Conditions', slug: 'terms-conditions' },
   { title: 'Community Guidelines', slug: 'community-guidelines' },
+  { title: 'Creator & Listing Policy', slug: 'creator-listing-policy' },
+  { title: 'Copyright Policy', slug: 'copyright-policy' },
 ];
 
 export const SettingsScreen = () => {

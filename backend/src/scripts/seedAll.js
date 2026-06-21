@@ -552,9 +552,9 @@ async function seedAll() {
     console.log(`${createdNotifications.length} notifications created.`);
 
     // ----------------------------------------------------------
-    // 11. Create CMS Pages (4)
+    // 11. Create CMS Pages (6)
     // ----------------------------------------------------------
-    console.log('\n--- Creating 4 CMS Pages ---');
+    console.log('\n--- Creating 6 CMS Pages ---');
     const cmsPages = [
       {
         slug: 'privacy-policy',
@@ -575,6 +575,16 @@ async function seedAll() {
         slug: 'community-guidelines',
         title: 'Community Guidelines',
         content: '<h1>Community Guidelines</h1><p>ArtNepalaya is a respectful space for artistic expression.</p><h2>Be Respectful</h2><p>Treat all community members with dignity. Harassment, hate speech, and discrimination are not tolerated.</p><h2>Original Work Only</h2><p>Post only artwork you have created. AI-generated images are not permitted. Always credit collaborators.</p><h2>Mark Sensitive Content</h2><p>If your artwork contains nudity or mature themes, use the 18+ toggle during upload.</p><h2>Report Violations</h2><p>Help us maintain a safe community by reporting content that violates these guidelines.</p><h2>Consequences</h2><p>Violations may result in content removal, temporary suspension, or permanent banning depending on severity.</p>'
+      },
+      {
+        slug: 'creator-listing-policy',
+        title: 'Creator & Listing Policy',
+        content: '<h1>Creator & Listing Policy</h1><p>This policy outlines the rules and guidelines for creators listing their artwork on ArtNepalaya.</p><h2>Eligibility</h2><p>Any registered artist can create listings on the platform. All listings must comply with our community guidelines.</p><h2>Content Standards</h2><p>All artwork must be original or properly licensed. AI-generated content must be clearly labeled. Prohibited content includes anything that violates local or international laws.</p><h2>Listing Guidelines</h2><p>Provide accurate descriptions, appropriate tags, and high-quality images. Misleading or deceptive listings will be removed.</p><h2>Intellectual Property</h2><p>You retain all rights to your original artwork. By listing on ArtNepalaya, you grant us a non-exclusive license to display your work on the platform.</p>'
+      },
+      {
+        slug: 'copyright-policy',
+        title: 'Copyright Policy',
+        content: '<h1>Copyright Policy</h1><p>ArtNepalaya respects the intellectual property rights of all creators and expects our users to do the same.</p><h2>Original Content</h2><p>All artwork uploaded to ArtNepalaya must be original work created by the uploader, or the uploader must have explicit permission from the copyright holder.</p><h2>Copyright Infringement</h2><p>If you believe your copyrighted work has been uploaded without authorization, please contact us with details of the infringement.</p><h2>DMCA Process</h2><p>We follow a notice-and-takedown process. Valid copyright complaints will result in content removal within 48 hours.</p><h2>Repeat Offenders</h2><p>Users who repeatedly violate copyright policies will have their accounts suspended or permanently banned.</p><h2>Fair Use</h2><p>We recognize fair use principles including commentary, criticism, education, and transformative works. Each case is evaluated individually.</p>'
       }
     ];
 
