@@ -1,8 +1,22 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, Save } from 'lucide-react';
+import { MessageSquare, Save, Plus, Archive, Edit2, X } from 'lucide-react';
 import { api } from '../services/api';
 
-interface PopupConfig {
+interface PopupItem {
+  _id: string;
+  heading: string;
+  icon: string;
+  body: string;
+  ctaText: string;
+  ctaLink: string;
+  isActive: boolean;
+  isArchived: boolean;
+  frequency: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PopupFormData {
   heading: string;
   icon: string;
   body: string;
@@ -20,60 +34,105 @@ const frequencyOptions = [
   { value: 'every_30_days', label: 'Show Every 30 Days' },
 ];
 
+const emptyForm: PopupFormData = {
+  heading: '',
+  icon: 'info',
+  body: '',
+  ctaText: '',
+  ctaLink: '',
+  isActive: false,
+  frequency: 'show_once',
+};
+
 export const GlobalPopup = () => {
-  const [config, setConfig] = useState<PopupConfig>({
-    heading: '',
-    icon: 'info',
-    body: '',
-    ctaText: '',
-    ctaLink: '',
-    isActive: false,
-    frequency: 'show_once',
-  });
+  const [popups, setPopups] = useState<PopupItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<PopupFormData>(emptyForm);
+
+  const fetchPopups = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get('/admin/global-popup');
+      const data = res.data.data || [];
+      setPopups(Array.isArray(data) ? data : [data].filter(Boolean));
+    } catch {
+      setError('Failed to load popup list.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchConfig = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await api.get('/admin/global-popup');
-        const data = res.data.data || res.data;
-        setConfig({
-          heading: data.heading || '',
-          icon: data.icon || 'info',
-          body: data.body || '',
-          ctaText: data.ctaText || '',
-          ctaLink: data.ctaLink || '',
-          isActive: data.isActive || false,
-          frequency: data.frequency || 'show_once',
-        });
-      } catch {
-        setError('Failed to load popup configuration.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchConfig();
+    fetchPopups();
   }, []);
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleCreate = () => {
+    setForm(emptyForm);
+    setEditingId(null);
+    setShowForm(true);
+    setSuccess(null);
+    setError(null);
+  };
+
+  const handleEdit = (popup: PopupItem) => {
+    setForm({
+      heading: popup.heading || '',
+      icon: popup.icon || 'info',
+      body: popup.body || '',
+      ctaText: popup.ctaText || '',
+      ctaLink: popup.ctaLink || '',
+      isActive: popup.isActive || false,
+      frequency: popup.frequency || 'show_once',
+    });
+    setEditingId(popup._id);
+    setShowForm(true);
+    setSuccess(null);
+    setError(null);
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      await api.put(`/admin/global-popup/${id}/archive`);
+      setSuccess('Popup archived successfully.');
+      fetchPopups();
+    } catch {
+      setError('Failed to archive popup.');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
     setSuccess(null);
-
     try {
-      await api.put('/admin/global-popup', config);
-      setSuccess('Global popup configuration saved successfully!');
+      if (editingId) {
+        await api.put(`/admin/global-popup/${editingId}`, form);
+        setSuccess('Popup updated successfully.');
+      } else {
+        await api.post('/admin/global-popup', form);
+        setSuccess('Popup created successfully.');
+      }
+      setShowForm(false);
+      setEditingId(null);
+      fetchPopups();
     } catch {
-      setError('Failed to save popup configuration. Please try again.');
+      setError('Failed to save popup. Please try again.');
     } finally {
       setSaving(false);
     }
+  };
+
+  const getStatusBadge = (popup: PopupItem) => {
+    if (popup.isArchived) return { text: 'Archived', class: 'bg-gray-100 text-gray-600' };
+    if (popup.isActive) return { text: 'Active', class: 'bg-green-100 text-green-800' };
+    return { text: 'Inactive', class: 'bg-yellow-100 text-yellow-800' };
   };
 
   if (loading) {
@@ -84,7 +143,7 @@ export const GlobalPopup = () => {
           <h2 className="text-lg font-semibold text-gray-900">Global Popup</h2>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-10 animate-pulse bg-gray-200 rounded" />
           ))}
         </div>
@@ -94,9 +153,18 @@ export const GlobalPopup = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-3">
-        <MessageSquare size={24} className="text-gray-700" />
-        <h2 className="text-lg font-semibold text-gray-900">Global Popup</h2>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <MessageSquare size={24} className="text-gray-700" />
+          <h2 className="text-lg font-semibold text-gray-900">Global Popup</h2>
+        </div>
+        <button
+          onClick={handleCreate}
+          className="flex items-center space-x-2 bg-black text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800"
+        >
+          <Plus size={16} />
+          <span>Create New</span>
+        </button>
       </div>
 
       {success && (
@@ -111,126 +179,175 @@ export const GlobalPopup = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <form onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="popup-heading" className="block text-sm font-medium text-gray-700 mb-1">
-                Heading
-              </label>
-              <input
-                id="popup-heading"
-                type="text"
-                value={config.heading}
-                onChange={(e) => setConfig({ ...config, heading: e.target.value })}
-                placeholder="Popup heading"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-              />
+      {/* Form */}
+      {showForm && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-md font-medium text-gray-800">
+              {editingId ? 'Edit Popup' : 'Create New Popup'}
+            </h3>
+            <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+              <X size={20} />
+            </button>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Heading</label>
+                <input
+                  type="text"
+                  value={form.heading}
+                  onChange={(e) => setForm({ ...form, heading: e.target.value })}
+                  placeholder="Popup heading"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
+                <select
+                  value={form.icon}
+                  onChange={(e) => setForm({ ...form, icon: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                >
+                  {iconOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-
             <div>
-              <label htmlFor="popup-icon" className="block text-sm font-medium text-gray-700 mb-1">
-                Icon
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
               <select
-                id="popup-icon"
-                value={config.icon}
-                onChange={(e) => setConfig({ ...config, icon: e.target.value })}
+                value={form.frequency}
+                onChange={(e) => setForm({ ...form, frequency: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
               >
-                {iconOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                  </option>
+                {frequencyOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
             </div>
-          </div>
-
-          <div>
-            <label htmlFor="popup-frequency" className="block text-sm font-medium text-gray-700 mb-1">
-              Display Frequency
-            </label>
-            <select
-              id="popup-frequency"
-              value={config.frequency}
-              onChange={(e) => setConfig({ ...config, frequency: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Body Text</label>
+              <textarea
+                value={form.body}
+                onChange={(e) => setForm({ ...form, body: e.target.value })}
+                placeholder="Popup body text"
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-none"
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">CTA Button Text</label>
+                <input
+                  type="text"
+                  value={form.ctaText}
+                  onChange={(e) => setForm({ ...form, ctaText: e.target.value })}
+                  placeholder="e.g. Learn More"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">CTA Link/Action</label>
+                <input
+                  type="text"
+                  value={form.ctaLink}
+                  onChange={(e) => setForm({ ...form, ctaLink: e.target.value })}
+                  placeholder="e.g. https://example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                checked={form.isActive}
+                onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+                className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+              />
+              <label className="text-sm font-medium text-gray-700">Active (show popup to users)</label>
+            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex items-center space-x-2 bg-black text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {frequencyOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+              <Save size={16} />
+              <span>{saving ? 'Saving...' : editingId ? 'Update Popup' : 'Create Popup'}</span>
+            </button>
+          </form>
+        </div>
+      )}
 
-          <div>
-            <label htmlFor="popup-body" className="block text-sm font-medium text-gray-700 mb-1">
-              Body Text
-            </label>
-            <textarea
-              id="popup-body"
-              value={config.body}
-              onChange={(e) => setConfig({ ...config, body: e.target.value })}
-              placeholder="Popup body text"
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="popup-cta-text" className="block text-sm font-medium text-gray-700 mb-1">
-                CTA Button Text
-              </label>
-              <input
-                id="popup-cta-text"
-                type="text"
-                value={config.ctaText}
-                onChange={(e) => setConfig({ ...config, ctaText: e.target.value })}
-                placeholder="e.g. Learn More"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="popup-cta-link" className="block text-sm font-medium text-gray-700 mb-1">
-                CTA Link/Action
-              </label>
-              <input
-                id="popup-cta-link"
-                type="text"
-                value={config.ctaLink}
-                onChange={(e) => setConfig({ ...config, ctaLink: e.target.value })}
-                placeholder="e.g. https://example.com or screen://profile"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <input
-              id="popup-active"
-              type="checkbox"
-              checked={config.isActive}
-              onChange={(e) => setConfig({ ...config, isActive: e.target.checked })}
-              className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-            />
-            <label htmlFor="popup-active" className="text-sm font-medium text-gray-700">
-              Active (show popup to users)
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex items-center space-x-2 bg-black text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save size={16} />
-            <span>{saving ? 'Saving...' : 'Save Configuration'}</span>
-          </button>
-        </form>
+      {/* Popup List */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-100">
+              <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Heading</th>
+              <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Icon</th>
+              <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Status</th>
+              <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Frequency</th>
+              <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Created</th>
+              <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {popups.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-5 py-12 text-center text-gray-400">
+                  No popups created yet.
+                </td>
+              </tr>
+            ) : (
+              popups.map((popup) => {
+                const badge = getStatusBadge(popup);
+                return (
+                  <tr key={popup._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+                    <td className="px-5 py-3 text-sm font-medium text-gray-900">{popup.heading}</td>
+                    <td className="px-5 py-3 text-sm text-gray-600 capitalize">{popup.icon}</td>
+                    <td className="px-5 py-3">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${badge.class}`}>
+                        {badge.text}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-sm text-gray-600">
+                      {frequencyOptions.find(f => f.value === popup.frequency)?.label || popup.frequency}
+                    </td>
+                    <td className="px-5 py-3 text-sm text-gray-500">
+                      {new Date(popup.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center space-x-2">
+                        {!popup.isArchived && (
+                          <>
+                            <button
+                              onClick={() => handleEdit(popup)}
+                              className="text-xs flex items-center space-x-1 bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200"
+                            >
+                              <Edit2 size={12} />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              onClick={() => handleArchive(popup._id)}
+                              className="text-xs flex items-center space-x-1 bg-red-50 text-red-700 px-2 py-1 rounded hover:bg-red-100"
+                            >
+                              <Archive size={12} />
+                              <span>Archive</span>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -248,3 +248,13 @@ export const getSearchInsights = async () => {
   return { topSearches, trending };
 };
 
+export const updateReportNotes = async (reportId, notes) => {
+  const report = await Report.findByIdAndUpdate(
+    reportId,
+    { $set: { adminNotes: notes } },
+    { new: true }
+  );
+  if (!report) throw Object.assign(new Error('Report not found'), { status: 404 });
+  return report;
+};
+

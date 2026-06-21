@@ -178,3 +178,18 @@ export const getUserMetrics = async (req, res, next) => {
     next(err);
   }
 };
+
+// === User Search ===
+export const searchUsers = async (req, res, next) => {
+  try {
+    const q = req.query.q || '';
+    const limit = parseInt(req.query.limit) || 20;
+    if (!q || q.length < 1) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+    const users = await userService.searchUsers(q, limit);
+    res.status(200).json({ success: true, data: users });
+  } catch (err) {
+    next(err);
+  }
+};

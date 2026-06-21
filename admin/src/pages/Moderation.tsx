@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, ShieldAlert, Copy, Check } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -9,6 +9,7 @@ interface Report {
   reporterId: { username: string } | string;
   details?: string;
   status: string;
+  adminNotes?: string | null;
 }
 
 interface Meta {
@@ -29,6 +30,9 @@ export const Moderation = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [expandedNotes, setExpandedNotes] = useState<string | null>(null);
+  const [notesText, setNotesText] = useState<string>('');
+  const [savingNotes, setSavingNotes] = useState<string | null>(null);
 
   const copyToClipboard = (id: string) => {
     navigator.clipboard.writeText(id);
@@ -68,6 +72,31 @@ export const Moderation = () => {
       setError('Failed to resolve report. Please try again.');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const toggleNotes = (report: Report) => {
+    if (expandedNotes === report._id) {
+      setExpandedNotes(null);
+    } else {
+      setExpandedNotes(report._id);
+      setNotesText(report.adminNotes || '');
+    }
+  };
+
+  const handleSaveNotes = async (reportId: string) => {
+    setSavingNotes(reportId);
+    setError(null);
+    try {
+      await api.put(`/admin/reports/${reportId}/notes`, { notes: notesText });
+      setReports((prev) =>
+        prev.map((r) => (r._id === reportId ? { ...r, adminNotes: notesText } : r))
+      );
+      setExpandedNotes(null);
+    } catch {
+      setError('Failed to save notes. Please try again.');
+    } finally {
+      setSavingNotes(null);
     }
   };
 
@@ -131,6 +160,7 @@ export const Moderation = () => {
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Reporter</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Details</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Status</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Notes</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Actions</th>
             </tr>
           </thead>
@@ -149,15 +179,15 @@ export const Moderation = () => {
               ))
             ) : reports.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-5 py-16 text-center">
+                <td colSpan={8} className="px-5 py-16 text-center">
                   <ShieldAlert size={40} className="mx-auto text-gray-200 mb-3" />
                   <p className="text-gray-400">No reports found.</p>
                 </td>
               </tr>
             ) : (
               reports.map((report) => (
+                <React.Fragment key={report._id}>
                 <tr
-                  key={report._id}
                   className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors duration-100"
                 >
                   <td className="px-5 py-3.5">
@@ -182,6 +212,18 @@ export const Moderation = () => {
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
+                    <button
+                      onClick={() => toggleNotes(report)}
+                      className={`text-xs px-2 py-1 rounded transition-colors ${
+                        report.adminNotes
+                          ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {report.adminNotes ? 'View Notes' : 'Add Notes'}
+                    </button>
+                  </td>
+                  <td className="px-5 py-3.5">
                     {report.status === 'Pending' && (
                       <button
                         onClick={() => handleResolve(report._id)}
@@ -193,6 +235,37 @@ export const Moderation = () => {
                     )}
                   </td>
                 </tr>
+                {expandedNotes === report._id && (
+                  <tr className="bg-gray-50/50">
+                    <td colSpan={8} className="px-5 py-3">
+                      <div className="flex items-start space-x-3">
+                        <textarea
+                          value={notesText}
+                          onChange={(e) => setNotesText(e.target.value)}
+                          placeholder="Add admin notes about this report..."
+                          rows={3}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-none"
+                        />
+                        <div className="flex flex-col space-y-2">
+                          <button
+                            onClick={() => handleSaveNotes(report._id)}
+                            disabled={savingNotes === report._id}
+                            className="text-xs bg-black text-white px-3 py-1.5 rounded-md hover:bg-gray-800 disabled:opacity-50"
+                          >
+                            {savingNotes === report._id ? 'Saving...' : 'Save'}
+                          </button>
+                          <button
+                            onClick={() => setExpandedNotes(null)}
+                            className="text-xs bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-300"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               ))
             )}
           </tbody>

@@ -6,6 +6,10 @@ import * as notificationService from '../notifications/notification.service.js';
 import { emitToUser } from '../../realtime/emitter.js';
 import { EVENTS } from '../../realtime/events.js';
 
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // === Fetch Profile ===
 export const getUserProfile = async (userId, isPublic = false) => {
   // Notice we removed .populate('interests') since they are now strings!
@@ -266,4 +270,17 @@ export const getFollowing = async (userId, page, limit) => {
 export const isFollowing = async (currentUserId, targetUserId) => {
   const exists = await Follow.exists({ followerId: currentUserId, followingId: targetUserId });
   return !!exists;
+};
+
+// === User Search ===
+export const searchUsers = async (query, limit = 20) => {
+  const safeQuery = escapeRegex(query);
+  const users = await User.find({
+    username: { $regex: '^' + safeQuery, $options: 'i' },
+    status: 'active'
+  })
+    .select('_id username avatarUrl role isVerified verifiedType')
+    .limit(limit)
+    .lean();
+  return users;
 };

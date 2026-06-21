@@ -18,6 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
+import { userService, SearchUserResult } from '../../services/user.service';
 import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
 import { api } from '../../services/api';
 
@@ -92,6 +93,9 @@ export const ExploreScreen = () => {
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [userResults, setUserResults] = useState<SearchUserResult[]>([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+  const userSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -149,6 +153,34 @@ export const ExploreScreen = () => {
       api.get('/tags', { params: { q: searchQuery } }).catch(() => {});
     }, 500);
     return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // User search: debounce 500ms, fire when searchQuery has 2+ chars
+  useEffect(() => {
+    if (userSearchTimerRef.current) {
+      clearTimeout(userSearchTimerRef.current);
+    }
+    if (searchQuery.length < 2) {
+      setUserResults([]);
+      setIsSearchingUsers(false);
+      return;
+    }
+    setIsSearchingUsers(true);
+    userSearchTimerRef.current = setTimeout(async () => {
+      try {
+        const results = await userService.searchUsers(searchQuery, 20);
+        setUserResults(results);
+      } catch {
+        setUserResults([]);
+      } finally {
+        setIsSearchingUsers(false);
+      }
+    }, 500);
+    return () => {
+      if (userSearchTimerRef.current) {
+        clearTimeout(userSearchTimerRef.current);
+      }
+    };
   }, [searchQuery]);
 
   const onRefresh = useCallback(() => {
@@ -281,6 +313,34 @@ export const ExploreScreen = () => {
           <Text style={styles.searchFeedbackText}>
             Showing results for '{searchQuery}' - {filteredPosts.length} artwork{filteredPosts.length !== 1 ? 's' : ''} found
           </Text>
+        </View>
+      )}
+
+      {/* User Search Results */}
+      {searchQuery.length >= 2 && userResults.length > 0 && (
+        <View style={styles.userResultsContainer}>
+          <Text style={styles.userResultsTitle}>Users</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.userResultsScroll}>
+            {userResults.map((user) => (
+              <TouchableOpacity
+                key={user._id}
+                style={styles.userResultItem}
+                onPress={() => navigation.navigate('UserProfile', { userId: user._id })}
+              >
+                {user.avatarUrl ? (
+                  <Image source={{ uri: user.avatarUrl }} style={styles.userResultAvatar} />
+                ) : (
+                  <View style={[styles.userResultAvatar, styles.userResultAvatarPlaceholder]}>
+                    <Feather name="user" size={16} color={darkColors.textSecondary} />
+                  </View>
+                )}
+                <Text style={styles.userResultName} numberOfLines={1}>@{user.username}</Text>
+                {user.isVerified && (
+                  <Feather name="check-circle" size={10} color="#3B82F6" style={{ marginTop: 2 }} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       )}
 
@@ -472,5 +532,38 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '600',
+  },
+  userResultsContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  userResultsTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: darkColors.textSecondary,
+    marginBottom: 8,
+  },
+  userResultsScroll: {
+    gap: 12,
+  },
+  userResultItem: {
+    alignItems: 'center',
+    width: 72,
+  },
+  userResultAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  userResultAvatarPlaceholder: {
+    backgroundColor: darkColors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userResultName: {
+    fontSize: 11,
+    color: darkColors.textPrimary,
+    marginTop: 4,
+    textAlign: 'center',
   },
 });

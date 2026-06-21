@@ -3,6 +3,7 @@ import { User } from '../users/user.model.js';
 import { sendPushNotifications } from '../../shared/utils/pushNotifications.js';
 import { emitToUser } from '../../realtime/emitter.js';
 import { EVENTS } from '../../realtime/events.js';
+import { BroadcastLog } from './broadcastLog.model.js';
 
 export const createNotification = async (payload) => {
   const { recipientId, senderId, postId, type, message } = payload;
@@ -75,7 +76,7 @@ export const markOneAsRead = async (userId, notificationId) => {
   return notification;
 };
 
-export const broadcastNotification = async (title, message) => {
+export const broadcastNotification = async (title, message, sentBy = null) => {
   const BATCH_SIZE = 500;
   let recipientCount = 0;
   let skip = 0;
@@ -110,6 +111,15 @@ export const broadcastNotification = async (title, message) => {
   }, []);
 
   const pushResult = await sendPushNotifications(allTokens, title, message);
+
+  // Log the broadcast
+  await BroadcastLog.create({
+    title,
+    message,
+    sentBy,
+    recipientCount,
+    pushesSent: pushResult.sent
+  });
 
   return { recipientCount, pushesSent: pushResult.sent, pushesFailed: pushResult.failed };
 };

@@ -7,7 +7,8 @@ const reportSchema = new mongoose.Schema({
   reason: { type: String, required: true },
   details: { type: String, maxLength: 500, default: null },
   status: { type: String, enum: ['Pending', 'Resolved', 'Dismissed'], default: 'Pending', index: true },
-  resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
+  resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  adminNotes: { type: String, default: null }
 }, { timestamps: true });
 
 reportSchema.index({ reporterId: 1, targetType: 1, targetId: 1 }, { unique: true });

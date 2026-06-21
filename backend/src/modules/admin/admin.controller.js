@@ -4,6 +4,7 @@ import { CmsPage } from './cmsPage.model.js';
 import { GlobalPopup } from './globalPopup.model.js';
 import { ArtworkType } from './artworkType.model.js';
 import * as notificationService from '../notifications/notification.service.js';
+import { BroadcastLog } from '../notifications/broadcastLog.model.js';
 import { User } from '../users/user.model.js';
 import { Post } from '../posts/post.model.js';
 import { Tag } from '../tags/tag.model.js';
@@ -99,7 +100,7 @@ export const broadcastNotification = async (req, res, next) => {
     if (!title || !message) {
       return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'title and message are required' } });
     }
-    const result = await notificationService.broadcastNotification(title, message);
+    const result = await notificationService.broadcastNotification(title, message, req.user.id);
     const recipientCount = result?.recipientCount || 0;
     const pushesSent = result?.pushesSent || 0;
     res.status(201).json({ success: true, message: `Broadcast sent: ${recipientCount} in-app notifications, ${pushesSent} push notifications delivered`, data: { notificationsCreated: recipientCount, pushesSent } });
@@ -130,19 +131,50 @@ export const updateCmsPage = async (req, res, next) => {
 
 export const getGlobalPopup = async (req, res, next) => {
   try {
-    const popup = await GlobalPopup.findOne().sort({ updatedAt: -1 }).lean();
-    res.status(200).json({ success: true, data: popup || null });
+    const popups = await GlobalPopup.find().sort({ createdAt: -1 }).lean();
+    res.status(200).json({ success: true, data: popups });
   } catch (err) { next(err); }
 };
 
 export const updateGlobalPopup = async (req, res, next) => {
   try {
     const { heading, icon, body, ctaText, ctaLink, isActive, frequency } = req.body;
-    const popup = await GlobalPopup.findOneAndUpdate(
-      {},
+    const popup = await GlobalPopup.findByIdAndUpdate(
+      req.params.id,
       { $set: { heading, icon, body, ctaText, ctaLink, isActive, frequency, updatedBy: req.user.id } },
-      { upsert: true, new: true }
+      { new: true }
     );
+    if (!popup) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Popup not found' } });
+    }
+    res.status(200).json({ success: true, data: popup });
+  } catch (err) { next(err); }
+};
+
+export const createGlobalPopup = async (req, res, next) => {
+  try {
+    const { heading, icon, body, ctaText, ctaLink, isActive, frequency } = req.body;
+    if (!heading || !body) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'heading and body are required' } });
+    }
+    const popup = await GlobalPopup.create({
+      heading, icon, body, ctaText, ctaLink, isActive, frequency,
+      createdBy: req.user.id, updatedBy: req.user.id
+    });
+    res.status(201).json({ success: true, data: popup });
+  } catch (err) { next(err); }
+};
+
+export const archiveGlobalPopup = async (req, res, next) => {
+  try {
+    const popup = await GlobalPopup.findByIdAndUpdate(
+      req.params.id,
+      { $set: { isArchived: true, isActive: false } },
+      { new: true }
+    );
+    if (!popup) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Popup not found' } });
+    }
     res.status(200).json({ success: true, data: popup });
   } catch (err) { next(err); }
 };
@@ -393,6 +425,35 @@ export const unverifyUser = async (req, res, next) => {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'User not found' } });
     }
     res.status(200).json({ success: true, message: 'User unverified', data: { isVerified: user.isVerified, verifiedType: user.verifiedType } });
+  } catch (err) { next(err); }
+};
+
+// --- Moderation Notes ---
+
+export const updateReportNotes = async (req, res, next) => {
+  try {
+    const { notes } = req.body;
+    const report = await adminService.updateReportNotes(req.params.reportId, notes);
+    res.status(200).json({ success: true, data: report });
+  } catch (err) { next(err); }
+};
+
+// --- Broadcast History ---
+
+export const getBroadcastHistory = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+    const [logs, totalItems] = await Promise.all([
+      BroadcastLog.find().sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+      BroadcastLog.countDocuments()
+    ]);
+    res.status(200).json({
+      success: true,
+      data: logs,
+      meta: { currentPage: page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) }
+    });
   } catch (err) { next(err); }
 };
 

@@ -36,6 +36,15 @@ export interface UserMetrics {
   totalSaves: number;
 }
 
+export interface SearchUserResult {
+  _id: string;
+  username: string;
+  avatarUrl?: string;
+  role: string;
+  isVerified?: boolean;
+  verifiedType?: string | null;
+}
+
 export const userService = {
   getMe: async (): Promise<User> => {
     const response = await api.get('/users/me');
@@ -108,6 +117,11 @@ export const userService = {
 
   getUserMetrics: async (userId: string): Promise<UserMetrics> => {
     const response = await api.get(`/users/${userId}/metrics`);
+    return response.data.data;
+  },
+
+  searchUsers: async (q: string, limit: number = 20): Promise<SearchUserResult[]> => {
+    const response = await api.get('/users/search', { params: { q, limit } });
     return response.data.data;
   },
 };

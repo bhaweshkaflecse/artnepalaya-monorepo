@@ -16,6 +16,9 @@ router.get('/me/saved', authGuard, validate(validation.paginationSchema), contro
 router.post('/me/push-token', authGuard, controller.registerPushToken);
 router.delete('/me/push-token', authGuard, controller.removePushToken);
 
+// === User Search (before /:userId to avoid conflicts) ===
+router.get('/search', optionalAuth, controller.searchUsers);
+
 // === Public User Routes (no auth required) ===
 // (Order matters! These must go AFTER '/me' so Express doesn't think "me" is a userId)
 router.get('/:userId', controller.getPublicProfile);

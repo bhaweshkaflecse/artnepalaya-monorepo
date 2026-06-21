@@ -8,7 +8,9 @@ const globalPopupSchema = new mongoose.Schema({
   ctaLink: { type: String, default: null },
   isActive: { type: Boolean, default: true },
   frequency: { type: String, enum: ['show_once', 'every_login', 'every_7_days', 'every_30_days'], default: 'show_once' },
-  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
+  updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  isArchived: { type: Boolean, default: false },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }
 }, { timestamps: true });
 
 export const GlobalPopup = mongoose.model('GlobalPopup', globalPopupSchema);

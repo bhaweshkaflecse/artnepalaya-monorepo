@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Send, Users } from 'lucide-react';
+import { Bell, Send, Users, Clock } from 'lucide-react';
 import { api } from '../services/api';
 
 interface BroadcastResult {
@@ -12,6 +12,15 @@ interface PushStats {
   totalTokens: number;
 }
 
+interface BroadcastLogEntry {
+  _id: string;
+  title: string;
+  message: string;
+  recipientCount: number;
+  pushesSent: number;
+  createdAt: string;
+}
+
 export const PushNotifications = () => {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
@@ -21,6 +30,8 @@ export const PushNotifications = () => {
   const [result, setResult] = useState<BroadcastResult | null>(null);
   const [stats, setStats] = useState<PushStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [history, setHistory] = useState<BroadcastLogEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -34,6 +45,22 @@ export const PushNotifications = () => {
       }
     };
     fetchStats();
+  }, []);
+
+  const fetchHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await api.get('/admin/notifications/history', { params: { page: 1, limit: 50 } });
+      setHistory(res.data.data || []);
+    } catch {
+      // History is non-critical
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
   }, []);
 
   const handleSend = async (e: React.FormEvent) => {
@@ -57,6 +84,7 @@ export const PushNotifications = () => {
       }
       setTitle('');
       setMessage('');
+      fetchHistory();
     } catch {
       setError('Failed to send broadcast notification. Please try again.');
     } finally {
@@ -159,6 +187,50 @@ export const PushNotifications = () => {
             <span>{loading ? 'Sending...' : 'Send Broadcast'}</span>
           </button>
         </form>
+      </div>
+
+      {/* Broadcast History */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center space-x-2">
+          <Clock size={18} className="text-gray-600" />
+          <h3 className="text-sm font-medium text-gray-700">Broadcast History</h3>
+        </div>
+        {historyLoading ? (
+          <div className="p-5 space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-8 animate-pulse bg-gray-100 rounded" />
+            ))}
+          </div>
+        ) : history.length === 0 ? (
+          <div className="px-5 py-12 text-center text-gray-400 text-sm">
+            No broadcasts sent yet.
+          </div>
+        ) : (
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Title</th>
+                <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Message</th>
+                <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Recipients</th>
+                <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Pushes</th>
+                <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Sent At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((entry) => (
+                <tr key={entry._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+                  <td className="px-5 py-3 text-sm font-medium text-gray-900">{entry.title}</td>
+                  <td className="px-5 py-3 text-sm text-gray-600 max-w-[200px] truncate">{entry.message}</td>
+                  <td className="px-5 py-3 text-sm text-gray-700">{entry.recipientCount}</td>
+                  <td className="px-5 py-3 text-sm text-gray-700">{entry.pushesSent}</td>
+                  <td className="px-5 py-3 text-sm text-gray-500">
+                    {new Date(entry.createdAt).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

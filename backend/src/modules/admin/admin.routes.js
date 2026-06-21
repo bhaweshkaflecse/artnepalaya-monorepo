@@ -17,6 +17,7 @@ router.put('/users/:userId/status', validate(validation.updateUserStatusSchema),
 
 router.get('/reports', validate(validation.queryPaginationSchema), controller.getReports);
 router.put('/reports/:reportId/resolve', validate(validation.reportIdParamsSchema), controller.resolveReport);
+router.put('/reports/:reportId/notes', validate(validation.reportIdParamsSchema), controller.updateReportNotes);
 
 router.delete('/posts/:postId', validate(validation.postIdParamsSchema), controller.deletePost);
 router.put('/posts/:postId/restore', validate(validation.postIdParamsSchema), controller.restorePost);
@@ -30,6 +31,7 @@ router.get('/config/auth-media', controller.getAuthMedia);
 router.put('/config/auth-media', controller.updateAuthMedia);
 
 router.post('/notifications/broadcast', controller.broadcastNotification);
+router.get('/notifications/history', controller.getBroadcastHistory);
 
 router.get('/push-stats', controller.getPushStats);
 
@@ -41,7 +43,9 @@ router.put('/cms/:slug', controller.updateCmsPage);
 router.get('/community-interest', getInterestUsers);
 
 router.get('/global-popup', controller.getGlobalPopup);
-router.put('/global-popup', controller.updateGlobalPopup);
+router.post('/global-popup', controller.createGlobalPopup);
+router.put('/global-popup/:id', controller.updateGlobalPopup);
+router.put('/global-popup/:id/archive', controller.archiveGlobalPopup);
 
 // Artwork Type Management
 router.get('/artwork-types', controller.getArtworkTypes);
