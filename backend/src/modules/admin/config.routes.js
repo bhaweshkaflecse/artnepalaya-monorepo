@@ -63,7 +63,7 @@ router.get('/featured', optionalAuth, async (req, res, next) => {
 
     // Filter out entries where the post no longer exists
     let data = featured
-      .filter((f) => f.postId != null)
+      .filter((f) => f.postId != null && !f.postId.deletedAt)
       .map((f) => f.postId);
 
     // NSFW Protection: Exclude NSFW posts for guests and users without mature content opt-in

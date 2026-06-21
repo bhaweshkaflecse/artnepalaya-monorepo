@@ -18,7 +18,7 @@ function escapeRegex(str) {
 
 export const getDashboardStats = async () => {
   const [totalUsers, totalPosts, pendingReports] = await Promise.all([
-    User.countDocuments(), Post.countDocuments(), Report.countDocuments({ status: 'Pending' })
+    User.countDocuments(), Post.countDocuments({ deletedAt: null }), Report.countDocuments({ status: 'Pending' })
   ]);
   return { totalUsers, totalPosts, pendingReports };
 };
@@ -97,12 +97,15 @@ export const restorePost = async (postId) => {
 
 export const getFeaturedPosts = async () => {
   const now = new Date();
-  return FeaturedPost.find({
+  const results = await FeaturedPost.find({
     $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }]
   })
     .sort({ sortOrder: 1 })
     .populate({ path: 'postId', populate: { path: 'authorId', select: 'username avatarUrl' } })
     .lean();
+
+  // Filter out entries where the populated post has been soft-deleted
+  return results.filter((entry) => entry.postId && !entry.postId.deletedAt);
 };
 
 export const addFeaturedPost = async (postId, adminId) => {
@@ -166,7 +169,7 @@ export const getAnalytics = async () => {
 
   const [postsPerDay, activeUsersResult, newPostsToday] = await Promise.all([
     Post.aggregate([
-      { $match: { createdAt: { $gte: sevenDaysAgo } } },
+      { $match: { createdAt: { $gte: sevenDaysAgo }, deletedAt: null } },
       {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
@@ -177,11 +180,11 @@ export const getAnalytics = async () => {
       { $project: { _id: 0, date: '$_id', count: 1 } }
     ]),
     Post.aggregate([
-      { $match: { createdAt: { $gte: sevenDaysAgo } } },
+      { $match: { createdAt: { $gte: sevenDaysAgo }, deletedAt: null } },
       { $group: { _id: '$authorId' } },
       { $count: 'total' }
     ]),
-    Post.countDocuments({ createdAt: { $gte: today } })
+    Post.countDocuments({ createdAt: { $gte: today }, deletedAt: null })
   ]);
 
   const activeUsersThisWeek = activeUsersResult.length > 0 ? activeUsersResult[0].total : 0;
@@ -191,13 +194,13 @@ export const getAnalytics = async () => {
 
 export const getFeedAnalytics = async () => {
   const [mostLikedPosts, mostSavedPosts, mostFollowedArtists] = await Promise.all([
-    Post.find()
+    Post.find({ deletedAt: null })
       .sort({ likesCount: -1 })
       .limit(5)
       .populate('authorId', 'username avatarUrl isVerified verifiedType')
       .select('caption media likesCount authorId')
       .lean(),
-    Post.find()
+    Post.find({ deletedAt: null })
       .sort({ savesCount: -1 })
       .limit(5)
       .populate('authorId', 'username avatarUrl isVerified verifiedType')

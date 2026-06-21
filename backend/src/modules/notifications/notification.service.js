@@ -110,16 +110,30 @@ export const broadcastNotification = async (title, message, sentBy = null) => {
     return tokens.concat(user.pushTokens);
   }, []);
 
+  // Log the broadcast intent before sending pushes (ensures log exists even if push fails)
+  let broadcastLog;
+  try {
+    broadcastLog = await BroadcastLog.create({
+      title,
+      message,
+      sentBy,
+      recipientCount,
+      pushesSent: 0
+    });
+  } catch (logErr) {
+    console.error('BroadcastLog creation failed:', logErr);
+  }
+
   const pushResult = await sendPushNotifications(allTokens, title, message);
 
-  // Log the broadcast
-  await BroadcastLog.create({
-    title,
-    message,
-    sentBy,
-    recipientCount,
-    pushesSent: pushResult.sent
-  });
+  // Update the log with actual push results
+  if (broadcastLog) {
+    try {
+      await BroadcastLog.findByIdAndUpdate(broadcastLog._id, { $set: { pushesSent: pushResult.sent } });
+    } catch (updateErr) {
+      console.error('BroadcastLog update failed:', updateErr);
+    }
+  }
 
   return { recipientCount, pushesSent: pushResult.sent, pushesFailed: pushResult.failed };
 };

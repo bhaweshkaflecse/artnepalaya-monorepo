@@ -160,7 +160,7 @@ export const getUserMetrics = async (req, res, next) => {
     if (!isValidId(req.params.userId)) return invalidIdResponse(res);
     const userId = new mongoose.Types.ObjectId(req.params.userId);
     const result = await Post.aggregate([
-      { $match: { authorId: userId } },
+      { $match: { authorId: userId, deletedAt: null } },
       {
         $group: {
           _id: null,
