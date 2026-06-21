@@ -17,8 +17,14 @@ const postSchema = new mongoose.Schema({
   // Artwork type categorization
   artworkType: { type: [String], default: [] },
   
-  // AI Declaration Flag - Must be true for Artnepalaya
+  // AI Declaration Flag - kept for backward compatibility
   isHumanMade: { type: Boolean, required: true },
+
+  // Original Content Declaration
+  isOriginalContent: { type: Boolean, default: false },
+
+  // AI-Generated/Assisted flag
+  isAIGenerated: { type: Boolean, default: false },
   
   // NSFW flag for content moderation
   isNsfw: { type: Boolean, default: false },

@@ -341,11 +341,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       </View>
 
       {/* Content Transparency Badges */}
-      {((post.isHumanMade === false) || (post as any).isNsfw === true) && (
+      {(((post as any).isAIGenerated === true || post.isHumanMade === false) || (post as any).isOriginalContent === true || (post as any).isNsfw === true) && (
         <View style={styles.badgesContainer}>
-          {post.isHumanMade === false && (
+          {((post as any).isAIGenerated === true || post.isHumanMade === false) && (
             <View style={styles.aiBadge}>
-              <Text style={styles.badgeText}>AI Generated</Text>
+              <Text style={styles.badgeText}>AI</Text>
+            </View>
+          )}
+          {(post as any).isOriginalContent === true && (
+            <View style={styles.originalBadge}>
+              <Text style={styles.badgeText}>Original</Text>
             </View>
           )}
           {(post as any).isNsfw === true && (
@@ -531,6 +536,12 @@ const styles = StyleSheet.create({
   },
   aiBadge: {
     backgroundColor: '#6366F1',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  originalBadge: {
+    backgroundColor: '#10B981',
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 3,

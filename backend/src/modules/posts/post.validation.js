@@ -4,13 +4,23 @@ export const createPostSchema = z.object({
   body: z.object({
     caption: z.string().max(2200).optional(),
     
-    // 1. Convert form-data string "true" into boolean, keep your custom error
+    // 1. Convert form-data string "true" into boolean - now optional, defaults to true for backward compat
     isHumanMade: z.preprocess(
-      (val) => val === 'true' || val === true, 
-      z.literal(true, {
-        errorMap: () => ({ message: "You must declare that this artwork is human-made." })
-      })
-    ),
+      (val) => val === 'true' || val === true,
+      z.boolean()
+    ).optional().default(true),
+
+    // Original Content Declaration
+    isOriginalContent: z.preprocess(
+      (val) => val === 'true' || val === true,
+      z.boolean()
+    ).optional().default(false),
+
+    // AI-Generated/Assisted flag
+    isAIGenerated: z.preprocess(
+      (val) => val === 'true' || val === true,
+      z.boolean()
+    ).optional().default(false),
 
     // NSFW flag - convert form-data string "true" into boolean
     isNsfw: z.preprocess(
@@ -60,6 +70,14 @@ export const updatePostSchema = z.object({
   body: z.object({
     caption: z.string().max(2200).optional(),
     isHumanMade: z.preprocess(
+      (val) => val === 'true' || val === true,
+      z.boolean()
+    ).optional(),
+    isOriginalContent: z.preprocess(
+      (val) => val === 'true' || val === true,
+      z.boolean()
+    ).optional(),
+    isAIGenerated: z.preprocess(
       (val) => val === 'true' || val === true,
       z.boolean()
     ).optional(),

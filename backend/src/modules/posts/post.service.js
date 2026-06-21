@@ -40,7 +40,23 @@ export const createPost = async (userId, postData) => {
     postData.tags = tagsArray.map(t => t.toLowerCase().trim());
   }
 
-  // Automatic AI tag enforcement: if post is not human-made, ensure "ai" tag exists
+  // Automatic AI tag enforcement: if post is AI-generated, ensure "ai" tag exists and set backward compat
+  if (postData.isAIGenerated === true || postData.isAIGenerated === 'true') {
+    if (!postData.tags) {
+      postData.tags = [];
+    }
+    if (!postData.tags.includes('ai')) {
+      postData.tags.push('ai');
+    }
+    postData.isHumanMade = false;
+  } else if (!postData.isAIGenerated || postData.isAIGenerated === false || postData.isAIGenerated === 'false') {
+    // If not AI-generated, set isHumanMade = true for backward compat
+    if (postData.isHumanMade === undefined) {
+      postData.isHumanMade = true;
+    }
+  }
+
+  // Legacy fallback: if isHumanMade is explicitly false (old clients), ensure "ai" tag exists
   if (postData.isHumanMade === false || postData.isHumanMade === 'false') {
     if (!postData.tags) {
       postData.tags = [];
@@ -273,6 +289,14 @@ export const updatePost = async (postId, userId, userRole, updateData) => {
 
   if (updateData.isHumanMade !== undefined) {
     allowedFields.isHumanMade = updateData.isHumanMade;
+  }
+
+  if (updateData.isOriginalContent !== undefined) {
+    allowedFields.isOriginalContent = updateData.isOriginalContent;
+  }
+
+  if (updateData.isAIGenerated !== undefined) {
+    allowedFields.isAIGenerated = updateData.isAIGenerated;
   }
 
   if (updateData.isNsfw !== undefined) {

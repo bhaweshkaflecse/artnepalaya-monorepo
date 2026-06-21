@@ -31,7 +31,8 @@ export const EditPostScreen = () => {
 
   const [caption, setCaption] = useState(post.caption || '');
   const [tagsInput, setTagsInput] = useState((post.tags || []).join(', '));
-  const [isHumanMade, setIsHumanMade] = useState(post.isHumanMade ?? true);
+  const [isAIGenerated, setIsAIGenerated] = useState((post as any).isAIGenerated ?? false);
+  const [isOriginalContent, setIsOriginalContent] = useState((post as any).isOriginalContent ?? false);
   const [isNsfw, setIsNsfw] = useState((post as any).isNsfw ?? false);
   const [isSaving, setIsSaving] = useState(false);
   const [artworkTypes, setArtworkTypes] = useState<string[]>(FALLBACK_TYPES);
@@ -61,11 +62,13 @@ export const EditPostScreen = () => {
         caption,
         tags: tagsArray,
         artworkType: selectedTypes,
-        isHumanMade,
+        isHumanMade: !isAIGenerated,
+        isAIGenerated,
+        isOriginalContent,
         isNsfw,
       });
 
-      const editedData = { caption, tags: tagsArray, artworkType: selectedTypes, isHumanMade, isNsfw };
+      const editedData = { caption, tags: tagsArray, artworkType: selectedTypes, isHumanMade: !isAIGenerated, isAIGenerated, isOriginalContent, isNsfw };
       dispatch(updateFeedPost({ postId, data: editedData }));
       dispatch(updateUserPost({ postId, data: editedData }));
 
@@ -141,18 +144,33 @@ export const EditPostScreen = () => {
           </View>
         </View>
 
-        {/* Human Made Toggle */}
+        {/* AI-Assisted / AI-Generated Toggle */}
         <TouchableOpacity
           style={styles.toggleRow}
           activeOpacity={0.7}
-          onPress={() => setIsHumanMade(!isHumanMade)}
+          onPress={() => setIsAIGenerated(!isAIGenerated)}
         >
           <View style={styles.toggleInfo}>
-            <Text style={styles.toggleLabel}>Human-made artwork</Text>
-            <Text style={styles.toggleDescription}>This artwork was created by a human</Text>
+            <Text style={styles.toggleLabel}>AI-Assisted / AI-Generated</Text>
+            <Text style={styles.toggleDescription}>This artwork was created with AI assistance</Text>
           </View>
-          <View style={[styles.checkbox, isHumanMade && styles.checkboxActive]}>
-            {isHumanMade && <Feather name="check" size={14} color="#FFFFFF" />}
+          <View style={[styles.checkbox, isAIGenerated && styles.checkboxActive]}>
+            {isAIGenerated && <Feather name="check" size={14} color="#FFFFFF" />}
+          </View>
+        </TouchableOpacity>
+
+        {/* Original Content Toggle */}
+        <TouchableOpacity
+          style={styles.toggleRow}
+          activeOpacity={0.7}
+          onPress={() => setIsOriginalContent(!isOriginalContent)}
+        >
+          <View style={styles.toggleInfo}>
+            <Text style={styles.toggleLabel}>Original Content</Text>
+            <Text style={styles.toggleDescription}>This is my original creative work</Text>
+          </View>
+          <View style={[styles.checkbox, isOriginalContent && styles.checkboxActive]}>
+            {isOriginalContent && <Feather name="check" size={14} color="#FFFFFF" />}
           </View>
         </TouchableOpacity>
 

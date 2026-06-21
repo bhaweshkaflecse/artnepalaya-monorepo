@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Stories 7.1 + 7.2 - Original Content Declaration and Simplified AI Disclosure: Add isOriginalContent and isAIGenerated fields to Post model, update validation/service, update mobile CreateScreen and EditPostScreen with new checkboxes (remove old isHumanMade UI, keep field for backward compat), update feed/detail badges.",
+  "status": "in_progress",
+  "steps": [
+    "1. Update backend/src/modules/posts/post.model.js: Add isOriginalContent: { type: Boolean, default: false } and isAIGenerated: { type: Boolean, default: false } to postSchema.",
+    "2. Update backend/src/modules/posts/post.validation.js createPostSchema: (a) Change isHumanMade to optional (not required anymore, default to true for backward compat when isAIGenerated is false). Add isOriginalContent as optional boolean (preprocess form-data string). Add isAIGenerated as optional boolean (preprocess form-data string). (b) In updatePostSchema: add isOriginalContent and isAIGenerated as optional booleans.",
+    "3. Update backend/src/modules/posts/post.service.js createPost: If isAIGenerated is true (or 'true'), ensure 'ai' tag exists in postData.tags (same as existing isHumanMade logic but using new field). Also: if isAIGenerated is true, set isHumanMade = false for backward compat. If isAIGenerated is false/undefined, set isHumanMade = true.",
+    "4. Update backend/src/modules/posts/post.service.js updatePost: Add isOriginalContent and isAIGenerated to allowed fields in the updatePost function.",
+    "5. Update mobile/src/screens/create/CreateScreen.tsx: (a) Remove the isHumanMade checkbox UI and its state variable. (b) Add isAIGenerated state (default false) with checkbox labeled 'AI-Assisted / AI-Generated'. (c) Add isOriginalContent state (default false) with checkbox labeled 'Original Content'. (d) Remove the isHumanMade validation requirement (no longer blocking publish). (e) In handlePublish FormData: always append isHumanMade: isAIGenerated ? 'false' : 'true'. Also append isAIGenerated and isOriginalContent. (f) Update canPublish to just require mediaItems.length > 0 (no isHumanMade gating).",
+    "6. Update mobile/src/screens/post/EditPostScreen.tsx: (a) Remove the isHumanMade toggle. (b) Add isAIGenerated toggle (init from post.isAIGenerated ?? false) with label 'AI-Assisted / AI-Generated'. (c) Add isOriginalContent toggle (init from post.isOriginalContent ?? false) with label 'Original Content'. (d) In handleSave: send isOriginalContent, isAIGenerated, and derived isHumanMade (!isAIGenerated).",
+    "7. Update mobile/src/components/home/PostCard.tsx: (a) Change AI badge condition from post.isHumanMade === false to (post as any).isAIGenerated === true. Keep fallback: || post.isHumanMade === false for backward compat. Change badge text to 'AI'. (b) Add 'Original' badge when (post as any).isOriginalContent === true - use a green badge color.",
+    "8. Update mobile/src/screens/post/PostDetailScreen.tsx: Same badge changes as PostCard - AI badge uses isAIGenerated (with isHumanMade fallback), add Original badge for isOriginalContent."
+  ],
+  "acceptance_criteria": [
+    "Post model has isOriginalContent and isAIGenerated fields",
+    "Validation accepts isOriginalContent and isAIGenerated in create and update",
+    "createPost service: if isAIGenerated true, adds 'ai' tag and sets isHumanMade=false",
+    "CreateScreen shows isAIGenerated + isOriginalContent checkboxes (no isHumanMade checkbox)",
+    "EditPostScreen shows isAIGenerated + isOriginalContent toggles (no isHumanMade toggle)",
+    "PostCard shows 'AI' badge for isAIGenerated===true (with isHumanMade===false fallback) and 'Original' badge for isOriginalContent===true",
+    "PostDetailScreen shows same badges"
+  ],
+  "verification": [
+    "Read all modified files and confirm proper field additions, validation changes, service logic, and UI updates"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
