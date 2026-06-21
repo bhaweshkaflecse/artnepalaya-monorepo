@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Story 6.1 - Popup Scheduling: Add startsAt/endsAt fields to GlobalPopup model, update public API to return only active popups based on time, update admin controller/form to support scheduling fields and status badges.",
+  "status": "completed",
+  "steps": [
+    "1. Update backend/src/modules/admin/globalPopup.model.js: Add startsAt: { type: Date, default: null } and endsAt: { type: Date, default: null } fields to the schema.",
+    "2. Update backend/src/modules/admin/config.routes.js GET /global-popup: Change the query logic to return only Active popups. A popup is Active if: (a) isArchived === false, AND (b) now >= startsAt (or startsAt is null), AND (c) now <= endsAt (or endsAt is null), AND (d) isActive === true. Return the most recently updated active popup.",
+    "3. Update backend/src/modules/admin/admin.controller.js createGlobalPopup: Accept startsAt and endsAt from req.body and pass them to GlobalPopup.create().",
+    "4. Update backend/src/modules/admin/admin.controller.js updateGlobalPopup: Accept startsAt and endsAt from req.body and include them in the $set update.",
+    "5. Update admin/src/pages/GlobalPopup.tsx: Add startsAt and endsAt fields to PopupItem interface. Add startsAt and endsAt date fields to PopupFormData interface and the form (use <input type='datetime-local'/>). Update getStatusBadge function to compute Scheduled/Active/Expired/Archived based on current time and the startsAt/endsAt values. Show status badges in the table."
+  ],
+  "acceptance_criteria": [
+    "GlobalPopup model has startsAt and endsAt fields",
+    "Public GET /config/global-popup only returns popups that are currently active (time-based check)",
+    "Admin createGlobalPopup and updateGlobalPopup accept and persist startsAt/endsAt",
+    "Admin GlobalPopup page shows scheduling form fields and Scheduled/Active/Expired/Archived badges"
+  ],
+  "verification": [
+    "Read modified files and confirm correct Mongoose schema, controller logic, and admin UI changes"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes implemented successfully. node --check passes on all 3 backend JS files. The config.routes.js query uses $and with two $or clauses for startsAt/endsAt time-based filtering. Admin UI includes datetime-local inputs with helper text and a Schedule column in the table. Status badges compute Scheduled/Active/Expired/Archived based on current time."
+}

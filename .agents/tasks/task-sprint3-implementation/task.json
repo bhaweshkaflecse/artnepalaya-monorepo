@@ -1,0 +1,7 @@
+{
+  "task_id": "task-sprint3-implementation",
+  "task_description": "ArtNepalaya Sprint 3: Popup scheduling (6.1), Original Content Declaration (7.1), Simplified AI Disclosure (7.2), Creator Analytics verification (8.1), Profile Contact Info (8.2), Community/Marketplace Analytics (9.1), plus documentation of notifications/OAuth/dev-login.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}
