@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, X, Award, ArrowUp, ArrowDown, Calendar } from 'lucide-react';
+import { Plus, X, Award, ArrowUp, ArrowDown, Calendar, Copy, Check } from 'lucide-react';
 import { api } from '../services/api';
 
 interface FeaturedPost {
@@ -24,6 +24,13 @@ export const Featured = () => {
   const [addError, setAddError] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyToClipboard = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const fetchFeatured = async () => {
     setLoading(true);
@@ -211,6 +218,12 @@ export const Featured = () => {
                   <p className="text-xs text-gray-500 truncate">
                     {item.postId.caption || 'No caption'}
                   </p>
+                  <div className="flex items-center space-x-1.5 mt-1">
+                    <span className="text-xs font-mono text-gray-400" title={item.postId._id}>ID: {item.postId._id}</span>
+                    <button onClick={() => copyToClipboard(item.postId._id)} className="text-gray-400 hover:text-gray-600 p-0.5 rounded transition-colors" title="Copy Post ID">
+                      {copiedId === item.postId._id ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                    </button>
+                  </div>
                   <p className="text-xs text-gray-400 mt-1">
                     Featured {new Date(item.createdAt).toLocaleDateString()}
                   </p>

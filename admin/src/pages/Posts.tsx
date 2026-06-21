@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Trash2, Star, StarOff, ChevronLeft, ChevronRight, Search, Film } from 'lucide-react';
+import { Trash2, Star, StarOff, ChevronLeft, ChevronRight, Search, Film, Copy, Check } from 'lucide-react';
 import { api } from '../services/api';
 
 /**
@@ -51,6 +51,13 @@ export const Posts = () => {
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyToClipboard = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const fetchFeatured = useCallback(async () => {
     try {
@@ -186,6 +193,7 @@ export const Posts = () => {
           <thead>
             <tr className="bg-gray-50/80 border-b border-gray-100">
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">#</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Post ID</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Thumbnail</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Caption</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Artist</th>
@@ -199,6 +207,7 @@ export const Posts = () => {
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="border-b border-gray-50">
                   <td className="px-5 py-3.5"><div className="h-4 w-6 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-20 animate-pulse bg-gray-100 rounded" /></td>
                   <td className="px-5 py-3.5"><div className="h-10 w-10 animate-pulse bg-gray-100 rounded-lg" /></td>
                   <td className="px-5 py-3.5"><div className="h-4 w-32 animate-pulse bg-gray-100 rounded" /></td>
                   <td className="px-5 py-3.5"><div className="h-4 w-20 animate-pulse bg-gray-100 rounded" /></td>
@@ -209,7 +218,7 @@ export const Posts = () => {
               ))
             ) : posts.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-5 py-12 text-center text-gray-400">
+                <td colSpan={8} className="px-5 py-12 text-center text-gray-400">
                   No posts found.
                 </td>
               </tr>
@@ -221,6 +230,14 @@ export const Posts = () => {
                 return (
                   <tr key={post._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors duration-100">
                     <td className="px-5 py-3.5 text-sm text-gray-400">{showingStart + idx}</td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-xs font-mono text-gray-500 truncate max-w-[120px]" title={post._id}>{post._id}</span>
+                        <button onClick={() => copyToClipboard(post._id)} className="text-gray-400 hover:text-gray-600 p-0.5 rounded transition-colors" title="Copy Post ID">
+                          {copiedId === post._id ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-5 py-3.5">
                       {firstMedia ? (
                         isVideo ? (

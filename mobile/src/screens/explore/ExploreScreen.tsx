@@ -215,6 +215,12 @@ export const ExploreScreen = () => {
             )}
           </View>
         )}
+        {item.media && item.media.length > 1 && (
+          <View style={styles.mediaBadge}>
+            <Feather name="layers" size={10} color="#FFFFFF" />
+            <Text style={styles.mediaBadgeText}>{item.media.length}</Text>
+          </View>
+        )}
       </TouchableOpacity>
     );
   };
@@ -449,5 +455,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 9,
     fontWeight: '700',
+  },
+  mediaBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    gap: 3,
+  },
+  mediaBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
   },
 });

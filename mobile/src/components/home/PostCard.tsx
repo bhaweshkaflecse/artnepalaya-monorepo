@@ -309,6 +309,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           >
             <Ionicons name="heart" size={80} color="#FFFFFF" />
           </Animated.View>
+          {post.media && post.media.length > 1 && (
+            <View style={styles.mediaBadge}>
+              <Feather name="layers" size={12} color="#FFFFFF" />
+              <Text style={styles.mediaBadgeText}>{post.media.length}</Text>
+            </View>
+          )}
         </View>
       </TouchableWithoutFeedback>
 
@@ -538,6 +544,23 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#FFFFFF',
     fontSize: 11,
+    fontWeight: '600',
+  },
+  mediaBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 4,
+  },
+  mediaBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '600',
   },
 });

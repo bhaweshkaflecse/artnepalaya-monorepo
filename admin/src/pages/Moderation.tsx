@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShieldAlert, Copy, Check } from 'lucide-react';
 import { api } from '../services/api';
 
 interface Report {
@@ -28,6 +28,13 @@ export const Moderation = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyToClipboard = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const fetchReports = useCallback(async (pageNum: number, status: StatusFilter) => {
     setLoading(true);
@@ -153,8 +160,13 @@ export const Moderation = () => {
                   key={report._id}
                   className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors duration-100"
                 >
-                  <td className="px-5 py-3.5 text-sm font-mono text-gray-400">
-                    #{report._id.slice(-6)}
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="text-xs font-mono text-gray-500 truncate max-w-[140px]" title={report._id}>{report._id}</span>
+                      <button onClick={() => copyToClipboard(report._id)} className="text-gray-400 hover:text-gray-600 p-0.5 rounded transition-colors" title="Copy Report ID">
+                        {copiedId === report._id ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                      </button>
+                    </div>
                   </td>
                   <td className="px-5 py-3.5 text-sm">{report.targetType}</td>
                   <td className="px-5 py-3.5 text-sm text-accent font-medium">{report.reason}</td>
