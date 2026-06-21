@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Trash2, Star, StarOff, ChevronLeft, ChevronRight, Search, Film, Copy, Check } from 'lucide-react';
+import { Trash2, Star, StarOff, ChevronLeft, ChevronRight, Search, Film, Copy, Check, RotateCcw } from 'lucide-react';
 import { api } from '../services/api';
 
 /**
@@ -52,6 +52,7 @@ export const Posts = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'active' | 'trash'>('active');
 
   const copyToClipboard = (id: string) => {
     navigator.clipboard.writeText(id);
@@ -71,12 +72,13 @@ export const Posts = () => {
     }
   }, []);
 
-  const fetchPosts = useCallback(async (page: number, search: string) => {
+  const fetchPosts = useCallback(async (page: number, search: string, deleted: boolean) => {
     setLoading(true);
     setError(null);
     try {
       const params: Record<string, string> = { page: String(page), limit: '15' };
       if (search) params.search = search;
+      if (deleted) params.deleted = 'true';
       const res = await api.get('/admin/posts', { params });
       setPosts(res.data.data);
       setMeta(res.data.meta);
@@ -88,17 +90,17 @@ export const Posts = () => {
   }, []);
 
   useEffect(() => {
-    fetchPosts(1, '');
+    fetchPosts(1, '', activeTab === 'trash');
     fetchFeatured();
-  }, [fetchPosts, fetchFeatured]);
+  }, [fetchPosts, fetchFeatured, activeTab]);
 
   const handlePageChange = (page: number) => {
-    fetchPosts(page, searchQuery);
+    fetchPosts(page, searchQuery, activeTab === 'trash');
   };
 
   const handleSearch = () => {
     setSearchQuery(searchInput);
-    fetchPosts(1, searchInput);
+    fetchPosts(1, searchInput, activeTab === 'trash');
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
@@ -142,6 +144,26 @@ export const Posts = () => {
     }
   };
 
+  const handleRestore = async (postId: string) => {
+    setActionLoading(postId);
+    setError(null);
+    try {
+      await api.put(`/admin/posts/${postId}/restore`);
+      setPosts((prev) => prev.filter((p) => p._id !== postId));
+      setMeta((prev) => ({ ...prev, totalItems: prev.totalItems - 1 }));
+    } catch {
+      setError('Failed to restore post. Please try again.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleTabChange = (tab: 'active' | 'trash') => {
+    setActiveTab(tab);
+    setSearchQuery('');
+    setSearchInput('');
+  };
+
   const getPageNumbers = () => {
     const { page, totalPages } = meta;
     const pages: number[] = [];
@@ -163,6 +185,31 @@ export const Posts = () => {
   return (
     <div className="space-y-5">
       {error && <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm border border-red-100">{error}</div>}
+
+      {/* Active / Trash Tabs */}
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => handleTabChange('active')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === 'active'
+              ? 'bg-gray-900 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          Active
+        </button>
+        <button
+          onClick={() => handleTabChange('trash')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === 'trash'
+              ? 'bg-red-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          Trash
+        </button>
+      </div>
+
       <div className="flex items-center space-x-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -284,14 +331,35 @@ export const Posts = () => {
                       </button>
                     </td>
                     <td className="px-5 py-3.5">
-                      <button
-                        onClick={() => setDeleteModal(post._id)}
-                        disabled={actionLoading === post._id}
-                        className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors duration-150 disabled:opacity-50"
-                        title="Delete post"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {activeTab === 'active' ? (
+                        <button
+                          onClick={() => setDeleteModal(post._id)}
+                          disabled={actionLoading === post._id}
+                          className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors duration-150 disabled:opacity-50"
+                          title="Delete post"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      ) : (
+                        <div className="flex items-center space-x-1">
+                          <button
+                            onClick={() => handleRestore(post._id)}
+                            disabled={actionLoading === post._id}
+                            className="text-green-600 hover:bg-green-50 p-1.5 rounded-lg transition-colors duration-150 disabled:opacity-50"
+                            title="Restore post"
+                          >
+                            <RotateCcw size={16} />
+                          </button>
+                          <button
+                            onClick={() => setDeleteModal(post._id)}
+                            disabled={actionLoading === post._id}
+                            className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors duration-150 disabled:opacity-50"
+                            title="Permanently delete"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -341,9 +409,13 @@ export const Posts = () => {
       {deleteModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-lg">
-            <h3 className="text-lg font-semibold mb-2 text-gray-900">Delete Post</h3>
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">
+              {activeTab === 'trash' ? 'Permanently Delete Post' : 'Delete Post'}
+            </h3>
             <p className="text-sm text-gray-500 mb-5">
-              Are you sure you want to delete this post? This action cannot be undone.
+              {activeTab === 'trash'
+                ? 'Are you sure you want to permanently delete this post? This will remove all associated data and cannot be undone.'
+                : 'Are you sure you want to delete this post? This action cannot be undone.'}
             </p>
             <div className="flex space-x-3 justify-end">
               <button
@@ -356,7 +428,7 @@ export const Posts = () => {
                 onClick={() => handleDelete(deleteModal)}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
               >
-                Delete
+                {activeTab === 'trash' ? 'Permanently Delete' : 'Delete'}
               </button>
             </div>
           </div>

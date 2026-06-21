@@ -1,0 +1,40 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Soft Delete + Recycle Bin: Add deletedAt field to Post model, modify all post queries to filter out soft-deleted posts, change creator DELETE to soft-delete, add admin restore/permanent-delete endpoints, and add Trash tab to admin Posts page",
+  "status": "in_progress",
+  "steps": [
+    "1. Add `deletedAt: { type: Date, default: null }` field to post schema in backend/src/modules/posts/post.model.js",
+    "2. In backend/src/modules/posts/post.service.js: Add `deletedAt: null` to the feed query in getFeed (line ~111 where query is built). Add `deletedAt: null` check in getSinglePost after finding the post (throw 404 if deletedAt is set, unless accessed by admin). The feed query object should include `{ deletedAt: null }` alongside other filters.",
+    "3. In backend/src/modules/users/user.service.js: Add `{ deletedAt: null }` filter to getUserPosts query (line ~64 `Post.find({ authorId: userId })` becomes `Post.find({ authorId: userId, deletedAt: null })`). Add same filter to getSavedPosts where `Post.find({ _id: { $in: postIds } })` becomes `Post.find({ _id: { $in: postIds }, deletedAt: null })`.",
+    "4. In backend/src/modules/admin/config.routes.js: The featured posts endpoint already filters via FeaturedPost -> populate postId. No change needed since featured posts reference post documents directly.",
+    "5. In backend/src/modules/posts/post.service.js: Change the `deletePost` function. Instead of hard-deleting with `Post.findByIdAndDelete(postId)` + Cloudinary cleanup + cascade deletes, do a soft delete: `Post.findByIdAndUpdate(postId, { $set: { deletedAt: new Date() } })`. Remove the Cloudinary destroy, Like.deleteMany, Save.deleteMany, Notification.deleteMany, FeaturedPost.findOneAndDelete, Report.deleteMany from this function. Keep the auth check. Keep cache invalidation and realtime event.",
+    "6. In backend/src/modules/admin/admin.service.js: The existing `deletePost` function (line ~63) already does hard delete via `Post.findByIdAndDelete`. Enhance it to also do Cloudinary cleanup and cascade deletes (move the cleanup logic from post.service.js deletePost here). Add full cascade: Like.deleteMany({postId}), Save.deleteMany({postId}), Notification.deleteMany({postId}), Report.deleteMany({targetId: postId}). Import Like, Save from '../posts/post-interaction.model.js', Notification from '../notifications/notification.model.js', Report from '../reports/report.model.js', and cloudinary.",
+    "7. In backend/src/modules/admin/admin.service.js: Add `restorePost(postId)` function that sets `deletedAt: null` on the post. Throw 404 if not found.",
+    "8. In backend/src/modules/admin/admin.service.js: Modify `getPosts(page, limit, search)` to accept an optional `deleted` parameter. When `deleted` is true, query `{ deletedAt: { $ne: null } }`. When false/undefined, query `{ deletedAt: null }` (default behavior shows active posts).",
+    "9. In backend/src/modules/admin/admin.controller.js: Add `restorePost` controller that calls `adminService.restorePost(req.params.postId)`. Modify `getPosts` controller to pass `req.query.deleted === 'true'` to the service.",
+    "10. In backend/src/modules/admin/admin.routes.js: Add `router.put('/posts/:postId/restore', validate(validation.postIdParamsSchema), controller.restorePost);` after the existing posts routes.",
+    "11. In admin/src/pages/Posts.tsx: Add a 'Trash' tab toggle (two buttons: 'Active' and 'Trash'). When 'Trash' is selected, fetch `/admin/posts?deleted=true`. Show a 'Restore' button and a 'Permanent Delete' button for each post in trash view. Restore calls PUT /admin/posts/:postId/restore. Permanent Delete calls DELETE /admin/posts/:postId (existing endpoint).",
+    "12. In backend/src/modules/admin/admin.controller.js: In the existing `deletePost` function, add Cloudinary cleanup for the post's media before hard-deleting. Import cloudinary at the top. Get the post first, destroy media, then delete.",
+    "13. Add `deletedAt: null` filter to the admin controller's `getDebugPosts` query (line ~159 `Post.find()` becomes `Post.find({ deletedAt: null })`)."
+  ],
+  "acceptance_criteria": [
+    "Post model has `deletedAt` field with default null",
+    "Feed queries exclude posts where deletedAt is not null",
+    "User posts and saved posts exclude soft-deleted posts",
+    "Creator DELETE /posts/:postId sets deletedAt instead of hard deleting",
+    "Admin DELETE /admin/posts/:postId permanently deletes with cascade cleanup",
+    "Admin PUT /admin/posts/:postId/restore sets deletedAt back to null",
+    "Admin GET /admin/posts?deleted=true returns only soft-deleted posts",
+    "Admin Posts page has Active/Trash tabs with restore and permanent delete buttons in Trash view"
+  ],
+  "verification": [
+    "Run `node --check backend/src/modules/posts/post.model.js` to verify syntax",
+    "Run `node --check backend/src/modules/posts/post.service.js` to verify syntax",
+    "Run `node --check backend/src/modules/admin/admin.service.js` to verify syntax",
+    "Run `node --check backend/src/modules/admin/admin.controller.js` to verify syntax",
+    "Run `node --check backend/src/modules/admin/admin.routes.js` to verify syntax"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -23,6 +23,9 @@ const postSchema = new mongoose.Schema({
   // NSFW flag for content moderation
   isNsfw: { type: Boolean, default: false },
 
+  // Soft delete
+  deletedAt: { type: Date, default: null },
+
   // Metrics
   likesCount: { type: Number, default: 0 },
   savesCount: { type: Number, default: 0 }

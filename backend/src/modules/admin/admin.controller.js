@@ -38,13 +38,19 @@ export const getPosts = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 15;
     const search = req.query.search || '';
-    const result = await adminService.getPosts(page, limit, search);
+    const deleted = req.query.deleted === 'true';
+    const result = await adminService.getPosts(page, limit, search, deleted);
     res.status(200).json({ success: true, ...result });
   } catch (err) { next(err); }
 };
 
 export const deletePost = async (req, res, next) => {
   try { await adminService.deletePost(req.params.postId); res.status(200).json({ success: true, message: "Post deleted permanently" }); } 
+  catch (err) { next(err); }
+};
+
+export const restorePost = async (req, res, next) => {
+  try { await adminService.restorePost(req.params.postId); res.status(200).json({ success: true, message: "Post restored successfully" }); }
   catch (err) { next(err); }
 };
 
@@ -156,7 +162,7 @@ export const getPushStats = async (req, res, next) => {
 
 export const getDebugPosts = async (req, res, next) => {
   try {
-    const posts = await Post.find().limit(20).lean();
+    const posts = await Post.find({ deletedAt: null }).limit(20).lean();
     const data = posts.map((p) => ({
       _id: p._id,
       caption: p.caption,

@@ -3,6 +3,9 @@ import { Post } from '../posts/post.model.js';
 import { Report } from '../reports/report.model.js';
 import { FeaturedPost } from './featured.model.js';
 import { SearchLog } from './searchLog.model.js';
+import { Like, Save } from '../posts/post-interaction.model.js';
+import { Notification } from '../notifications/notification.model.js';
+import { v2 as cloudinary } from 'cloudinary';
 import { invalidateCache } from '../../shared/utils/cache.js';
 
 /**
@@ -61,10 +64,35 @@ export const resolveReport = async (reportId, adminId) => {
 };
 
 export const deletePost = async (postId) => {
-  const post = await Post.findByIdAndDelete(postId);
+  const post = await Post.findById(postId);
   if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
-  await FeaturedPost.findOneAndDelete({ postId });
+
+  // Clean up Cloudinary assets
+  const destroyPromises = post.media.map(m =>
+    cloudinary.uploader.destroy(m.providerId, { resource_type: m.type === 'video' ? 'video' : 'image' }).catch(err => console.error('Cloudinary destroy failed:', err))
+  );
+  await Promise.all(destroyPromises);
+
+  // Cascade delete all related data
+  await Promise.all([
+    Post.findByIdAndDelete(postId),
+    Like.deleteMany({ postId }),
+    Save.deleteMany({ postId }),
+    Notification.deleteMany({ postId }),
+    FeaturedPost.findOneAndDelete({ postId }),
+    Report.deleteMany({ targetId: postId }),
+  ]);
+
+  invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));
+
   return true;
+};
+
+export const restorePost = async (postId) => {
+  const post = await Post.findByIdAndUpdate(postId, { $set: { deletedAt: null } }, { new: true });
+  if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
+  invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));
+  return post;
 };
 
 export const getFeaturedPosts = async () => {
@@ -98,9 +126,17 @@ export const removeFeaturedPost = async (postId) => {
   return true;
 };
 
-export const getPosts = async (page = 1, limit = 15, search = '') => {
+export const getPosts = async (page = 1, limit = 15, search = '', deleted = false) => {
   const skip = (page - 1) * limit;
   const query = {};
+
+  // Filter by soft-delete status
+  if (deleted) {
+    query.deletedAt = { $ne: null };
+  } else {
+    query.deletedAt = null;
+  }
+
   if (search) {
     const safeSearch = escapeRegex(search);
     query.$or = [

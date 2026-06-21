@@ -70,6 +70,11 @@ export const getSinglePost = async (postId, userId, showMatureContent = false) =
   const post = await Post.findById(postId).populate('authorId', 'username avatarUrl role isVerified verifiedType status').lean();
   if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
 
+  // Hide soft-deleted posts
+  if (post.deletedAt) {
+    throw Object.assign(new Error('Post not found'), { status: 404 });
+  }
+
   // Hide posts from banned/suspended authors
   if (post.authorId && (post.authorId.status === 'banned' || post.authorId.status === 'suspended')) {
     throw Object.assign(new Error('Post not found'), { status: 404 });
@@ -109,6 +114,9 @@ export const getFeed = async (userId, cursor, limit, showMatureContent) => {
 
   const baseFeed = await getOrSetCache(cacheKey, 300, async () => {
     const query = cursor ? { _id: { $lt: cursor } } : {};
+
+    // Exclude soft-deleted posts
+    query.deletedAt = null;
 
     // Exclude posts from banned/suspended users
     const inactiveIds = await getInactiveUserIds();
@@ -293,20 +301,8 @@ export const deletePost = async (postId, userId, userRole) => {
     throw Object.assign(new Error('You do not have permission to delete this post'), { status: 403 });
   }
 
-  // Clean up Cloudinary assets
-  const destroyPromises = post.media.map(m =>
-    cloudinary.uploader.destroy(m.providerId, { resource_type: m.type === 'video' ? 'video' : 'image' }).catch(err => console.error('Cloudinary destroy failed:', err))
-  );
-  await Promise.all(destroyPromises);
-
-  await Promise.all([
-    Post.findByIdAndDelete(postId),
-    Like.deleteMany({ postId }),
-    Save.deleteMany({ postId }),
-    Notification.deleteMany({ postId }),
-    FeaturedPost.findOneAndDelete({ postId }),
-    Report.deleteMany({ targetId: postId }),
-  ]);
+  // Soft delete: set deletedAt timestamp instead of removing
+  await Post.findByIdAndUpdate(postId, { $set: { deletedAt: new Date() } });
 
   // Emit realtime event
   emitToFeed(EVENTS.POST_DELETED, { postId });

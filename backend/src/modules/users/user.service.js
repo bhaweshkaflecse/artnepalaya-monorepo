@@ -61,13 +61,13 @@ export const getUserPosts = async (userId, page, limit, viewerId) => {
   const skip = (page - 1) * limit;
 
   const [posts, totalItems] = await Promise.all([
-    Post.find({ authorId: userId })
+    Post.find({ authorId: userId, deletedAt: null })
       .sort({ createdAt: -1 }) // Newest first
       .skip(skip)
       .limit(limit)
       .populate('authorId', 'username avatarUrl role isVerified verifiedType')
       .lean(),
-    Post.countDocuments({ authorId: userId })
+    Post.countDocuments({ authorId: userId, deletedAt: null })
   ]);
 
   // Hydrate like/save state for authenticated viewer
@@ -112,7 +112,7 @@ export const getSavedPosts = async (userId, page, limit) => {
   const skip = (page - 1) * limit;
   const saves = await Save.find({ userId }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
   const postIds = saves.map(s => s.postId);
-  const posts = await Post.find({ _id: { $in: postIds } }).populate('authorId', 'username avatarUrl role isVerified verifiedType status').lean();
+  const posts = await Post.find({ _id: { $in: postIds }, deletedAt: null }).populate('authorId', 'username avatarUrl role isVerified verifiedType status').lean();
   // Reorder posts to match save order (newest saved first)
   const postMap = new Map(posts.map(p => [p._id.toString(), p]));
   const orderedPosts = postIds.map(id => postMap.get(id.toString())).filter(Boolean);
