@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Story 1.1 - Hide Banned/Suspended Users Across Platform: Add query-level author status filtering to all public endpoints that return posts (feed, explore, single post, user posts, saved posts, featured content). The User model has status field with enum ['active', 'banned', 'suspended']. The authGuard already blocks banned/suspended users from making authenticated requests, but PUBLIC endpoints using optionalAuth do NOT filter posts by author status. Posts from banned/suspended authors must be excluded at the database query level.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Modify backend/src/modules/posts/post.service.js - getFeed() function: After the existing query construction (line ~55), add a filter to exclude posts whose authorId references a banned or suspended user. Since Post.find() uses cursor-based pagination and populates authorId, the most efficient approach is to: (a) First get the list of banned/suspended user IDs, then add { authorId: { $nin: bannedUserIds } } to the query. Import the User model at the top. Add a helper function getBannedUserIds() that queries User.find({ status: { $in: ['banned', 'suspended'] } }).select('_id').lean() and returns the IDs. Call this before the Post.find() query and add the $nin filter to the query object.",
     "Step 2: Modify backend/src/modules/posts/post.service.js - getSinglePost() function: After fetching the post and checking if it exists, add a check: if (post.authorId && post.authorId.status) is not needed since we don't populate status. Instead, after the populate, look up the author's status. The simplest approach: change the populate to include 'status' in the select fields: .populate('authorId', 'username avatarUrl role isVerified verifiedType status'). Then after the post is fetched, check if post.authorId.status is 'banned' or 'suspended' and if so throw a 404 error (post not found) so banned authors' posts appear to not exist.",
@@ -27,5 +27,5 @@
     "Verify the getBannedUserIds helper function or equivalent filtering logic exists"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All three files pass node --check syntax validation. The NODE_OPTIONS env var needed to be cleared to run node --check in this sandbox. Implementation follows existing patterns (populate with select, .filter(), Object.assign for errors). The getInactiveUserIds helper is inside the cached getFeed callback so that cache invalidation on user status changes works correctly."
 }
