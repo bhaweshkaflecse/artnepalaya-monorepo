@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Story 1.2 - Full Post ID Visibility in Admin Panel + Story 1.3 - Multi-Media Indicators in Mobile Feed: (A) Admin: Show full Post ID with copy-to-clipboard button in Posts.tsx, Moderation.tsx, and Featured.tsx. Currently Posts.tsx has no ID column, Moderation.tsx shows #{report._id.slice(-6)}, Featured.tsx shows no post ID. (B) Mobile: Add multi-media count badge overlay on PostCard.tsx when post.media.length > 1, showing a layers icon and count number.",
+  "status": "completed",
+  "steps": [
+    "Step 1 (Admin Posts.tsx): Add a 'Post ID' column to the table in admin/src/pages/Posts.tsx. Add it after the '#' column. Show the full post._id string. Add a copy button (use clipboard icon from lucide-react, e.g. 'Copy' or 'Clipboard'). On click, use navigator.clipboard.writeText(post._id) and show a brief 'Copied!' tooltip or change the icon momentarily. Import 'Copy, Check' from lucide-react. Use local state to track which ID was just copied.",
+    "Step 2 (Admin Moderation.tsx): Change the Report ID cell from #{report._id.slice(-6)} to show the full report._id. Add a small copy button next to it. Same pattern: navigator.clipboard.writeText(report._id), brief visual feedback. Import Copy and Check from lucide-react.",
+    "Step 3 (Admin Featured.tsx): Add the post ID display in the featured post cards. In the info section of each featured item, below the @username line, add a line showing 'Post ID: {item.postId._id}' in a small monospace font with a copy button. Same clipboard copy pattern.",
+    "Step 4 (Mobile PostCard.tsx): Add a multi-media indicator badge. When post.media && post.media.length > 1, render an absolute-positioned badge in the top-right corner of the imageWrapper View. The badge should show a layers/copy icon (use Feather 'layers' icon) and the count number (post.media.length). Style: small rounded pill, semi-transparent dark background (rgba(0,0,0,0.7)), white text, positioned top: 8, right: 8. Add styles for mediaBadge, mediaBadgeText. This must NOT affect existing touch handling or performance.",
+    "Step 5 (Mobile ExploreScreen.tsx): Add the same multi-media indicator badge to explore grid items. In the renderItem function, after the existing badge overlays, add a similar badge in the top-right showing media count when item.media?.length > 1. Use Feather 'layers' icon and count. Position: absolute, top: 4, right: 4."
+  ],
+  "acceptance_criteria": [
+    "Admin Posts page shows full Post ID for each post with a working copy-to-clipboard button",
+    "Admin Moderation page shows full Report ID (not truncated) with copy button",
+    "Admin Featured page shows post ID with copy button for each featured post",
+    "Copy button provides visual feedback (icon change or tooltip) when clicked",
+    "Mobile PostCard shows media count badge (layers icon + number) when post has more than 1 media item",
+    "Mobile Explore grid items show media count badge when post has more than 1 media item",
+    "Media badge does not appear for posts with 0 or 1 media items",
+    "No performance impact - badge is a simple static overlay, no additional API calls or re-renders"
+  ],
+  "verification": [
+    "Run: node --check admin/src/pages/Posts.tsx (will fail for TSX - use grep to verify no obvious syntax errors)",
+    "Grep for 'navigator.clipboard' in Posts.tsx, Moderation.tsx, Featured.tsx to confirm copy functionality",
+    "Grep for 'media.length > 1' or 'media?.length > 1' in PostCard.tsx and ExploreScreen.tsx to confirm badge logic",
+    "Grep for 'layers' in PostCard.tsx and ExploreScreen.tsx to confirm icon usage"
+  ],
+  "blocked_reason": null,
+  "findings": "All 5 files modified successfully. Admin: Posts.tsx, Moderation.tsx, Featured.tsx all have full ID display with copy-to-clipboard (Copy/Check icons from lucide-react, navigator.clipboard API). Posts.tsx colSpan updated from 7 to 8, skeleton row updated with extra column. Mobile: PostCard.tsx and ExploreScreen.tsx both have media badge with Feather layers icon when media.length > 1. Cannot run build/test due to INTEGRATIONS_ONLY network mode and sandbox preload issue preventing node --check, but all code verified via grep."
+}
