@@ -23,6 +23,8 @@ export interface Post {
   likesCount: number;
   savesCount: number;
   isHumanMade?: boolean;
+  isAIGenerated?: boolean;
+  isOriginalContent?: boolean;
   isNsfw?: boolean;
   isLikedByMe?: boolean;
   isSavedByMe?: boolean;
@@ -98,7 +100,7 @@ export const postService = {
     });
   },
 
-  updatePost: async (postId: string, data: { caption?: string; tags?: string[]; artworkType?: string[]; isHumanMade?: boolean; isNsfw?: boolean }): Promise<Post> => {
+  updatePost: async (postId: string, data: { caption?: string; tags?: string[]; artworkType?: string[]; isHumanMade?: boolean; isAIGenerated?: boolean; isOriginalContent?: boolean; isNsfw?: boolean }): Promise<Post> => {
     const response = await api.put(`/posts/${postId}`, data);
     return response.data.data;
   },

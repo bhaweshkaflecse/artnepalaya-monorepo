@@ -14,5 +14,6 @@ const communityWaitlistSchema = new mongoose.Schema(
 
 communityWaitlistSchema.index({ userId: 1, type: 1 });
 communityWaitlistSchema.index({ deviceId: 1, type: 1 });
+communityWaitlistSchema.index({ type: 1, createdAt: -1 });
 
 export const CommunityWaitlist = mongoose.model('CommunityWaitlist', communityWaitlistSchema);

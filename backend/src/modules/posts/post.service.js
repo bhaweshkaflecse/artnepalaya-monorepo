@@ -299,6 +299,21 @@ export const updatePost = async (postId, userId, userRole, updateData) => {
     allowedFields.isAIGenerated = updateData.isAIGenerated;
   }
 
+  // AI tag enforcement on update: mirror createPost logic
+  if (allowedFields.isAIGenerated === true || allowedFields.isAIGenerated === 'true') {
+    // Ensure tags array includes "ai"
+    if (!allowedFields.tags) {
+      // Start from existing post tags if user didn't provide new tags
+      allowedFields.tags = Array.isArray(post.tags) ? [...post.tags] : [];
+    }
+    if (!allowedFields.tags.includes('ai')) {
+      allowedFields.tags.push('ai');
+    }
+    allowedFields.isHumanMade = false;
+  } else if (allowedFields.isAIGenerated === false || allowedFields.isAIGenerated === 'false') {
+    allowedFields.isHumanMade = true;
+  }
+
   if (updateData.isNsfw !== undefined) {
     allowedFields.isNsfw = updateData.isNsfw;
   }
