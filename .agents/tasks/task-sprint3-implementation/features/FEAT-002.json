@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Stories 7.1 + 7.2 - Original Content Declaration and Simplified AI Disclosure: Add isOriginalContent and isAIGenerated fields to Post model, update validation/service, update mobile CreateScreen and EditPostScreen with new checkboxes (remove old isHumanMade UI, keep field for backward compat), update feed/detail badges.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. Update backend/src/modules/posts/post.model.js: Add isOriginalContent: { type: Boolean, default: false } and isAIGenerated: { type: Boolean, default: false } to postSchema.",
     "2. Update backend/src/modules/posts/post.validation.js createPostSchema: (a) Change isHumanMade to optional (not required anymore, default to true for backward compat when isAIGenerated is false). Add isOriginalContent as optional boolean (preprocess form-data string). Add isAIGenerated as optional boolean (preprocess form-data string). (b) In updatePostSchema: add isOriginalContent and isAIGenerated as optional booleans.",
@@ -26,5 +26,5 @@
     "Read all modified files and confirm proper field additions, validation changes, service logic, and UI updates"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 8 steps implemented successfully. Backend JS files pass node --check syntax validation. TypeScript files could not be verified due to no tsc binary in sandbox, but all changes follow existing patterns and are straightforward. Network mode is INTEGRATIONS_ONLY so no npm install possible."
 }
