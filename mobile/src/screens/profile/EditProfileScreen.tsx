@@ -38,6 +38,8 @@ export const EditProfileScreen = () => {
   const [fullName, setFullName] = useState(displayUser?.fullName || '');
   const [username, setUsername] = useState(displayUser?.username || '');
   const [bio, setBio] = useState((profile as any)?.bio || '');
+  const [location, setLocation] = useState((profile as any)?.location || '');
+  const [website, setWebsite] = useState((profile as any)?.website || '');
   const [selectedRole, setSelectedRole] = useState(displayUser?.role || 'Art Lover');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -70,6 +72,8 @@ export const EditProfileScreen = () => {
         username: username.trim(),
         bio: bio.trim(),
         role: selectedRole,
+        location: location.trim() || null,
+        website: website.trim() || null,
       } as any);
       dispatch(setProfile(updatedUser));
       Alert.alert('Success', 'Profile updated successfully!', [
@@ -160,6 +164,31 @@ export const EditProfileScreen = () => {
             textAlignVertical="top"
           />
           <Text style={styles.charCount}>{bio.length}/300</Text>
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Location</Text>
+          <TextInput
+            style={styles.input}
+            value={location}
+            onChangeText={setLocation}
+            placeholder="City, Country"
+            placeholderTextColor={lightColors.textSecondary}
+            maxLength={100}
+          />
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Website</Text>
+          <TextInput
+            style={styles.input}
+            value={website}
+            onChangeText={setWebsite}
+            placeholder="https://yourwebsite.com"
+            placeholderTextColor={lightColors.textSecondary}
+            autoCapitalize="none"
+            maxLength={200}
+          />
         </View>
 
         {/* Artwork Role Selector */}

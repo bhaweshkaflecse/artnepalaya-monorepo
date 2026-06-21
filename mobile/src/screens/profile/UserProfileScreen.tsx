@@ -247,6 +247,20 @@ export const UserProfileScreen = () => {
               <Text style={styles.bio}>{profile.bio}</Text>
             ) : null}
 
+            {/* Location & Website */}
+            {!!profile?.location && (
+              <View style={styles.contactInfoRow}>
+                <Feather name="map-pin" size={14} color={lightColors.textSecondary} />
+                <Text style={styles.contactInfoText}>{profile.location}</Text>
+              </View>
+            )}
+            {!!profile?.website && (
+              <View style={styles.contactInfoRow}>
+                <Feather name="globe" size={14} color={lightColors.textSecondary} />
+                <Text style={styles.contactInfoText}>{profile.website}</Text>
+              </View>
+            )}
+
             {/* Role Badge */}
             <View style={styles.roleBadge}>
               <Text style={styles.roleBadgeText}>
@@ -427,6 +441,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 10,
     paddingHorizontal: 16,
+  },
+  contactInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 6,
+  },
+  contactInfoText: {
+    fontSize: 13,
+    color: lightColors.textSecondary,
   },
   roleBadge: {
     borderWidth: 1.5,

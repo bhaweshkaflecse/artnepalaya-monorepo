@@ -18,6 +18,8 @@ export const updateProfileSchema = z.object({
     dob: z.string().datetime().or(z.date()).optional(),
 
     bio: z.string().max(300).optional(),
+    location: z.string().max(100).optional().nullable(),
+    website: z.string().max(200).optional().nullable(),
     nsfwBlurEnabled: z.boolean().optional(),
     showMatureContent: z.boolean().optional()
     

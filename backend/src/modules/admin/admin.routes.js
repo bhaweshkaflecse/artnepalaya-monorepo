@@ -4,7 +4,7 @@ import { requireRole } from '../../middlewares/roleGuard.js';
 import { validate } from '../../middlewares/validator.js';
 import * as validation from './admin.validation.js';
 import * as controller from './admin.controller.js';
-import { getInterestUsers } from '../community/community.controller.js';
+import { getInterestUsers, getInterestAnalytics } from '../community/community.controller.js';
 
 const router = Router();
 router.use(authGuard);
@@ -40,6 +40,7 @@ router.get('/debug/posts', controller.getDebugPosts);
 router.get('/cms/:slug', controller.getCmsPage);
 router.put('/cms/:slug', controller.updateCmsPage);
 
+router.get('/community-interest/analytics', getInterestAnalytics);
 router.get('/community-interest', getInterestUsers);
 
 router.get('/global-popup', controller.getGlobalPopup);

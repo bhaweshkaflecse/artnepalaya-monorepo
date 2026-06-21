@@ -80,6 +80,16 @@ const userSchema = new mongoose.Schema(
       maxLength: 300,
       default: '',
     },
+    location: {
+      type: String,
+      default: null,
+      maxlength: 100,
+    },
+    website: {
+      type: String,
+      default: null,
+      maxlength: 200,
+    },
     nsfwBlurEnabled: {
       type: Boolean,
       default: true,

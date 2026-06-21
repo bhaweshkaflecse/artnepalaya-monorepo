@@ -265,6 +265,20 @@ export const ProfileScreen = () => {
                     </Text>
                   </View>
 
+                  {/* Location & Website */}
+                  {!!(displayUser as any)?.location && (
+                    <View style={styles.contactInfoRow}>
+                      <Feather name="map-pin" size={14} color={lightColors.textSecondary} />
+                      <Text style={styles.contactInfoText}>{(displayUser as any).location}</Text>
+                    </View>
+                  )}
+                  {!!(displayUser as any)?.website && (
+                    <View style={styles.contactInfoRow}>
+                      <Feather name="globe" size={14} color={lightColors.textSecondary} />
+                      <Text style={styles.contactInfoText}>{(displayUser as any).website}</Text>
+                    </View>
+                  )}
+
                   {/* Stats */}
                   <View style={styles.statsContainer}>
                     <TouchableOpacity style={styles.statBox} onPress={openFollowersList} activeOpacity={0.7}>
@@ -484,6 +498,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: lightColors.accent,
+  },
+  contactInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 6,
+  },
+  contactInfoText: {
+    fontSize: 13,
+    color: lightColors.textSecondary,
   },
   statsContainer: {
     flexDirection: 'row',

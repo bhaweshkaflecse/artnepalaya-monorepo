@@ -87,3 +87,37 @@ export const getInterestUsers = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getInterestAnalytics = async (req, res, next) => {
+  try {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+
+    const [
+      communityTotal,
+      communityLast7Days,
+      communityLast30Days,
+      marketplaceTotal,
+      marketplaceLast7Days,
+      marketplaceLast30Days,
+    ] = await Promise.all([
+      CommunityWaitlist.countDocuments({ type: 'community' }),
+      CommunityWaitlist.countDocuments({ type: 'community', createdAt: { $gte: sevenDaysAgo } }),
+      CommunityWaitlist.countDocuments({ type: 'community', createdAt: { $gte: thirtyDaysAgo } }),
+      CommunityWaitlist.countDocuments({ type: 'marketplace' }),
+      CommunityWaitlist.countDocuments({ type: 'marketplace', createdAt: { $gte: sevenDaysAgo } }),
+      CommunityWaitlist.countDocuments({ type: 'marketplace', createdAt: { $gte: thirtyDaysAgo } }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        community: { total: communityTotal, last7Days: communityLast7Days, last30Days: communityLast30Days },
+        marketplace: { total: marketplaceTotal, last7Days: marketplaceLast7Days, last30Days: marketplaceLast30Days },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

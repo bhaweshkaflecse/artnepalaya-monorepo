@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, TrendingUp } from 'lucide-react';
 import { api } from '../services/api';
 
 interface InterestUser {
@@ -22,6 +22,11 @@ interface PaginationMeta {
   marketplaceCount?: number;
 }
 
+interface AnalyticsData {
+  community: { total: number; last7Days: number; last30Days: number };
+  marketplace: { total: number; last7Days: number; last30Days: number };
+}
+
 export const CommunityInterest = () => {
   const [users, setUsers] = useState<InterestUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +35,20 @@ export const CommunityInterest = () => {
   const [activeType, setActiveType] = useState<'all' | 'community' | 'marketplace'>('all');
   const [communityCount, setCommunityCount] = useState(0);
   const [marketplaceCount, setMarketplaceCount] = useState(0);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+
+  const fetchAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true);
+    try {
+      const res = await api.get('/admin/community-interest/analytics');
+      setAnalytics(res.data.data);
+    } catch {
+      // Silently fail - analytics is supplementary
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, []);
 
   const fetchUsers = useCallback(async (page: number, type: string) => {
     setLoading(true);
@@ -53,7 +72,8 @@ export const CommunityInterest = () => {
 
   useEffect(() => {
     fetchUsers(1, 'all');
-  }, [fetchUsers]);
+    fetchAnalytics();
+  }, [fetchUsers, fetchAnalytics]);
 
   const handlePageChange = (page: number) => {
     fetchUsers(page, activeType);
@@ -81,6 +101,45 @@ export const CommunityInterest = () => {
           {meta.totalItems} total
         </span>
       </div>
+
+      {/* Analytics Summary */}
+      {analyticsLoading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="h-4 w-20 animate-pulse bg-gray-200 rounded mb-2" />
+              <div className="h-6 w-10 animate-pulse bg-gray-200 rounded" />
+            </div>
+          ))}
+        </div>
+      ) : analytics ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <p className="text-xs text-gray-500 font-medium">Community Total</p>
+            <p className="text-xl font-bold text-blue-700 mt-1">{analytics.community.total}</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <p className="text-xs text-gray-500 font-medium">Community Last 7 Days</p>
+            <p className="text-xl font-bold text-blue-600 mt-1">{analytics.community.last7Days}</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <p className="text-xs text-gray-500 font-medium">Community Last 30 Days</p>
+            <p className="text-xl font-bold text-blue-500 mt-1">{analytics.community.last30Days}</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <p className="text-xs text-gray-500 font-medium">Marketplace Total</p>
+            <p className="text-xl font-bold text-green-700 mt-1">{analytics.marketplace.total}</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <p className="text-xs text-gray-500 font-medium">Marketplace Last 7 Days</p>
+            <p className="text-xl font-bold text-green-600 mt-1">{analytics.marketplace.last7Days}</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <p className="text-xs text-gray-500 font-medium">Marketplace Last 30 Days</p>
+            <p className="text-xl font-bold text-green-500 mt-1">{analytics.marketplace.last30Days}</p>
+          </div>
+        </div>
+      ) : null}
 
       {/* Filter Tabs */}
       <div className="flex items-center space-x-2 mb-4">

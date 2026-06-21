@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Story 8.2 - Profile Contact Information + Story 9.1 - Community/Marketplace Analytics: Add location and website to User model, update validation/service/mobile screens. Add analytics aggregation endpoint for Community/Marketplace with time ranges to admin.",
+  "status": "in_progress",
+  "steps": [
+    "1. Update backend/src/modules/users/user.model.js: Add location: { type: String, default: null, maxlength: 100 } and website: { type: String, default: null, maxlength: 200 } to the userSchema.",
+    "2. Update backend/src/modules/users/user.validation.js updateProfileSchema: Add location: z.string().max(100).optional().nullable() and website: z.string().max(200).optional().nullable() inside the body object (before .strict()).",
+    "3. Update backend/src/modules/users/user.service.js allowedUpdates array in updateUserProfile: Add 'location' and 'website'.",
+    "4. Update mobile/src/services/user.service.ts User interface: Add location?: string | null and website?: string | null.",
+    "5. Update mobile/src/screens/profile/EditProfileScreen.tsx: Add location and website state variables (init from profile). Add Location and Website text inputs in the form (after Bio). Include location and website in handleSave updateProfile call.",
+    "6. Update mobile/src/screens/profile/ProfileScreen.tsx: After the bio/role section and before the stats, show location and website as plain Text components (NON-CLICKABLE, no onPress, no Linking). Only show if non-null. Use Feather icons (map-pin for location, globe for website).",
+    "7. Update mobile/src/screens/profile/UserProfileScreen.tsx: In the profile info section (after bio), show location and website as plain Text (NON-CLICKABLE). Only show if non-null.",
+    "8. Story 9.1: Update backend/src/modules/community/community.controller.js - Add a new exported function getInterestAnalytics that returns: { community: { total, last7Days, last30Days }, marketplace: { total, last7Days, last30Days } } using CommunityWaitlist.countDocuments with date filters.",
+    "9. Update backend/src/modules/admin/admin.routes.js: Add route: router.get('/community-interest/analytics', getInterestAnalytics); Import getInterestAnalytics from community.controller.js.",
+    "10. Update admin/src/pages/CommunityInterest.tsx: Add an analytics summary section at the top showing the 6 counts (community total/7d/30d, marketplace total/7d/30d) fetched from the new endpoint. Display as cards or a simple grid."
+  ],
+  "acceptance_criteria": [
+    "User model has location and website fields with proper constraints",
+    "updateProfileSchema validates location and website",
+    "allowedUpdates includes location and website",
+    "EditProfileScreen has location and website inputs",
+    "ProfileScreen shows location/website as NON-CLICKABLE plain text",
+    "UserProfileScreen shows location/website as NON-CLICKABLE plain text",
+    "GET /admin/community-interest/analytics returns community/marketplace counts with time ranges",
+    "CommunityInterest admin page displays analytics summary"
+  ],
+  "verification": [
+    "Read all modified files and confirm proper field additions, validation, service, mobile UI (no clickable links), and analytics endpoint"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

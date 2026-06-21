@@ -13,6 +13,8 @@ export interface User {
   fullName: string;
   avatarUrl?: string;
   bio?: string;
+  location?: string | null;
+  website?: string | null;
   role: string;
   subRoles?: string[];
   phoneNumber?: string;
