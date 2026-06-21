@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Story 2.1 - Community vs Marketplace Separation: Add a 'type' field to the CommunityWaitlist model to distinguish between 'community' and 'marketplace' interest registrations. Update the controller to accept and store this type. Update the mobile CommunityScreen to pass the correct type. Update the admin CommunityInterest page to support filtering by type and show separate counts.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1 (Backend Model): Modify backend/src/modules/community/communityWaitlist.model.js to add a 'type' field with enum ['community', 'marketplace'], defaulting to 'community'. This ensures existing records default to 'community'.",
     "Step 2 (Backend Controller): Modify backend/src/modules/community/community.controller.js - registerInterest function: Accept 'type' from req.body (default to 'community' if not provided). Pass it to CommunityWaitlist.create() calls. For the authenticated user path: add type to the create call. For the guest user path: same. Also update the existing duplicate check for guests: when source is 'marketplace', allow a separate entry even if a 'community' entry exists for the same deviceId (update findOne queries to include type). Update getInterestUsers to accept a 'type' query param for filtering.",
@@ -28,5 +28,5 @@
     "Grep for \"registerInterest\" in mobile/src/services/community.service.ts to confirm new method"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All changes implemented successfully. Backend model has type field with compound unique indexes on userId+type and deviceId+type. Controller accepts type from request body with validation. Mobile uses registerInterest with correct type parameter for each tab. Admin has filter tabs with counts and colored type badges. No build/test commands available due to INTEGRATIONS_ONLY network mode."
 }
