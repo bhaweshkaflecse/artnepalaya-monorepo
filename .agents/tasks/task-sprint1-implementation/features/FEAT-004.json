@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Story 3.1 - CMS Completion: Add 'Creator & Listing Policy' and 'Copyright Policy' CMS pages. The CMS infrastructure already exists (CmsPage model, admin GET/PUT /cms/:slug, mobile CmsPageScreen with dynamic slug loading). Need to: (1) Add the new slugs to the CmsPage model enum, (2) Add them to the mobile SettingsScreen CMS_PAGES array, (3) Add them to the seeder so they are created with default content on fresh deployments.",
+  "status": "completed",
+  "steps": [
+    "Step 1 (Backend CMS Model): Modify backend/src/modules/admin/cmsPage.model.js - Add 'creator-listing-policy' and 'copyright-policy' to the slug enum array. Current enum: ['privacy-policy', 'about-us', 'terms-conditions', 'community-guidelines']. New enum: ['privacy-policy', 'about-us', 'terms-conditions', 'community-guidelines', 'creator-listing-policy', 'copyright-policy'].",
+    "Step 2 (Mobile SettingsScreen): Modify mobile/src/screens/profile/SettingsScreen.tsx - Add the two new pages to the CMS_PAGES array: { title: 'Creator & Listing Policy', slug: 'creator-listing-policy' } and { title: 'Copyright Policy', slug: 'copyright-policy' }.",
+    "Step 3 (Backend Seeder): Modify backend/src/scripts/seedAll.js - Find where CMS pages are seeded (search for CmsPage.create or insertMany). Add entries for the two new pages with default placeholder content. Use meaningful default content like 'This page outlines our creator and listing policies...' and 'This page outlines our copyright policies...' respectively. If no CMS seeding section exists, add one that creates all 6 CMS pages with upsert logic.",
+    "Step 4 (Admin CMS Editor verification): Verify that admin/src/pages/CmsEditor.tsx already handles arbitrary slugs dynamically (it should since the admin route PUT /cms/:slug uses upsert). No changes needed if the CmsEditor already loads any slug. Confirm by reading the file."
+  ],
+  "acceptance_criteria": [
+    "CmsPage model enum includes 'creator-listing-policy' and 'copyright-policy'",
+    "Mobile SettingsScreen shows 'Creator & Listing Policy' and 'Copyright Policy' links",
+    "Tapping the links navigates to CmsPage screen with the correct slug",
+    "Admin can edit these pages via the existing CMS editor",
+    "Seeder creates default content for both new pages",
+    "Existing CMS pages are not affected"
+  ],
+  "verification": [
+    "Run: node --check backend/src/modules/admin/cmsPage.model.js",
+    "Grep for 'creator-listing-policy' in cmsPage.model.js to confirm enum addition",
+    "Grep for 'creator-listing-policy' in SettingsScreen.tsx to confirm mobile addition",
+    "Grep for 'copyright-policy' in SettingsScreen.tsx to confirm mobile addition"
+  ],
+  "blocked_reason": null,
+  "findings": "All 4 files updated: model enum, mobile SettingsScreen, seeder (with full HTML content), and admin CmsEditor sidebar. The admin CmsEditor uses PUT /admin/cms/:slug which does upsert, so it handles any slug dynamically. Added the new slugs to the admin sidebar for discoverability."
+}
