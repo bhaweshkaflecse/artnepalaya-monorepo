@@ -138,10 +138,10 @@ export const getGlobalPopup = async (req, res, next) => {
 
 export const updateGlobalPopup = async (req, res, next) => {
   try {
-    const { heading, icon, body, ctaText, ctaLink, isActive, frequency } = req.body;
+    const { heading, icon, body, ctaText, ctaLink, isActive, frequency, startsAt, endsAt } = req.body;
     const popup = await GlobalPopup.findByIdAndUpdate(
       req.params.id,
-      { $set: { heading, icon, body, ctaText, ctaLink, isActive, frequency, updatedBy: req.user.id } },
+      { $set: { heading, icon, body, ctaText, ctaLink, isActive, frequency, startsAt: startsAt || null, endsAt: endsAt || null, updatedBy: req.user.id } },
       { new: true }
     );
     if (!popup) {
@@ -153,12 +153,13 @@ export const updateGlobalPopup = async (req, res, next) => {
 
 export const createGlobalPopup = async (req, res, next) => {
   try {
-    const { heading, icon, body, ctaText, ctaLink, isActive, frequency } = req.body;
+    const { heading, icon, body, ctaText, ctaLink, isActive, frequency, startsAt, endsAt } = req.body;
     if (!heading || !body) {
       return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'heading and body are required' } });
     }
     const popup = await GlobalPopup.create({
       heading, icon, body, ctaText, ctaLink, isActive, frequency,
+      startsAt: startsAt || null, endsAt: endsAt || null,
       createdBy: req.user.id, updatedBy: req.user.id
     });
     res.status(201).json({ success: true, data: popup });

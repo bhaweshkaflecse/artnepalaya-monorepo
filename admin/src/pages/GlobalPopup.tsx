@@ -12,6 +12,8 @@ interface PopupItem {
   isActive: boolean;
   isArchived: boolean;
   frequency: string;
+  startsAt: string | null;
+  endsAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,6 +26,8 @@ interface PopupFormData {
   ctaLink: string;
   isActive: boolean;
   frequency: string;
+  startsAt: string;
+  endsAt: string;
 }
 
 const iconOptions = ['info', 'warning', 'survey', 'update', 'celebration'];
@@ -42,6 +46,17 @@ const emptyForm: PopupFormData = {
   ctaLink: '',
   isActive: false,
   frequency: 'show_once',
+  startsAt: '',
+  endsAt: '',
+};
+
+/** Convert an ISO date string to datetime-local input format (YYYY-MM-DDTHH:mm) */
+const toDatetimeLocal = (iso: string | null): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
 export const GlobalPopup = () => {
@@ -89,6 +104,8 @@ export const GlobalPopup = () => {
       ctaLink: popup.ctaLink || '',
       isActive: popup.isActive || false,
       frequency: popup.frequency || 'show_once',
+      startsAt: toDatetimeLocal(popup.startsAt),
+      endsAt: toDatetimeLocal(popup.endsAt),
     });
     setEditingId(popup._id);
     setShowForm(true);
@@ -112,11 +129,16 @@ export const GlobalPopup = () => {
     setError(null);
     setSuccess(null);
     try {
+      const payload = {
+        ...form,
+        startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : null,
+        endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
+      };
       if (editingId) {
-        await api.put(`/admin/global-popup/${editingId}`, form);
+        await api.put(`/admin/global-popup/${editingId}`, payload);
         setSuccess('Popup updated successfully.');
       } else {
-        await api.post('/admin/global-popup', form);
+        await api.post('/admin/global-popup', payload);
         setSuccess('Popup created successfully.');
       }
       setShowForm(false);
@@ -131,7 +153,20 @@ export const GlobalPopup = () => {
 
   const getStatusBadge = (popup: PopupItem) => {
     if (popup.isArchived) return { text: 'Archived', class: 'bg-gray-100 text-gray-600' };
+
+    const now = new Date();
+    const startsAt = popup.startsAt ? new Date(popup.startsAt) : null;
+    const endsAt = popup.endsAt ? new Date(popup.endsAt) : null;
+
+    // If there is an end date and it has passed, the popup is expired
+    if (endsAt && now > endsAt) return { text: 'Expired', class: 'bg-red-100 text-red-800' };
+
+    // If there is a start date and it is in the future, the popup is scheduled
+    if (startsAt && now < startsAt) return { text: 'Scheduled', class: 'bg-blue-100 text-blue-800' };
+
+    // Within the time window (or no time constraints) and isActive
     if (popup.isActive) return { text: 'Active', class: 'bg-green-100 text-green-800' };
+
     return { text: 'Inactive', class: 'bg-yellow-100 text-yellow-800' };
   };
 
@@ -261,6 +296,29 @@ export const GlobalPopup = () => {
                 />
               </div>
             </div>
+            {/* Scheduling Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Starts At</label>
+                <input
+                  type="datetime-local"
+                  value={form.startsAt}
+                  onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">Leave empty to start immediately when active</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ends At</label>
+                <input
+                  type="datetime-local"
+                  value={form.endsAt}
+                  onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">Leave empty to run indefinitely</p>
+              </div>
+            </div>
             <div className="flex items-center space-x-3">
               <input
                 type="checkbox"
@@ -291,6 +349,7 @@ export const GlobalPopup = () => {
               <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Icon</th>
               <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Status</th>
               <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Frequency</th>
+              <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Schedule</th>
               <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Created</th>
               <th className="px-5 py-3 font-semibold text-gray-500 text-xs uppercase tracking-wider">Actions</th>
             </tr>
@@ -298,7 +357,7 @@ export const GlobalPopup = () => {
           <tbody>
             {popups.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-12 text-center text-gray-400">
+                <td colSpan={7} className="px-5 py-12 text-center text-gray-400">
                   No popups created yet.
                 </td>
               </tr>
@@ -316,6 +375,16 @@ export const GlobalPopup = () => {
                     </td>
                     <td className="px-5 py-3 text-sm text-gray-600">
                       {frequencyOptions.find(f => f.value === popup.frequency)?.label || popup.frequency}
+                    </td>
+                    <td className="px-5 py-3 text-sm text-gray-500">
+                      {popup.startsAt || popup.endsAt ? (
+                        <div className="space-y-0.5">
+                          {popup.startsAt && <div className="text-xs">From: {new Date(popup.startsAt).toLocaleString()}</div>}
+                          {popup.endsAt && <div className="text-xs">Until: {new Date(popup.endsAt).toLocaleString()}</div>}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">Always</span>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-sm text-gray-500">
                       {new Date(popup.createdAt).toLocaleDateString()}
