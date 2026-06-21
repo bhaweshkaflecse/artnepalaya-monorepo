@@ -52,8 +52,8 @@ export const CommunityInterest = () => {
   }, []);
 
   useEffect(() => {
-    fetchUsers(1, activeType);
-  }, [fetchUsers, activeType]);
+    fetchUsers(1, 'all');
+  }, [fetchUsers]);
 
   const handlePageChange = (page: number) => {
     fetchUsers(page, activeType);

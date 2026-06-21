@@ -3,6 +3,7 @@ import { Post } from '../posts/post.model.js';
 import { Report } from '../reports/report.model.js';
 import { FeaturedPost } from './featured.model.js';
 import { SearchLog } from './searchLog.model.js';
+import { invalidateCache } from '../../shared/utils/cache.js';
 
 /**
  * Escapes special regex characters in a string so it can be safely
@@ -39,6 +40,7 @@ export const getUsers = async (page, limit, search) => {
 export const updateUserStatus = async (userId, status) => {
   const user = await User.findByIdAndUpdate(userId, { $set: { status } }, { new: true }).lean();
   if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
+  invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));
   return user;
 };
 

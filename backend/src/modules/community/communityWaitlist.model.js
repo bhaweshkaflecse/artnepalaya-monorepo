@@ -12,7 +12,7 @@ const communityWaitlistSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-communityWaitlistSchema.index({ userId: 1, type: 1 }, { unique: true, sparse: true });
-communityWaitlistSchema.index({ deviceId: 1, type: 1 }, { unique: true, sparse: true });
+communityWaitlistSchema.index({ userId: 1, type: 1 });
+communityWaitlistSchema.index({ deviceId: 1, type: 1 });
 
 export const CommunityWaitlist = mongoose.model('CommunityWaitlist', communityWaitlistSchema);

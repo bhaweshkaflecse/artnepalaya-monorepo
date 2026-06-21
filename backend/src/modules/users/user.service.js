@@ -131,6 +131,8 @@ export const getSavedPosts = async (userId, page, limit) => {
     });
   }
 
+  // Note: totalItems reflects all saves. Some may be filtered if authors are banned.
+  // This is acceptable as the count will self-correct when users unsave banned authors' posts.
   const totalItems = await Save.countDocuments({ userId });
   return { data: activePosts, meta: { currentPage: page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
 };

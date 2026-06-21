@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-005",
+  "type": "fix",
+  "description": "Address 5 review issues: feed cache invalidation on ban, saved-posts totalItems comment, compound index migration safety, redundant source field removal, and CommunityInterest double-fetch fix.",
+  "status": "in_progress",
+  "steps": [
+    "Step 1: In admin.service.js, import invalidateCache and call it after user status update",
+    "Step 2: In user.service.js getSavedPosts, add explanatory comment about totalItems discrepancy",
+    "Step 3: In communityWaitlist.model.js, remove unique:true from compound indexes",
+    "Step 4: In community.controller.js registerInterest, remove source: type from create calls",
+    "Step 5: In CommunityInterest.tsx, fix double-fetch by removing activeType from useEffect deps"
+  ],
+  "acceptance_criteria": [
+    "admin.service.js imports and calls invalidateCache after status update",
+    "user.service.js has explanatory comment about totalItems behavior",
+    "communityWaitlist.model.js indexes are non-unique for migration safety",
+    "community.controller.js does not write source: type in create calls",
+    "CommunityInterest.tsx useEffect only fires on mount, not on activeType change"
+  ],
+  "verification": [
+    "Run: node --check backend/src/modules/admin/admin.service.js",
+    "Run: node --check backend/src/modules/users/user.service.js",
+    "Run: node --check backend/src/modules/community/communityWaitlist.model.js",
+    "Run: node --check backend/src/modules/community/community.controller.js"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}

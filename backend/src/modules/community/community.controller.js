@@ -39,7 +39,6 @@ export const registerInterest = async (req, res, next) => {
         userId,
         email: req.user.email,
         username: req.user.username,
-        source: type,
         type
       });
       return res.status(201).json({ success: true, message: 'Interest registered successfully!' });
@@ -53,7 +52,7 @@ export const registerInterest = async (req, res, next) => {
     if (existing) {
       return res.status(200).json({ success: true, message: 'Already registered interest!' });
     }
-    await CommunityWaitlist.create({ deviceId, source: type, type });
+    await CommunityWaitlist.create({ deviceId, type });
     return res.status(201).json({ success: true, message: 'Interest registered successfully!' });
   } catch (error) {
     next(error);
