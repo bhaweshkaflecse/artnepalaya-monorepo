@@ -6,12 +6,13 @@ const communityWaitlistSchema = new mongoose.Schema(
     email: { type: String, sparse: true },
     username: { type: String },
     source: { type: String, default: 'community' },
+    type: { type: String, enum: ['community', 'marketplace'], default: 'community' },
     deviceId: { type: String, sparse: true },
   },
   { timestamps: true }
 );
 
-communityWaitlistSchema.index({ userId: 1 }, { unique: true, sparse: true });
-communityWaitlistSchema.index({ deviceId: 1 }, { unique: true, sparse: true });
+communityWaitlistSchema.index({ userId: 1, type: 1 }, { unique: true, sparse: true });
+communityWaitlistSchema.index({ deviceId: 1, type: 1 }, { unique: true, sparse: true });
 
 export const CommunityWaitlist = mongoose.model('CommunityWaitlist', communityWaitlistSchema);

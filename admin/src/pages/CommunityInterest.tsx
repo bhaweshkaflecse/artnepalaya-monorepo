@@ -9,6 +9,7 @@ interface InterestUser {
   username?: string;
   deviceId?: string;
   source: string;
+  type?: string;
   createdAt: string;
 }
 
@@ -17,6 +18,8 @@ interface PaginationMeta {
   limit: number;
   totalItems: number;
   totalPages: number;
+  communityCount?: number;
+  marketplaceCount?: number;
 }
 
 export const CommunityInterest = () => {
@@ -24,14 +27,23 @@ export const CommunityInterest = () => {
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState<PaginationMeta>({ page: 1, limit: 20, totalItems: 0, totalPages: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [activeType, setActiveType] = useState<'all' | 'community' | 'marketplace'>('all');
+  const [communityCount, setCommunityCount] = useState(0);
+  const [marketplaceCount, setMarketplaceCount] = useState(0);
 
-  const fetchUsers = useCallback(async (page: number) => {
+  const fetchUsers = useCallback(async (page: number, type: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get('/admin/community-interest', { params: { page: String(page), limit: '20' } });
+      const params: Record<string, string> = { page: String(page), limit: '20' };
+      if (type !== 'all') params.type = type;
+      const res = await api.get('/admin/community-interest', { params });
       setUsers(res.data.data);
       setMeta(res.data.meta);
+      if (res.data.meta.communityCount !== undefined) {
+        setCommunityCount(res.data.meta.communityCount);
+        setMarketplaceCount(res.data.meta.marketplaceCount);
+      }
     } catch {
       setError('Failed to load community interest users.');
     } finally {
@@ -40,11 +52,11 @@ export const CommunityInterest = () => {
   }, []);
 
   useEffect(() => {
-    fetchUsers(1);
-  }, [fetchUsers]);
+    fetchUsers(1, activeType);
+  }, [fetchUsers, activeType]);
 
   const handlePageChange = (page: number) => {
-    fetchUsers(page);
+    fetchUsers(page, activeType);
   };
 
   const getDisplayName = (user: InterestUser) => {
@@ -70,6 +82,23 @@ export const CommunityInterest = () => {
         </span>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex items-center space-x-2 mb-4">
+        {(['all', 'community', 'marketplace'] as const).map((type) => (
+          <button
+            key={type}
+            onClick={() => { setActiveType(type); fetchUsers(1, type); }}
+            className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
+              activeType === type
+                ? 'bg-gray-900 text-white'
+                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            {type === 'all' ? `All (${meta.totalItems})` : type === 'community' ? `Community (${communityCount})` : `Marketplace (${marketplaceCount})`}
+          </button>
+        ))}
+      </div>
+
       {error && <div className="bg-red-50 text-red-700 px-4 py-2 rounded-md text-sm">{error}</div>}
 
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -79,7 +108,7 @@ export const CommunityInterest = () => {
               <th className="p-4 font-medium text-gray-600 text-sm">#</th>
               <th className="p-4 font-medium text-gray-600 text-sm">Username / Device</th>
               <th className="p-4 font-medium text-gray-600 text-sm">Email</th>
-              <th className="p-4 font-medium text-gray-600 text-sm">Source</th>
+              <th className="p-4 font-medium text-gray-600 text-sm">Type</th>
               <th className="p-4 font-medium text-gray-600 text-sm">Registered At</th>
             </tr>
           </thead>
@@ -107,8 +136,10 @@ export const CommunityInterest = () => {
                   <td className="p-4 text-sm font-medium">{getDisplayName(user)}</td>
                   <td className="p-4 text-sm text-gray-600">{getEmail(user)}</td>
                   <td className="p-4">
-                    <span className="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">
-                      {user.source || 'community'}
+                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                      user.type === 'marketplace' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'
+                    }`}>
+                      {user.type || 'community'}
                     </span>
                   </td>
                   <td className="p-4 text-sm text-gray-500">

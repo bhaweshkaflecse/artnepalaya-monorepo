@@ -46,7 +46,7 @@ const CommunityContent = () => {
 
     setIsJoining(true);
     try {
-      const result = await communityService.joinWaitlist();
+      const result = await communityService.registerInterest('community');
       Alert.alert('Success', result.message || 'You have been added to the waitlist!');
       setHasJoined(true);
       await SecureStore.setItemAsync('communityWaitlistJoined', 'true');
@@ -144,7 +144,7 @@ const MarketplaceContent = () => {
 
     setIsRegistering(true);
     try {
-      const result = await communityService.joinWaitlist();
+      const result = await communityService.registerInterest('marketplace');
       Alert.alert('Success', result.message || 'You have been added to the marketplace waitlist!');
       setHasRegistered(true);
       await SecureStore.setItemAsync('marketplaceWaitlistJoined', 'true');

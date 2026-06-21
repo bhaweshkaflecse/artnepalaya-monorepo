@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Story 2.1 - Community vs Marketplace Separation: Add a 'type' field to the CommunityWaitlist model to distinguish between 'community' and 'marketplace' interest registrations. Update the controller to accept and store this type. Update the mobile CommunityScreen to pass the correct type. Update the admin CommunityInterest page to support filtering by type and show separate counts.",
+  "status": "in_progress",
+  "steps": [
+    "Step 1 (Backend Model): Modify backend/src/modules/community/communityWaitlist.model.js to add a 'type' field with enum ['community', 'marketplace'], defaulting to 'community'. This ensures existing records default to 'community'.",
+    "Step 2 (Backend Controller): Modify backend/src/modules/community/community.controller.js - registerInterest function: Accept 'type' from req.body (default to 'community' if not provided). Pass it to CommunityWaitlist.create() calls. For the authenticated user path: add type to the create call. For the guest user path: same. Also update the existing duplicate check for guests: when source is 'marketplace', allow a separate entry even if a 'community' entry exists for the same deviceId (update findOne queries to include type). Update getInterestUsers to accept a 'type' query param for filtering.",
+    "Step 3 (Backend Controller - getInterestUsers): Modify the getInterestUsers function to support filtering by type. Accept req.query.type. If provided, add { type: req.query.type } to the find query. Also add a separate count endpoint or return counts by type in the response metadata.",
+    "Step 4 (Mobile CommunityScreen.tsx): Modify mobile/src/screens/community/CommunityScreen.tsx - Update the MarketplaceContent's handleSellerRegistration to pass type: 'marketplace' when calling the API. Currently it calls communityService.joinWaitlist() which hits POST /community/waitlist. We need it to call the interest endpoint instead. Update mobile/src/services/community.service.ts to add a registerInterest(type: string) method that POSTs to /community/interest with { type, deviceId }. Update CommunityContent to call registerInterest('community') and MarketplaceContent to call registerInterest('marketplace').",
+    "Step 5 (Admin CommunityInterest.tsx): Modify admin/src/pages/CommunityInterest.tsx to add type filter tabs (All, Community, Marketplace) at the top. Add state for activeFilter. Pass the type query param to the API call. Show counts per type in the header. Add a badge/pill showing the type for each row (already shows source, but now also show type with distinct colors - blue for community, green for marketplace)."
+  ],
+  "acceptance_criteria": [
+    "CommunityWaitlist model has a 'type' field with enum ['community', 'marketplace'] defaulting to 'community'",
+    "Existing records without 'type' field default to 'community' (Mongoose default handles this)",
+    "registerInterest controller accepts and stores the type field",
+    "Users can register interest for community AND marketplace separately (not duplicate-blocked)",
+    "Mobile Community tab registers interest with type='community'",
+    "Mobile Marketplace tab registers interest with type='marketplace'",
+    "Admin CommunityInterest page shows filter tabs for All/Community/Marketplace",
+    "Admin page displays separate counts for each type",
+    "Admin page shows type badge per row"
+  ],
+  "verification": [
+    "Run: node --check backend/src/modules/community/communityWaitlist.model.js",
+    "Run: node --check backend/src/modules/community/community.controller.js",
+    "Grep for \"type\" in communityWaitlist.model.js to confirm field addition",
+    "Grep for \"registerInterest\" in mobile/src/services/community.service.ts to confirm new method"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
