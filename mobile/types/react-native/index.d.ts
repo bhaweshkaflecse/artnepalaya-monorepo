@@ -52,6 +52,8 @@ declare module 'react-native' {
     View: React.FC<any>;
     Text: React.FC<any>;
     Image: React.FC<any>;
+    FlatList: React.FC<any>;
+    ScrollView: React.FC<any>;
     Value: new (value: number) => AnimatedValue;
     timing: (value: AnimatedValue, config: any) => AnimatedCompositeAnimation;
     spring: (value: AnimatedValue, config: any) => AnimatedCompositeAnimation;
@@ -59,11 +61,12 @@ declare module 'react-native' {
     sequence: (animations: AnimatedCompositeAnimation[]) => AnimatedCompositeAnimation;
     parallel: (animations: AnimatedCompositeAnimation[]) => AnimatedCompositeAnimation;
     delay: (time: number) => AnimatedCompositeAnimation;
+    event: (argMapping: any[], config?: any) => (...args: any[]) => void;
   };
 
   export interface AnimatedValue {
     setValue: (value: number) => void;
-    interpolate: (config: { inputRange: number[]; outputRange: any[] }) => any;
+    interpolate: (config: { inputRange: number[]; outputRange: any[]; extrapolate?: string }) => any;
   }
 
   export interface AnimatedCompositeAnimation {

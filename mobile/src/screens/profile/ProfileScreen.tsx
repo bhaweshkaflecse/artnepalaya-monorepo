@@ -143,9 +143,7 @@ export const ProfileScreen = () => {
             {(item.isHumanMade === false || item.isNsfw === true) && (
               <View style={styles.badgeOverlay}>
                 {item.isHumanMade === false && (
-                  <View style={styles.aiBadgeSmall}>
-                    <Text style={styles.badgeTextSmall}>AI</Text>
-                  </View>
+                  <Text style={styles.subtleLabelOverlay}>AI</Text>
                 )}
                 {item.isNsfw === true && (
                   <View style={styles.nsfwBadgeSmall}>
@@ -728,11 +726,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 2,
   },
-  aiBadgeSmall: {
-    backgroundColor: '#6366F1',
-    borderRadius: 7,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
+  subtleLabelOverlay: {
+    fontSize: 8,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.75)',
+    fontStyle: 'italic',
   },
   nsfwBadgeSmall: {
     backgroundColor: '#DC2626',

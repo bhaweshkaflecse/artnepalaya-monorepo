@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Mobile UX overhaul: Cover Flow carousel on LoginScreen, Upload polish on CreateScreen, Content badges to subtle labels across 4 screens, info button alerts on CreateScreen, search debounce change on ExploreScreen, UX polish pass on PostCard/HomeScreen/ProfileScreen/SettingsScreen",
+  "status": "completed",
+  "steps": [
+    "ITEM 1 - LoginScreen Cover Flow: Replace the flat FlatList carousel with a 3D Cover Flow effect using Animated.ScrollView or FlatList with onScroll Animated.event. Each item uses interpolated scale (active 1.0 at ~70-75% width portrait 3:4, neighbors 0.75 scale), rotateY (~10deg toward center), opacity (neighbors 0.6), borderRadius 24, soft shadow on active. Use spring animation. Keep existing carouselData logic intact.",
+    "ITEM 2 - CreateScreen Polish: Change hero aspect ratio from 4/5 to 3/4 (heroTouchable style). Reduce statusBanner paddingVertical from 12 to 10. Reduce thumbnailItem width/height from 68 to 60. Reduce fieldContainer marginBottom from 20 to 16. Reduce complianceCard padding from 16 to 12.",
+    "ITEM 3 - Content Badges to Subtle Labels in PostCard.tsx: Remove colored aiBadge/originalBadge views. Replace AI badge with Text 'info-circle Contains AI-generated media' (grey, 12px, italic). Replace Original badge with Text 'info-circle Original artwork' (grey, 12px, italic). Keep NSFW as small red pill '18+'. Update badgesContainer styles accordingly.",
+    "ITEM 3 continued - Same badge change in PostDetailScreen.tsx: Same pattern - grey text labels for AI/Original, keep 18+ red pill.",
+    "ITEM 3 continued - Same badge change in ExploreScreen.tsx: The explore grid has aiBadgeSmall overlay. Replace with subtle grey text 'AI' label (no colored background) for the overlay. Keep 18+ as small red badge.",
+    "ITEM 3 continued - Same badge change in ProfileScreen.tsx: Same as ExploreScreen - replace aiBadgeSmall with subtle grey text, keep 18+ red badge.",
+    "ITEM 4 - Info Button Alerts on CreateScreen: Wrap each Feather 'info' icon in the compliance section with TouchableOpacity. AI row info onPress: Alert.alert('AI Content Disclosure', 'AI-assisted content includes artwork created or enhanced using artificial intelligence tools such as Midjourney, DALL-E, Stable Diffusion, etc.'). Original content row info onPress: Alert.alert('Original Content', 'By checking this, you declare that this artwork is your own original creation and does not infringe on any copyright.'). NSFW row: Add info icon with onPress: Alert.alert('Mature Content', 'Mark content as mature if it contains nudity, violence, or other content not suitable for audiences under 18.')",
+    "ITEM 9 - ExploreScreen search insights: Change debounce timer from 500ms to 2000ms. Change minimum length from 3 to 2. The useEffect that calls api.get('/tags'...).",
+    "ITEM 13 - UX Polish Pass: In PostCard.tsx increase card borderRadius-related styles to use 12 instead of 8 where applicable. Ensure action buttons have minWidth/minHeight 44. Add subtle shadow (iOS shadowOpacity 0.08, Android elevation 2) to the card. In ProfileScreen.tsx ensure thumbnailContainer has borderRadius 12 and subtle shadow. Apply consistent 16px horizontal padding. Do NOT heavily restructure - just targeted style tweaks."
+  ],
+  "acceptance_criteria": [
+    "LoginScreen uses Animated interpolation for cover flow effect with scale, rotateY, opacity on carousel items",
+    "CreateScreen hero uses aspectRatio 3/4, statusBanner paddingVertical 10, thumbnail size 60, field marginBottom 16, compliance padding 12",
+    "PostCard/PostDetailScreen/ExploreScreen/ProfileScreen show grey italic text for AI/Original labels instead of colored pill badges",
+    "18+ remains as a red badge across all screens",
+    "CreateScreen info icons trigger Alert.alert with explanatory text",
+    "ExploreScreen search logging debounces at 2000ms with 2-char minimum",
+    "PostCard has borderRadius 12 on card, min 44x44 touch targets, subtle shadow"
+  ],
+  "verification": [
+    "Grep for 'interpolate' in LoginScreen.tsx to confirm animated interpolation",
+    "Grep for '3 / 4' or '3/4' in CreateScreen.tsx for aspect ratio",
+    "Grep for 'Contains AI-generated media' in PostCard.tsx",
+    "Grep for 'Alert.alert' in CreateScreen.tsx for info modals",
+    "Grep for '2000' in ExploreScreen.tsx for debounce timer"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes verified. TypeScript error count stayed at 67 (pre-existing type stub limitations). Cover Flow uses Animated.FlatList with scrollX interpolation for scale, rotateY, opacity. Type stubs updated to include Animated.FlatList, Animated.event, and extrapolate in interpolate config. Alert.alert calls added to all 3 compliance info buttons including NSFW which previously had no info icon."
+}

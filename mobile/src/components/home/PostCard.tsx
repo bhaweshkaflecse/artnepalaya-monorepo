@@ -344,18 +344,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       {(((post as any).isAIGenerated === true || post.isHumanMade === false) || (post as any).isOriginalContent === true || (post as any).isNsfw === true) && (
         <View style={styles.badgesContainer}>
           {((post as any).isAIGenerated === true || post.isHumanMade === false) && (
-            <View style={styles.aiBadge}>
-              <Text style={styles.badgeText}>AI</Text>
-            </View>
+            <Text style={styles.subtleLabel}>{'\u24D8'} Contains AI-generated media</Text>
           )}
           {(post as any).isOriginalContent === true && (
-            <View style={styles.originalBadge}>
-              <Text style={styles.badgeText}>Original</Text>
-            </View>
+            <Text style={styles.subtleLabel}>{'\u24D8'} Original artwork</Text>
           )}
           {(post as any).isNsfw === true && (
             <View style={styles.nsfwBadge}>
-              <Text style={styles.badgeText}>18+</Text>
+              <Text style={styles.badgeText}>{'\uD83D\uDD34'} 18+</Text>
             </View>
           )}
         </View>
@@ -397,6 +393,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     borderBottomWidth: 1,
     borderBottomColor: '#1A1A1A',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',
@@ -470,6 +472,10 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     marginRight: 16,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     paddingHorizontal: 12,
@@ -533,18 +539,13 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 4,
     gap: 6,
+    flexWrap: 'wrap',
+    alignItems: 'center',
   },
-  aiBadge: {
-    backgroundColor: '#6366F1',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  originalBadge: {
-    backgroundColor: '#10B981',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  subtleLabel: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
   },
   nsfwBadge: {
     backgroundColor: '#DC2626',

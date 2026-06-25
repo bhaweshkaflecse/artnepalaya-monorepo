@@ -37,7 +37,8 @@ const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.72;
 const CAROUSEL_ITEM_SPACING = 12;
-const CAROUSEL_HEIGHT = SCREEN_HEIGHT * 0.32;
+const CAROUSEL_ITEM_FULL = CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING;
+const CAROUSEL_HEIGHT = CAROUSEL_ITEM_WIDTH * (4 / 3); // portrait 3:4 ratio
 
 /**
  * Generates a unique device identifier for token binding.
@@ -60,6 +61,7 @@ export const LoginScreen = () => {
   const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
   const carouselRef = useRef<FlatList>(null);
   const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scrollX = useRef(new Animated.Value(0)).current;
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -96,7 +98,7 @@ export const LoginScreen = () => {
         setActiveCarouselIndex((prev) => {
           const next = (prev + 1) % authBackgroundMedia.length;
           carouselRef.current?.scrollToOffset({
-            offset: next * (CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING),
+            offset: next * CAROUSEL_ITEM_FULL,
             animated: true,
           });
           return next;
@@ -299,22 +301,56 @@ export const LoginScreen = () => {
     itemVisiblePercentThreshold: 50,
   }).current;
 
-  // Render carousel item
-  const renderCarouselItem = useCallback(({ item }: { item: { url: string; type: string; color?: string } }) => (
-    <View style={styles.carouselItem}>
-      {item.url ? (
-        <Image
-          source={{ uri: item.url }}
-          style={styles.carouselImage}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={[styles.carouselPlaceholder, { backgroundColor: item.color || lightColors.surface }]}>
-          <Feather name="image" size={32} color={lightColors.textSecondary} />
-        </View>
-      )}
-    </View>
-  ), []);
+  // Render carousel item with Cover Flow interpolation
+  const renderCarouselItem = useCallback(({ item, index }: { item: { url: string; type: string; color?: string }; index: number }) => {
+    const inputRange = [
+      (index - 1) * CAROUSEL_ITEM_FULL,
+      index * CAROUSEL_ITEM_FULL,
+      (index + 1) * CAROUSEL_ITEM_FULL,
+    ];
+
+    const scale = scrollX.interpolate({
+      inputRange,
+      outputRange: [0.75, 1.0, 0.75],
+      extrapolate: 'clamp',
+    });
+
+    const rotateY = scrollX.interpolate({
+      inputRange,
+      outputRange: ['10deg', '0deg', '-10deg'],
+      extrapolate: 'clamp',
+    });
+
+    const opacity = scrollX.interpolate({
+      inputRange,
+      outputRange: [0.6, 1.0, 0.6],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <Animated.View
+        style={[
+          styles.carouselItem,
+          {
+            transform: [{ scale }, { rotateY }, { perspective: 1000 }],
+            opacity,
+          },
+        ]}
+      >
+        {item.url ? (
+          <Image
+            source={{ uri: item.url }}
+            style={styles.carouselImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.carouselPlaceholder, { backgroundColor: item.color || lightColors.surface }]}>
+            <Feather name="image" size={32} color={lightColors.textSecondary} />
+          </View>
+        )}
+      </Animated.View>
+    );
+  }, [scrollX]);
 
   // Placeholder carousel items when no media is loaded (solid color surfaces, no external network)
   const placeholderMedia = [
@@ -336,18 +372,23 @@ export const LoginScreen = () => {
         >
           {/* Hero Carousel Section */}
           <View style={styles.carouselSection}>
-            <FlatList
+            <Animated.FlatList
               ref={carouselRef}
               data={carouselData}
               renderItem={renderCarouselItem}
               keyExtractor={(_, index) => `carousel-${index}`}
               horizontal
               showsHorizontalScrollIndicator={false}
-              snapToInterval={CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING}
+              snapToInterval={CAROUSEL_ITEM_FULL}
               decelerationRate="fast"
               contentContainerStyle={styles.carouselContainer}
               onViewableItemsChanged={onViewableItemsChanged}
               viewabilityConfig={viewabilityConfig}
+              onScroll={Animated.event(
+                [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                { useNativeDriver: true }
+              )}
+              scrollEventThrottle={16}
             />
             {/* Pagination Dots */}
             <View style={styles.paginationContainer}>
@@ -517,14 +558,14 @@ const styles = StyleSheet.create({
     width: CAROUSEL_ITEM_WIDTH,
     height: CAROUSEL_HEIGHT,
     marginHorizontal: CAROUSEL_ITEM_SPACING / 2,
-    borderRadius: 20,
+    borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: lightColors.surface,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
+        shadowOpacity: 0.15,
         shadowRadius: 12,
       },
       android: {

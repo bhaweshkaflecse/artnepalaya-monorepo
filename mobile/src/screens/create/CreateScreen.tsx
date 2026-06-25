@@ -665,7 +665,9 @@ export const CreateScreen = () => {
               <Text style={styles.complianceLabel}>This artwork was created with AI tools</Text>
               <Text style={styles.complianceHelper}>AI-assisted or AI-generated content</Text>
             </View>
-            <Feather name="info" size={14} color={lightColors.textSecondary} />
+            <TouchableOpacity onPress={() => Alert.alert('AI Content Disclosure', 'AI-assisted content includes artwork created or enhanced using artificial intelligence tools such as Midjourney, DALL-E, Stable Diffusion, etc.')}>
+              <Feather name="info" size={14} color={lightColors.textSecondary} />
+            </TouchableOpacity>
           </TouchableOpacity>
 
           {/* Original Content */}
@@ -682,7 +684,9 @@ export const CreateScreen = () => {
               <Text style={styles.complianceLabel}>I confirm this artwork is NOT AI-generated</Text>
               <Text style={styles.complianceHelper}>Original creative work declaration</Text>
             </View>
-            <Feather name="info" size={14} color={lightColors.textSecondary} />
+            <TouchableOpacity onPress={() => Alert.alert('Original Content', 'By checking this, you declare that this artwork is your own original creation and does not infringe on any copyright.')}>
+              <Feather name="info" size={14} color={lightColors.textSecondary} />
+            </TouchableOpacity>
           </TouchableOpacity>
 
           {/* NSFW */}
@@ -699,6 +703,9 @@ export const CreateScreen = () => {
               <Text style={styles.complianceLabel}>18+ / Mature Content</Text>
               <Text style={styles.complianceHelper}>Contains sensitive content not suitable for all audiences</Text>
             </View>
+            <TouchableOpacity onPress={() => Alert.alert('Mature Content', 'Mark content as mature if it contains nudity, violence, or other content not suitable for audiences under 18.')}>
+              <Feather name="info" size={14} color={lightColors.textSecondary} />
+            </TouchableOpacity>
           </TouchableOpacity>
         </Animated.View>
 
@@ -796,7 +803,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 12,
     marginBottom: 16,
   },
@@ -835,7 +842,7 @@ const styles = StyleSheet.create({
   },
   heroTouchable: {
     width: '100%',
-    aspectRatio: 4 / 5,
+    aspectRatio: 3 / 4,
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: lightColors.surface,
@@ -975,8 +982,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   thumbnailItem: {
-    width: 68,
-    height: 68,
+    width: 60,
+    height: 60,
     borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 2,
@@ -1013,8 +1020,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   thumbnailAddBtn: {
-    width: 68,
-    height: 68,
+    width: 60,
+    height: 60,
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: lightColors.border,
@@ -1045,7 +1052,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   fieldContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   fieldLabel: {
     fontSize: 14,
@@ -1131,7 +1138,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: lightColors.border,
-    padding: 16,
+    padding: 12,
     marginBottom: 16,
   },
   complianceTitleText: {

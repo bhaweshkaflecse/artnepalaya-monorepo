@@ -515,18 +515,14 @@ export const PostDetailScreen = () => {
         {(((post as any).isAIGenerated === true || post.isHumanMade === false) || (post as any).isOriginalContent === true || (post as any).isNsfw === true) && (
           <View style={styles.badgesContainer}>
             {((post as any).isAIGenerated === true || post.isHumanMade === false) && (
-              <View style={styles.aiBadge}>
-                <Text style={styles.badgeText}>AI</Text>
-              </View>
+              <Text style={styles.subtleLabel}>{'\u24D8'} Contains AI-generated media</Text>
             )}
             {(post as any).isOriginalContent === true && (
-              <View style={styles.originalBadge}>
-                <Text style={styles.badgeText}>Original</Text>
-              </View>
+              <Text style={styles.subtleLabel}>{'\u24D8'} Original artwork</Text>
             )}
             {(post as any).isNsfw === true && (
               <View style={styles.nsfwBadge}>
-                <Text style={styles.badgeText}>18+</Text>
+                <Text style={styles.badgeText}>{'\uD83D\uDD34'} 18+</Text>
               </View>
             )}
           </View>
@@ -769,18 +765,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 8,
     gap: 6,
+    flexWrap: 'wrap',
+    alignItems: 'center',
   },
-  aiBadge: {
-    backgroundColor: '#6366F1',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  originalBadge: {
-    backgroundColor: '#10B981',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+  subtleLabel: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
   },
   nsfwBadge: {
     backgroundColor: '#DC2626',

@@ -146,12 +146,12 @@ export const ExploreScreen = () => {
     fetchArtworkTypes();
   }, []);
 
-  // Search logging: debounce 500ms, fire when searchQuery has 3+ chars
+  // Search logging: debounce 2000ms, fire when searchQuery has 2+ chars
   useEffect(() => {
-    if (searchQuery.length < 3) return;
+    if (searchQuery.length < 2) return;
     const timer = setTimeout(() => {
       api.get('/tags', { params: { q: searchQuery } }).catch(() => {});
-    }, 500);
+    }, 2000);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -236,9 +236,7 @@ export const ExploreScreen = () => {
         {(item.isHumanMade === false || (item as any).isNsfw === true) && (
           <View style={styles.badgeOverlay}>
             {item.isHumanMade === false && (
-              <View style={styles.aiBadgeSmall}>
-                <Text style={styles.badgeTextSmall}>AI</Text>
-              </View>
+              <Text style={styles.subtleLabelOverlay}>AI</Text>
             )}
             {(item as any).isNsfw === true && (
               <View style={styles.nsfwBadgeSmall}>
@@ -499,11 +497,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 3,
   },
-  aiBadgeSmall: {
-    backgroundColor: '#6366F1',
-    borderRadius: 8,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
+  subtleLabelOverlay: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.75)',
+    fontStyle: 'italic',
   },
   nsfwBadgeSmall: {
     backgroundColor: '#DC2626',
