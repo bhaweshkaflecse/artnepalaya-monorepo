@@ -80,16 +80,50 @@ export const removeFeatured = async (req, res, next) => {
 export const getAuthMedia = async (req, res, next) => {
   try {
     const config = await AppConfig.findOne({ key: 'auth_background_media' }).lean();
-    res.status(200).json({ success: true, data: config ? config.value : [] });
+    const storedValue = config ? config.value : [];
+
+    // If stored value is an array of postIds (strings), resolve post details for admin display
+    if (Array.isArray(storedValue) && storedValue.length > 0 && typeof storedValue[0] === 'string') {
+      const postIds = storedValue;
+      const posts = await Post.find({ _id: { $in: postIds }, deletedAt: null })
+        .select('media authorId caption createdAt')
+        .populate('authorId', 'username')
+        .lean();
+
+      // Maintain original order
+      const postMap = {};
+      posts.forEach((p) => { postMap[p._id.toString()] = p; });
+      const resolvedPosts = postIds
+        .filter((id) => postMap[id])
+        .map((id) => {
+          const p = postMap[id];
+          return {
+            postId: p._id,
+            url: p.media?.[0]?.url || '',
+            type: p.media?.[0]?.type || 'image',
+            caption: p.caption || '',
+            artist: p.authorId?.username || '',
+            createdAt: p.createdAt,
+          };
+        });
+
+      res.status(200).json({ success: true, data: { postIds, posts: resolvedPosts } });
+    } else {
+      // Legacy format: raw media entries
+      res.status(200).json({ success: true, data: { postIds: [], posts: [], legacy: storedValue } });
+    }
   } catch (err) { next(err); }
 };
 
 export const updateAuthMedia = async (req, res, next) => {
   try {
-    const { media } = req.body;
+    const { postIds } = req.body;
+    if (!Array.isArray(postIds)) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'postIds must be an array' } });
+    }
     await AppConfig.findOneAndUpdate(
       { key: 'auth_background_media' },
-      { $set: { value: media, updatedBy: req.user.id } },
+      { $set: { value: postIds, updatedBy: req.user.id } },
       { upsert: true, new: true }
     );
     res.status(200).json({ success: true, message: 'Auth media updated' });

@@ -302,7 +302,7 @@ export const LoginScreen = () => {
   }).current;
 
   // Render carousel item with Cover Flow interpolation
-  const renderCarouselItem = useCallback(({ item, index }: { item: { url: string; type: string; color?: string }; index: number }) => {
+  const renderCarouselItem = useCallback(({ item, index }: { item: { url: string; type: string; color?: string; artist?: string; caption?: string }; index: number }) => {
     const inputRange = [
       (index - 1) * CAROUSEL_ITEM_FULL,
       index * CAROUSEL_ITEM_FULL,
@@ -338,11 +338,19 @@ export const LoginScreen = () => {
         ]}
       >
         {item.url ? (
-          <Image
-            source={{ uri: item.url }}
-            style={styles.carouselImage}
-            resizeMode="cover"
-          />
+          <>
+            <Image
+              source={{ uri: item.url }}
+              style={styles.carouselImage}
+              resizeMode="cover"
+            />
+            {item.artist ? (
+              <View style={styles.artistOverlay}>
+                <Feather name="user" size={10} color="#FFFFFF" />
+                <Text style={styles.artistOverlayText}>@{item.artist}</Text>
+              </View>
+            ) : null}
+          </>
         ) : (
           <View style={[styles.carouselPlaceholder, { backgroundColor: item.color || lightColors.surface }]}>
             <Feather name="image" size={32} color={lightColors.textSecondary} />
@@ -576,6 +584,23 @@ const styles = StyleSheet.create({
   carouselImage: {
     width: '100%',
     height: '100%',
+  },
+  artistOverlay: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  artistOverlayText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '500',
+    marginLeft: 4,
   },
   carouselPlaceholder: {
     width: '100%',

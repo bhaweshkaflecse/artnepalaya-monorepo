@@ -4,18 +4,48 @@ import { CmsPage } from './cmsPage.model.js';
 import { GlobalPopup } from './globalPopup.model.js';
 import { FeaturedPost } from './featured.model.js';
 import { ArtworkType } from './artworkType.model.js';
+import { Post } from '../posts/post.model.js';
 import { optionalAuth } from '../../middlewares/optionalAuth.js';
 
 const router = Router();
 
 // Public endpoint - no auth required
+// Resolves stored postIds to media URLs for the mobile login carousel
 router.get('/auth-media', async (req, res, next) => {
   try {
     const config = await AppConfig.findOne({ key: 'auth_background_media' }).lean();
-    res.status(200).json({ 
-      success: true, 
-      data: config ? config.value : [] 
-    });
+    const storedValue = config ? config.value : [];
+
+    // New format: array of postId strings
+    if (Array.isArray(storedValue) && storedValue.length > 0 && typeof storedValue[0] === 'string') {
+      const postIds = storedValue;
+      const posts = await Post.find({ _id: { $in: postIds }, deletedAt: null })
+        .select('media authorId caption')
+        .populate('authorId', 'username')
+        .lean();
+
+      // Build a map to maintain the stored order
+      const postMap = {};
+      posts.forEach((p) => { postMap[p._id.toString()] = p; });
+
+      const resolved = postIds
+        .filter((id) => postMap[id])
+        .map((id) => {
+          const p = postMap[id];
+          return {
+            url: p.media?.[0]?.url || '',
+            type: p.media?.[0]?.type || 'image',
+            postId: p._id,
+            caption: p.caption || '',
+            artist: p.authorId?.username || '',
+          };
+        });
+
+      return res.status(200).json({ success: true, data: resolved });
+    }
+
+    // Legacy format: already [{url, type}] objects - return as-is for backward compatibility
+    res.status(200).json({ success: true, data: storedValue });
   } catch (err) {
     next(err);
   }
