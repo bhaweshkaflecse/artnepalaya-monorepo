@@ -361,12 +361,13 @@ export const CreateScreen = () => {
   const canPublish = mediaItems.length > 0 && !isPublishing;
 
   const handlePublishPress = () => {
+    // Call handlePublish immediately to prevent double-tap race
+    handlePublish();
+    // Animate the button visually (non-blocking)
     Animated.sequence([
       Animated.timing(publishScaleAnim, { toValue: 0.92, duration: 80, useNativeDriver: true }),
       Animated.timing(publishScaleAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-    ]).start(() => {
-      handlePublish();
-    });
+    ]).start();
   };
 
   const goToPrevMedia = () => {
@@ -445,7 +446,9 @@ export const CreateScreen = () => {
             </Text>
           </View>
           <View style={styles.statusBadge}>
-            <Text style={styles.statusBadgeText}>Media {mediaItems.length}/6</Text>
+            <Text style={styles.statusBadgeText}>
+              {mediaItems.filter((m) => m.type === 'image').length}/{MAX_IMAGES} img | {mediaItems.filter((m) => m.type === 'video').length}/{MAX_VIDEOS} vid
+            </Text>
           </View>
         </Animated.View>
 

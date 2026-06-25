@@ -16,7 +16,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
@@ -87,27 +87,30 @@ export const LoginScreen = () => {
     ]).start();
   }, []);
 
-  // Auto-scroll carousel
-  useEffect(() => {
-    if (authBackgroundMedia.length <= 1) return;
+  // Auto-scroll carousel (gated by screen focus)
+  useFocusEffect(
+    useCallback(() => {
+      if (authBackgroundMedia.length <= 1) return;
 
-    autoScrollTimer.current = setInterval(() => {
-      setActiveCarouselIndex((prev) => {
-        const next = (prev + 1) % authBackgroundMedia.length;
-        carouselRef.current?.scrollToOffset({
-          offset: next * (CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING),
-          animated: true,
+      autoScrollTimer.current = setInterval(() => {
+        setActiveCarouselIndex((prev) => {
+          const next = (prev + 1) % authBackgroundMedia.length;
+          carouselRef.current?.scrollToOffset({
+            offset: next * (CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING),
+            animated: true,
+          });
+          return next;
         });
-        return next;
-      });
-    }, 4000);
+      }, 4000);
 
-    return () => {
-      if (autoScrollTimer.current) {
-        clearInterval(autoScrollTimer.current);
-      }
-    };
-  }, [authBackgroundMedia.length]);
+      return () => {
+        if (autoScrollTimer.current) {
+          clearInterval(autoScrollTimer.current);
+          autoScrollTimer.current = null;
+        }
+      };
+    }, [authBackgroundMedia.length])
+  );
 
   /**
    * IMPORTANT: Google OAuth in Expo Go (SDK 50)
@@ -297,21 +300,27 @@ export const LoginScreen = () => {
   }).current;
 
   // Render carousel item
-  const renderCarouselItem = useCallback(({ item }: { item: { url: string; type: string } }) => (
+  const renderCarouselItem = useCallback(({ item }: { item: { url: string; type: string; color?: string } }) => (
     <View style={styles.carouselItem}>
-      <Image
-        source={{ uri: item.url }}
-        style={styles.carouselImage}
-        resizeMode="cover"
-      />
+      {item.url ? (
+        <Image
+          source={{ uri: item.url }}
+          style={styles.carouselImage}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={[styles.carouselPlaceholder, { backgroundColor: item.color || lightColors.surface }]}>
+          <Feather name="image" size={32} color={lightColors.textSecondary} />
+        </View>
+      )}
     </View>
   ), []);
 
-  // Placeholder carousel items when no media is loaded
+  // Placeholder carousel items when no media is loaded (solid color surfaces, no external network)
   const placeholderMedia = [
-    { url: 'https://picsum.photos/600/400?art=1', type: 'image' as const },
-    { url: 'https://picsum.photos/600/400?art=2', type: 'image' as const },
-    { url: 'https://picsum.photos/600/400?art=3', type: 'image' as const },
+    { url: '', type: 'placeholder' as const, color: lightColors.surface },
+    { url: '', type: 'placeholder' as const, color: lightColors.border },
+    { url: '', type: 'placeholder' as const, color: lightColors.surface },
   ];
 
   const carouselData = authBackgroundMedia.length > 0 ? authBackgroundMedia : placeholderMedia;
@@ -526,6 +535,12 @@ const styles = StyleSheet.create({
   carouselImage: {
     width: '100%',
     height: '100%',
+  },
+  carouselPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   paginationContainer: {
     flexDirection: 'row',
