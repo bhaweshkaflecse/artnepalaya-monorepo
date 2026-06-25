@@ -1,0 +1,7 @@
+{
+  "task_id": "task-premium-composition-pass",
+  "task_description": "Final premium composition pass on Login and Upload screens - holistic viewport optimization with Cover Flow depth on Login carousel, restored Continue as Guest, and compact creative workflow on Upload screen",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

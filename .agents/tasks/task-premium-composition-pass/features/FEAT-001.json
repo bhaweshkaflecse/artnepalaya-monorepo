@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Premium composition pass on LoginScreen - true Cover Flow 3D carousel with depth/perspective/shadows, restored Continue as Guest as subtle secondary navigation, and holistic viewport composition ensuring Hero->Brand->Stats->Login->Signup->Guest->QA all fit within the first viewport with minimal scrolling.",
+  "status": "in_progress",
+  "steps": [
+    "In mobile/src/screens/auth/LoginScreen.tsx, enhance the carousel's Cover Flow effect: the current implementation already uses scale, rotateY, opacity, and perspective interpolation. Enhance it further by: (1) adding translateX overlap so neighboring items slide behind the center item, (2) deepening the shadow on the center item to create floating depth (stronger shadow for center vs none for edges), (3) optionally adding a subtle zIndex via translateZ or elevation difference to reinforce the layering. The goal is a premium gallery/museum feel where the center artwork floats and neighbors recede.",
+    "Ensure the carousel height constant (CAROUSEL_HEIGHT) and spacing produce a visually impressive but space-efficient hero. Keep CAROUSEL_HEIGHT at Math.min(SCREEN_HEIGHT * 0.26, 200) or adjust slightly if needed to fit the full viewport hierarchy. The carousel should feel like a curated gallery installation, not just a list of images.",
+    "The 'Continue as Guest' button is already present in the current code with subtle styling (guestButton style with fontSize: 13, textSecondary color, fontWeight 400). VERIFY it is present and keep it as-is - it should be very light supporting navigation, not competing with the primary CTA. If style adjustments are needed to make it even more subtle (e.g. slightly reduced opacity or smaller font), make them.",
+    "Review the overall vertical rhythm of the first viewport. The current hierarchy is: carouselSection (marginTop:12, marginBottom:12) -> brandingSection (marginBottom:12) -> statsInline (marginBottom:16) -> authSection (marginBottom:8) -> guestButton (marginBottom:8) -> termsText (marginBottom:12) -> devLoginContainer (marginTop:8). Tighten any excessive margins to ensure ALL elements fit on one screen (approx 667-812pt viewport after SafeArea). The user should see everything from carousel to QA login without scrolling on a standard iPhone.",
+    "Add a subtle translateX interpolation to the carousel so neighboring items overlap slightly behind the center card. Use input ranges: index-1 should translate toward center by about 20-30px, index+1 should translate toward center by -20 to -30px. This creates the classic Cover Flow overlap effect where side items peek out from behind the center.",
+    "Increase center carousel item shadow depth: for iOS use shadowOpacity: 0.25 and shadowRadius: 16 on center item. For the carouselItem base style, keep shadowOpacity: 0.15 and shadowRadius: 12 as fallback. The animated opacity already handles the visual weight difference."
+  ],
+  "acceptance_criteria": [
+    "The carousel has true Cover Flow depth: center item appears to float with stronger shadow, neighboring items are scaled down, rotated in 3D, partially overlapping behind center, and faded",
+    "Continue as Guest is present as subtle secondary navigation below the Sign Up button - light typography, secondary color, no border or background",
+    "The entire onboarding hierarchy (carousel, brand, stats, Google login, signup, guest, QA) fits within one viewport on a standard iPhone (375x812 or similar) with minimal or no scrolling",
+    "The visual hierarchy clearly communicates: premium art platform, hero artwork, brand identity, effortless sign-in"
+  ],
+  "verification": [
+    "Read the final LoginScreen.tsx and confirm all carousel interpolations include translateX for overlap effect",
+    "Confirm Continue as Guest TouchableOpacity exists with subtle styling",
+    "Verify no TypeScript syntax errors in the file by checking balanced braces and proper JSX"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

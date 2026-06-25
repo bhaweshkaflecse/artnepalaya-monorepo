@@ -1,0 +1,20 @@
+{
+  "project_type": "Expo React Native mobile app (monorepo with backend + admin)",
+  "language": "TypeScript / React Native",
+  "build_system": "Expo (no npm install available - INTEGRATIONS_ONLY network)",
+  "test_framework": "N/A for UI composition work",
+  "build_command": "N/A - INTEGRATIONS_ONLY mode, AST validation only",
+  "test_command": "N/A - visual composition changes only",
+  "verification_instructions": "Verify TypeScript compiles by checking for syntax errors in modified files",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "No setup needed - modify files in place",
+  "environment_constraints": "INTEGRATIONS_ONLY network - cannot npm install, cannot access external URLs, cannot run builds. Only file modifications allowed.",
+  "contribution_requirements": "Commit to fix/final-stabilization branch with descriptive message",
+  "key_patterns": "React Native StyleSheet, Animated API for transitions, lightColors theme from ../../theme/colors, Feather/Ionicons icons, SafeAreaView wrapper, ScrollView for content",
+  "relevant_files": [
+    "mobile/src/screens/auth/LoginScreen.tsx",
+    "mobile/src/screens/create/CreateScreen.tsx",
+    "mobile/src/theme/colors.ts"
+  ],
+  "directory_structure": "mobile/src/screens/auth/ - authentication screens, mobile/src/screens/create/ - upload screen, mobile/src/theme/ - color tokens"
+}

@@ -301,7 +301,7 @@ export const LoginScreen = () => {
     itemVisiblePercentThreshold: 50,
   }).current;
 
-  // Render carousel item with Cover Flow interpolation
+  // Render carousel item with premium Cover Flow interpolation (depth, overlap, shadows)
   const renderCarouselItem = useCallback(({ item, index }: { item: { url: string; type: string; color?: string; artist?: string; caption?: string }; index: number }) => {
     const inputRange = [
       (index - 2) * CAROUSEL_ITEM_FULL,
@@ -313,19 +313,37 @@ export const LoginScreen = () => {
 
     const scale = scrollX.interpolate({
       inputRange,
-      outputRange: [0.65, 0.78, 1.0, 0.78, 0.65],
+      outputRange: [0.6, 0.75, 1.0, 0.75, 0.6],
       extrapolate: 'clamp',
     });
 
     const rotateY = scrollX.interpolate({
       inputRange,
-      outputRange: ['18deg', '12deg', '0deg', '-12deg', '-18deg'],
+      outputRange: ['25deg', '15deg', '0deg', '-15deg', '-25deg'],
       extrapolate: 'clamp',
     });
 
     const opacity = scrollX.interpolate({
       inputRange,
-      outputRange: [0.3, 0.6, 1.0, 0.6, 0.3],
+      outputRange: [0.25, 0.55, 1.0, 0.55, 0.25],
+      extrapolate: 'clamp',
+    });
+
+    // Cover Flow overlap: neighbors slide toward center, creating depth layering
+    const translateX = scrollX.interpolate({
+      inputRange,
+      outputRange: [40, 25, 0, -25, -40],
+      extrapolate: 'clamp',
+    });
+
+    // Elevated shadow for center item (iOS), reduced for neighbors
+    const shadowOpacity = scrollX.interpolate({
+      inputRange: [
+        (index - 1) * CAROUSEL_ITEM_FULL,
+        index * CAROUSEL_ITEM_FULL,
+        (index + 1) * CAROUSEL_ITEM_FULL,
+      ],
+      outputRange: [0.08, 0.3, 0.08],
       extrapolate: 'clamp',
     });
 
@@ -334,8 +352,14 @@ export const LoginScreen = () => {
         style={[
           styles.carouselItem,
           {
-            transform: [{ scale }, { rotateY }, { perspective: 1000 }],
+            transform: [
+              { perspective: 800 },
+              { translateX },
+              { scale },
+              { rotateY },
+            ],
             opacity,
+            ...(Platform.OS === 'ios' ? { shadowOpacity } : {}),
           },
         ]}
       >
@@ -538,13 +562,13 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
 
   // Carousel
   carouselSection: {
-    marginTop: 12,
-    marginBottom: 12,
+    marginTop: 8,
+    marginBottom: 8,
   },
   carouselContainer: {
     paddingHorizontal: (SCREEN_WIDTH - CAROUSEL_ITEM_WIDTH) / 2 - CAROUSEL_ITEM_SPACING / 2,
@@ -559,12 +583,12 @@ const styles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.2,
+        shadowRadius: 16,
       },
       android: {
-        elevation: 6,
+        elevation: 8,
       },
     }),
   },
@@ -599,7 +623,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 14,
+    marginTop: 10,
   },
   paginationDot: {
     width: 7,
@@ -618,7 +642,7 @@ const styles = StyleSheet.create({
   brandingSection: {
     alignItems: 'center',
     paddingHorizontal: 32,
-    marginBottom: 12,
+    marginBottom: 6,
   },
   brandName: {
     fontSize: 22,
@@ -632,13 +656,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: lightColors.textSecondary,
     letterSpacing: 1.5,
-    marginBottom: 12,
+    marginBottom: 6,
   },
 
   // Statistics - inline
   statsInline: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   statsInlineText: {
     fontSize: 11,
@@ -707,13 +731,14 @@ const styles = StyleSheet.create({
   // Continue as Guest
   guestButton: {
     alignItems: 'center',
-    paddingVertical: 8,
-    marginBottom: 8,
+    paddingVertical: 6,
+    marginBottom: 6,
   },
   guestButtonText: {
-    fontSize: 13,
+    fontSize: 12,
     color: lightColors.textSecondary,
     fontWeight: '400',
+    opacity: 0.75,
   },
 
   // Terms
@@ -723,7 +748,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 48,
     lineHeight: 14,
-    marginBottom: 12,
+    marginBottom: 8,
     opacity: 0.7,
   },
 
@@ -731,13 +756,13 @@ const styles = StyleSheet.create({
   devLoginContainer: {
     paddingHorizontal: 24,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 4,
   },
   devDivider: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   dividerLine: {
     flex: 1,

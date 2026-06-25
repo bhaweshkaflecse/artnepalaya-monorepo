@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Premium composition pass on CreateScreen (Upload Artwork) - optimize the entire creative workflow viewport so the first screen immediately communicates 'I am creating artwork' rather than 'I am filling a long form'. Reduce unnecessary vertical whitespace throughout, keep preview visually important but not dominating, ensure status->preview->thumbnails->beginning of details all appear above the fold.",
+  "status": "pending",
+  "steps": [
+    "In mobile/src/screens/create/CreateScreen.tsx, reduce the hero container height. Currently heroTouchable has height: Math.min(SCREEN_HEIGHT * 0.32, 280). Reduce to Math.min(SCREEN_HEIGHT * 0.28, 240) - still visually prominent but allows more content above fold.",
+    "Reduce the content padding. Currently styles.content has padding: 16, paddingBottom: 48. Reduce to padding: 12, paddingBottom: 48 to give slightly more vertical room.",
+    "Reduce the statusBanner marginBottom from 8 to 6. Reduce heroContainer marginBottom from 6 to 4. Reduce paginationDots marginBottom from 8 to 4. Reduce thumbnailStrip marginBottom (in contentContainerStyle paddingVertical) from 4 to 2. Reduce limitsText marginBottom from 12 to 8.",
+    "Reduce fieldContainer marginBottom from 12 to 10. Reduce textAreaContainer minHeight from 120 to 100 (the text area is still usable but does not dominate). Reduce textArea minHeight from 90 to 72.",
+    "Reduce the header paddingVertical from 12 to 10 to gain a few pixels at the top.",
+    "The heroPlaceholder padding is 32 - reduce to 24 to make the empty state more compact. Reduce heroPlaceholderIcon dimensions from 72x72 to 60x60 (borderRadius 30).",
+    "Ensure the overall effect is that when the screen opens, the user sees: status banner -> media preview (still the visual hero) -> thumbnail strip -> beginning of description field, all without scrolling. The screen should feel like a creative workspace, not a form."
+  ],
+  "acceptance_criteria": [
+    "The media preview remains the largest single visual element but no longer consumes more than ~28% of screen height",
+    "Status banner, preview, thumbnail gallery, and beginning of the description field are all visible above the fold on a standard iPhone",
+    "Vertical whitespace between elements is tight and intentional - no large gaps between sections",
+    "The overall feel is 'creative workspace' rather than 'long form to fill out'"
+  ],
+  "verification": [
+    "Read the final CreateScreen.tsx and confirm heroTouchable height is reduced",
+    "Verify all margin/padding reductions are applied as specified",
+    "Verify no TypeScript syntax errors in the file by checking balanced braces and proper JSX"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
