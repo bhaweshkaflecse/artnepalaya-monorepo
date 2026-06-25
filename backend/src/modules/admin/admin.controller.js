@@ -45,6 +45,13 @@ export const getPosts = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+export const softDeletePost = async (req, res, next) => {
+  try {
+    await adminService.softDeletePost(req.params.postId);
+    res.status(200).json({ success: true, message: 'Post moved to trash' });
+  } catch (err) { next(err); }
+};
+
 export const deletePost = async (req, res, next) => {
   try { await adminService.deletePost(req.params.postId); res.status(200).json({ success: true, message: "Post deleted permanently" }); } 
   catch (err) { next(err); }

@@ -88,6 +88,13 @@ export const deletePost = async (postId) => {
   return true;
 };
 
+export const softDeletePost = async (postId) => {
+  const post = await Post.findByIdAndUpdate(postId, { $set: { deletedAt: new Date() } }, { new: true });
+  if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });
+  invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));
+  return true;
+};
+
 export const restorePost = async (postId) => {
   const post = await Post.findByIdAndUpdate(postId, { $set: { deletedAt: null } }, { new: true });
   if (!post) throw Object.assign(new Error('Post not found'), { status: 404 });

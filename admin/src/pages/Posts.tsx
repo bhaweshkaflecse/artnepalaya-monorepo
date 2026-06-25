@@ -133,7 +133,13 @@ export const Posts = () => {
     setActionLoading(postId);
     setError(null);
     try {
-      await api.delete(`/admin/posts/${postId}`);
+      if (activeTab === 'active') {
+        // Soft delete: move to trash
+        await api.put(`/admin/posts/${postId}/trash`);
+      } else {
+        // Permanent delete from trash tab
+        await api.delete(`/admin/posts/${postId}`);
+      }
       setPosts((prev) => prev.filter((p) => p._id !== postId));
       setMeta((prev) => ({ ...prev, totalItems: prev.totalItems - 1 }));
     } catch {
@@ -410,12 +416,12 @@ export const Posts = () => {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-lg">
             <h3 className="text-lg font-semibold mb-2 text-gray-900">
-              {activeTab === 'trash' ? 'Permanently Delete Post' : 'Delete Post'}
+              {activeTab === 'trash' ? 'Permanently Delete Post' : 'Move to Trash'}
             </h3>
             <p className="text-sm text-gray-500 mb-5">
               {activeTab === 'trash'
                 ? 'Are you sure you want to permanently delete this post? This will remove all associated data and cannot be undone.'
-                : 'Are you sure you want to delete this post? This action cannot be undone.'}
+                : 'Are you sure you want to move this post to trash? It can be restored later from the Trash tab.'}
             </p>
             <div className="flex space-x-3 justify-end">
               <button
@@ -428,7 +434,7 @@ export const Posts = () => {
                 onClick={() => handleDelete(deleteModal)}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
               >
-                {activeTab === 'trash' ? 'Permanently Delete' : 'Delete'}
+                {activeTab === 'trash' ? 'Permanently Delete' : 'Move to Trash'}
               </button>
             </div>
           </div>

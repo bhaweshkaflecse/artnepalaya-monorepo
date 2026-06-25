@@ -67,14 +67,19 @@ export const EditProfileScreen = () => {
 
     setIsSaving(true);
     try {
-      const updatedUser = await userService.updateProfile({
+      const payload: any = {
         fullName: fullName.trim(),
         username: username.trim(),
         bio: bio.trim(),
-        role: selectedRole,
         location: location.trim() || null,
         website: website.trim() || null,
-      } as any);
+      };
+      // Only include role if it's a valid non-admin role (Admin role cannot be changed via this form)
+      const validRoles = ['Artist', 'Art Lover', 'Business', 'Gallery'];
+      if (validRoles.includes(selectedRole)) {
+        payload.role = selectedRole;
+      }
+      const updatedUser = await userService.updateProfile(payload);
       dispatch(setProfile(updatedUser));
       Alert.alert('Success', 'Profile updated successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() },

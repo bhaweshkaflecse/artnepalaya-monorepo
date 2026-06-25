@@ -19,6 +19,7 @@ router.get('/reports', validate(validation.queryPaginationSchema), controller.ge
 router.put('/reports/:reportId/resolve', validate(validation.reportIdParamsSchema), controller.resolveReport);
 router.put('/reports/:reportId/notes', validate(validation.reportIdParamsSchema), controller.updateReportNotes);
 
+router.put('/posts/:postId/trash', validate(validation.postIdParamsSchema), controller.softDeletePost);
 router.delete('/posts/:postId', validate(validation.postIdParamsSchema), controller.deletePost);
 router.put('/posts/:postId/restore', validate(validation.postIdParamsSchema), controller.restorePost);
 router.get('/posts', controller.getPosts);
