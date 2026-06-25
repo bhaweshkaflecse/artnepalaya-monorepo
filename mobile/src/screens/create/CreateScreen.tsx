@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: lightColors.border,
   },
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
     color: '#999999',
   },
   content: {
-    padding: 16,
+    padding: 12,
     paddingBottom: 48,
   },
   statusBanner: {
@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   statusBannerReady: {
     backgroundColor: '#F0FFF4',
@@ -833,11 +833,11 @@ const styles = StyleSheet.create({
     color: lightColors.textSecondary,
   },
   heroContainer: {
-    marginBottom: 6,
+    marginBottom: 4,
   },
   heroTouchable: {
     width: '100%',
-    height: Math.min(SCREEN_HEIGHT * 0.32, 280),
+    height: Math.min(SCREEN_HEIGHT * 0.28, 240),
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: lightColors.surface,
@@ -856,12 +856,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    padding: 24,
   },
   heroPlaceholderIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: lightColors.border,
     justifyContent: 'center',
     alignItems: 'center',
@@ -949,7 +949,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
     gap: 6,
   },
   dot: {
@@ -971,7 +971,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 8,
     paddingHorizontal: 2,
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   thumbnailWrapper: {
     position: 'relative',
@@ -1040,10 +1040,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: lightColors.textSecondary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   fieldContainer: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   fieldLabel: {
     fontSize: 13,
@@ -1057,13 +1057,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: lightColors.border,
     padding: 10,
-    minHeight: 120,
+    minHeight: 100,
   },
   textArea: {
     fontSize: 15,
     color: lightColors.textPrimary,
     lineHeight: 22,
-    minHeight: 90,
+    minHeight: 72,
   },
   charCounter: {
     fontSize: 11,
