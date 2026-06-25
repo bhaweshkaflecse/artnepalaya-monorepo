@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Implement swipeable media carousel in PostCard for multi-media posts, update AppStack route params to pass initialMediaIndex, and update PostDetailScreen to accept and use it.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. Update AppStackParamList in mobile/src/navigation/AppStack.tsx: Change PostDetail params from `{ postId: string }` to `{ postId: string; initialMediaIndex?: number }` to support passing the current carousel index when navigating from the feed.",
     "2. Update PostDetailScreen in mobile/src/screens/post/PostDetailScreen.tsx: (a) Update the RouteProp type to include `initialMediaIndex?: number`. (b) Extract `initialMediaIndex` from route.params (default 0). (c) Initialize the `currentIndex` state with `initialMediaIndex` instead of 0. (d) Add a ref to the FlatList and use `initialScrollIndex={initialMediaIndex}` prop, plus `getItemLayout` for the FlatList to enable instant scroll to the correct index on mount.",
@@ -29,5 +29,5 @@
     "Verify PostCard renders a horizontal FlatList for media with pagination dots"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All pre-existing TypeScript errors in the project are due to missing type declarations (node_modules not installed in this INTEGRATIONS_ONLY environment). My changes introduced zero new errors - verified by stashing changes and comparing error output before/after. The FlatList carousel uses SCREEN_WIDTH for snap interval and item width, matching the PostDetailScreen pattern. The renderMediaItem callback uses useCallback for performance. The handleImageTap function is shared across all carousel items (not per-item) since the double-tap/single-tap refs are at the component level - this works correctly because only one item is interactable at a time."
 }
