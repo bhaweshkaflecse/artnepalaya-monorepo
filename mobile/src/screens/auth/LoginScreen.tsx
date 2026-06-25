@@ -256,10 +256,6 @@ export const LoginScreen = () => {
     }
   };
 
-  const handleSignUp = () => {
-    navigation.navigate('SignUp');
-  };
-
   // Button press animation helpers
   const onPressIn = useCallback(() => {
     Animated.spring(buttonScale, {
@@ -511,8 +507,9 @@ export const LoginScreen = () => {
 
             {/* Secondary: Sign up with Google */}
             <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={handleSignUp}
+              style={[styles.secondaryButton, isLoading && styles.buttonDisabled]}
+              onPress={handleGoogleLogin}
+              disabled={isLoading}
               activeOpacity={0.7}
             >
               <AntDesign name="google" size={18} color={lightColors.accent} style={styles.buttonIcon} />
