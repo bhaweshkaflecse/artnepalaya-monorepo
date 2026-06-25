@@ -1,0 +1,32 @@
+{
+  "project_type": "Expo React Native mobile app (Expo SDK 50)",
+  "language": "TypeScript/React Native",
+  "build_system": "expo (no install possible - INTEGRATIONS_ONLY network). Files can only be modified/created.",
+  "test_framework": "No test framework configured in mobile app. Validation is visual/type-check only.",
+  "build_command": "Cannot run build (no network for npm install). Validation via TypeScript type-checking in IDE only.",
+  "test_command": "No test runner available. Validate by reading code for correctness.",
+  "verification_instructions": "1. Verify all existing business logic functions are preserved unchanged. 2. Verify imports resolve to existing modules. 3. Verify no new npm dependencies are introduced. 4. Verify TypeScript types are correct.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "N/A - INTEGRATIONS_ONLY network mode prevents any setup.",
+  "environment_constraints": "INTEGRATIONS_ONLY network - cannot npm install, cannot run expo start, cannot pull images. Only modify/create source files. No new dependencies allowed. Only React Native built-in Animated API available (no reanimated, no gesture-handler, no linear-gradient).",
+  "contribution_requirements": "Preserve all existing business logic, API integration, Redux state management, navigation, authentication, upload pipeline, and validation. Only improve UI/UX.",
+  "key_patterns": "Screens export named components. StyleSheet.create for styles. lightColors/darkColors from theme/colors.ts. Feather and Ionicons from @expo/vector-icons. SafeAreaView wrapper. useAppSelector/useAppDispatch custom hooks.",
+  "relevant_files": [
+    "mobile/src/screens/auth/LoginScreen.tsx",
+    "mobile/src/screens/create/CreateScreen.tsx",
+    "mobile/src/components/common/AnimatedBackground.tsx",
+    "mobile/src/theme/colors.ts",
+    "mobile/src/services/auth.service.ts",
+    "mobile/src/services/api.ts",
+    "mobile/src/store/slices/authSlice.ts",
+    "mobile/src/store/slices/feedSlice.ts",
+    "mobile/src/store/slices/userSlice.ts",
+    "mobile/src/store/slices/appSlice.ts",
+    "mobile/src/navigation/AuthStack.tsx",
+    "mobile/src/navigation/MainTabs.tsx",
+    "mobile/src/utils/media.ts",
+    "mobile/src/services/post.service.ts",
+    "mobile/src/screens/post/PostDetailScreen.tsx"
+  ],
+  "directory_structure": "mobile/src/screens/ - all screens grouped by feature. mobile/src/components/ - reusable components. mobile/src/services/ - API service layers. mobile/src/store/slices/ - Redux toolkit slices. mobile/src/theme/ - color definitions. mobile/src/utils/ - utility functions. mobile/src/navigation/ - React Navigation stacks and tabs."
+}
