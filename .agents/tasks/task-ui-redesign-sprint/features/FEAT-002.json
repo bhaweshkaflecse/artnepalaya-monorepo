@@ -1,0 +1,50 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Redesign CreateScreen.tsx to match premium artwork upload UI with publish header, status banner, large hero preview with carousel navigation, thumbnail strip with drag-to-reorder, improved form fields, compliance section cards, and floating upload progress indicator. All existing business logic (media picker, FormData construction, API upload, Redux dispatches, validation) must be preserved exactly as-is.",
+  "status": "completed",
+  "steps": [
+    "Rewrite mobile/src/screens/create/CreateScreen.tsx with the following visual structure while keeping ALL existing state, hooks, effects, and handler functions unchanged:",
+    "1. PUBLISH HEADER: Top navigation bar with back button (Feather 'arrow-left'), centered title 'Upload Artwork', and Publish button as red rounded pill (backgroundColor #FF3B30, borderRadius 20, paddingHorizontal 20). Publish button shows disabled/enabled/uploading states visually.",
+    "2. PUBLISH STATUS BANNER: Green status card below header showing dynamic validation state. When media selected: green background (#F0FFF4), 'Ready to publish' with checkmark, 'X items uploaded'. When no media: amber (#FFFBEB), 'Minimum 1 artwork required'. Include media counter badge on right: 'Media N/6'.",
+    "3. LARGE HERO PREVIEW: Large rounded (borderRadius 16) media preview container (aspectRatio 4/5). Show active media item. For videos: show video badge with duration and play icon overlay. Add 'Cover' badge (red pill) on the first/cover item. Add position indicator '2/5' bottom-right.",
+    "4. CAROUSEL NAVIGATION: Previous/Next large circular arrow buttons (white background, shadow, Feather 'chevron-left'/'chevron-right') overlaid on left/right of hero preview. Update activePreviewIndex on press.",
+    "5. PAGINATION DOTS: Below hero preview, dots for each media item. Active dot is red (#FF3B30), inactive is grey.",
+    "6. THUMBNAIL STRIP: Horizontal ScrollView of thumbnails (width 68, height 68, borderRadius 10). Active thumbnail has red border. Each thumbnail has: delete button (top-right X), video duration badge (bottom-left), selection border when active. Add 'Add Media' card at end with dashed border and + icon.",
+    "7. UPLOAD LIMITS TEXT: Display formatted limits below thumbnails: 'Up to 5 images + 1 video | JPG, PNG, WEBP, MP4 | Max 10MB/image, 50MB/video'.",
+    "8. DESCRIPTION FIELD: Large rounded textarea (borderRadius 14, backgroundColor lightColors.surface, borderWidth 1, borderColor lightColors.border). Character counter showing current/2000. Placeholder 'Describe your artwork...'.",
+    "9. KEYWORDS/TAGS FIELD: Rounded input (borderRadius 14) with improved helper text 'Separate with commas (e.g., landscape, oil painting, Nepal)'.",
+    "10. ARTWORK TYPES: Current chip logic preserved. Red selected chips (#FF3B30 background, white text), grey unselected (lightColors.surface background, border). Wrap in horizontal ScrollView.",
+    "11. COMPLIANCE SECTION: Card layout (rounded, bordered, lightColors.surface background) containing all three checkboxes grouped together. Improved wording: 'I confirm this artwork is NOT AI-generated' for original declaration with info icon. 'This artwork was created with AI tools' for AI disclosure. '18+ / Mature Content' for NSFW. Each with Ionicons checkbox icons.",
+    "12. UPLOAD PROGRESS (floating): When isPublishing is true, show a bottom floating card (position absolute, bottom 20, full width minus padding) with: cloud upload icon, progress bar (red fill), percentage text, 'Uploading artwork...' text. Use Animated API for slide-up entrance.",
+    "13. PUBLISH BUTTON STATES: Visually indicate states - Ready (red, enabled), Missing fields (grey, disabled with hint), Uploading (show progress), Completed (green flash). Without changing validation logic.",
+    "14. ANIMATIONS: Fade-in for sections on mount using Animated API. Scale press effect on publish button. Smooth opacity transition for status banner color changes. Slide-up for upload progress card.",
+    "15. GUEST MODE: Preserve existing guest info card and guest warning card with improved styling (rounded, proper shadows).",
+    "16. Preserve ALL existing logic exactly: pickImage (with selectionLimit: Math.max(1, 6 - mediaItems.length)), removeMediaItem, toggleArtworkType, resetForm, handlePublish (with FormData construction loop, api.post, prependFeedPost, prependMyPost dispatches), all validation logic, all error handling.",
+    "17. Use lightColors from theme/colors.ts consistently. Ensure responsive layout across devices."
+  ],
+  "acceptance_criteria": [
+    "CreateScreen renders without errors with all existing imports resolving correctly",
+    "Media picker (pickImage) preserves exact same logic: ImagePicker.launchImageLibraryAsync with selectionLimit: Math.max(1, 6 - mediaItems.length), allowsMultipleSelection: true, quality: 0.8",
+    "FormData construction in handlePublish appends ALL mediaItems in a loop - no media is lost",
+    "api.post('/posts', formData, { headers multipart, timeout 120000, onUploadProgress }) call is preserved exactly",
+    "prependFeedPost and prependMyPost Redux dispatches after successful publish are preserved",
+    "All file size validations (10MB images, 50MB videos, 100MB total) are preserved",
+    "MAX_IMAGES = 5, MAX_VIDEOS = 1 constants are preserved",
+    "artworkType chips from /config/artwork-types API fetch are preserved",
+    "isAIGenerated, isOriginalContent, isNsfw checkboxes and their FormData append logic are preserved",
+    "Guest mode restriction in pickImage and handlePublish is preserved",
+    "No new npm dependencies introduced",
+    "Visual output matches premium upload UI design with proper spacing, rounded components, and status indicators"
+  ],
+  "verification": [
+    "Read the final CreateScreen.tsx and verify handlePublish function has identical FormData construction logic",
+    "Verify pickImage function preserves selectionLimit: Math.max(1, 6 - mediaItems.length) and all file size checks",
+    "Verify all imports resolve to existing modules",
+    "Verify the component exports as named export { CreateScreen }",
+    "Verify MAX_IMAGES = 5 and MAX_VIDEOS = 1 constants are present",
+    "Verify no media items are filtered out or lost between selection and FormData append"
+  ],
+  "blocked_reason": null,
+  "findings": "All business logic preserved exactly - pickImage with selectionLimit: Math.max(1, 6 - mediaItems.length), handlePublish with FormData loop over all mediaItems, api.post with multipart headers and 120000 timeout, prependFeedPost/prependMyPost dispatches, all file size validations (10MB images, 50MB videos, 100MB total), guest mode restrictions. No new npm dependencies. Used React Native built-in Animated API for fade-in, scale press, and slide-up progress. Cannot run build/test since network is INTEGRATIONS_ONLY - validation done via code review and structural verification (407 balanced braces). Media pipeline is completely unchanged per orchestrator guidance."
+}
