@@ -1,0 +1,31 @@
+{
+  "project_type": "Full-stack monorepo: Node.js Express backend + Expo React Native mobile + Vite React admin",
+  "language": "TypeScript (mobile/admin), JavaScript ES modules (backend)",
+  "build_system": "npm workspaces, no package manager available in sandbox",
+  "test_framework": "No test suite observed",
+  "build_command": "N/A - INTEGRATIONS_ONLY network, cannot install dependencies",
+  "test_command": "N/A - no test runner available",
+  "verification_instructions": "AST-level validation only; verify files parse correctly with node --check for backend JS files",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "N/A - code-only changes, cannot run npm install",
+  "environment_constraints": "INTEGRATIONS_ONLY network - cannot npm install, pull images, or access external registries. Only modify files and commit.",
+  "contribution_requirements": "Commit message format: fix: description. Push to fix/final-stabilization branch.",
+  "key_patterns": "Backend uses ES modules with named exports. Mobile uses React Native StyleSheet, Redux Toolkit, expo-vector-icons Feather/Ionicons. Zod validation with .strict() for user updates. Dark theme on feed/detail screens, light theme on create/profile screens.",
+  "relevant_files": [
+    "mobile/src/screens/auth/LoginScreen.tsx",
+    "mobile/src/screens/create/CreateScreen.tsx",
+    "mobile/src/components/home/PostCard.tsx",
+    "mobile/src/screens/post/PostDetailScreen.tsx",
+    "mobile/src/screens/explore/ExploreScreen.tsx",
+    "mobile/src/screens/profile/ProfileScreen.tsx",
+    "mobile/src/services/api.ts",
+    "backend/src/modules/posts/post.service.js",
+    "backend/src/modules/admin/admin.service.js",
+    "backend/src/modules/admin/globalPopup.model.js",
+    "backend/src/modules/admin/config.routes.js",
+    "backend/src/modules/users/user.validation.js",
+    "mobile/src/screens/home/HomeScreen.tsx",
+    "mobile/src/screens/profile/SettingsScreen.tsx"
+  ],
+  "directory_structure": "backend/src/modules/ - feature-based backend modules. mobile/src/screens/ - screen components. mobile/src/components/ - shared components. mobile/src/services/ - API layer."
+}
