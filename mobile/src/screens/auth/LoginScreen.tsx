@@ -391,9 +391,11 @@ export const LoginScreen = () => {
 
   return (
     <View style={styles.root}>
-      {/* Simulated warm white to cream gradient background */}
-      <View style={styles.gradientLayer1} />
-      <View style={styles.gradientLayer2} />
+      {/* Multi-zone gradient: warm cream/sky top fading to clean white bottom */}
+      <View style={styles.gradientBase} />
+      <View style={styles.gradientWarmMid} />
+      <View style={styles.gradientWarmTop} />
+      <View style={styles.gradientSkyHint} />
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
@@ -587,19 +589,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  // Simulated gradient layers
-  gradientLayer1: {
+  // Multi-zone gradient simulation — warm cream top fading to clean white bottom
+  gradientBase: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#FFFFFF',
   },
-  gradientLayer2: {
+  gradientWarmMid: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    height: SCREEN_HEIGHT * 0.50,
     backgroundColor: '#FFFBF5',
-    opacity: 0.6,
+    opacity: 0.55,
+  },
+  gradientWarmTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: SCREEN_HEIGHT * 0.25,
+    backgroundColor: '#FFF5EB',
+    opacity: 0.45,
+  },
+  gradientSkyHint: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: SCREEN_HEIGHT * 0.15,
+    backgroundColor: '#F0F7FF',
+    opacity: 0.22,
   },
   safeArea: {
     flex: 1,
