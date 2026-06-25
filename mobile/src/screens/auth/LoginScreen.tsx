@@ -35,13 +35,12 @@ WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.62;
-const CAROUSEL_ITEM_SPACING = 2;
+const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.64;
+const CAROUSEL_ITEM_SPACING = 16;
 const CAROUSEL_ITEM_FULL = CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING;
-const CAROUSEL_HEIGHT = Math.min(SCREEN_HEIGHT * 0.40, 340);
-// Cover Flow overlap: show only ~30% of side cards
-const SIDE_CARD_VISIBLE_FRACTION = 0.30;
-const SIDE_CARD_TRANSLATE = CAROUSEL_ITEM_WIDTH * (1 - SIDE_CARD_VISIBLE_FRACTION) * 0.52;
+const CAROUSEL_HEIGHT = SCREEN_HEIGHT * 0.42;
+// Cover Flow: large spacing ensures FlatList renders neighbors, then translateX pulls them inward
+const SIDE_OVERLAP_INWARD = CAROUSEL_ITEM_WIDTH * 0.28;
 
 /**
  * Generates a unique device identifier for token binding.
@@ -310,9 +309,10 @@ export const LoginScreen = () => {
       extrapolate: 'clamp',
     });
 
+    // Pull neighbors inward to create visual overlap (classic Cover Flow)
     const translateX = scrollX.interpolate({
       inputRange,
-      outputRange: [SIDE_CARD_TRANSLATE * 1.6, SIDE_CARD_TRANSLATE, 0, -SIDE_CARD_TRANSLATE, -SIDE_CARD_TRANSLATE * 1.6],
+      outputRange: [SIDE_OVERLAP_INWARD * 1.4, SIDE_OVERLAP_INWARD, 0, -SIDE_OVERLAP_INWARD, -SIDE_OVERLAP_INWARD * 1.4],
       extrapolate: 'clamp',
     });
 
@@ -391,7 +391,10 @@ export const LoginScreen = () => {
 
   return (
     <View style={styles.root}>
-      {/* Multi-zone gradient: warm cream/sky top fading to clean white bottom */}
+      {/* Premium gradient background: warm cream top fading to white bottom */}
+      {/* TODO: When mobile/assets/loginimage.png is ready, replace gradient layers with:
+          <Image source={require('../../../assets/loginimage.png')} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+      */}
       <View style={styles.gradientBase} />
       <View style={styles.gradientWarmMid} />
       <View style={styles.gradientWarmTop} />
@@ -450,11 +453,13 @@ export const LoginScreen = () => {
               },
             ]}
           >
-            {/* Logo placeholder */}
+            {/* App Logo */}
             <View style={styles.logoContainer}>
-              <View style={styles.logoCircle}>
-                <Text style={styles.logoText}>A</Text>
-              </View>
+              <Image
+                source={require('../../../assets/icon.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
 
             <Text style={styles.brandName}>ArtNepalaya</Text>
@@ -537,7 +542,10 @@ export const LoginScreen = () => {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Terms Text with tappable links - pushed toward bottom */}
+          {/* Spacer pushes bottom content toward screen edge */}
+          <View style={{ flex: 1, minHeight: 4 }} />
+
+          {/* Terms Text with tappable links */}
           <View style={styles.termsContainer}>
             <Text style={styles.termsText}>By continuing, you agree to our </Text>
             <TouchableOpacity
@@ -591,7 +599,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  // Multi-zone gradient simulation — warm cream top fading to clean white bottom
+  // Premium gradient simulation -- warm cream top fading to clean white bottom
   gradientBase: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#FFFFFF',
@@ -601,27 +609,27 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: SCREEN_HEIGHT * 0.50,
+    height: SCREEN_HEIGHT * 0.55,
     backgroundColor: '#FFFBF5',
-    opacity: 0.55,
+    opacity: 0.6,
   },
   gradientWarmTop: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: SCREEN_HEIGHT * 0.25,
-    backgroundColor: '#FFF5EB',
-    opacity: 0.45,
+    height: SCREEN_HEIGHT * 0.30,
+    backgroundColor: '#FFF8F0',
+    opacity: 0.5,
   },
   gradientSkyHint: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: SCREEN_HEIGHT * 0.15,
-    backgroundColor: '#F0F7FF',
-    opacity: 0.22,
+    height: SCREEN_HEIGHT * 0.12,
+    backgroundColor: '#FFF5E8',
+    opacity: 0.25,
   },
   safeArea: {
     flex: 1,
@@ -631,15 +639,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 20,
+    paddingBottom: 12,
   },
 
-  // === Hero Section (Top 40%) ===
+  // === Hero Section (Top ~42%) ===
   heroSection: {
-    height: SCREEN_HEIGHT * 0.40,
+    height: CAROUSEL_HEIGHT,
     justifyContent: 'center',
-    marginTop: 16,
-    marginBottom: 14,
+    marginTop: 8,
+    marginBottom: 8,
     overflow: 'visible',
   },
   carouselFlatList: {
@@ -648,25 +656,24 @@ const styles = StyleSheet.create({
   carouselContainer: {
     paddingHorizontal: (SCREEN_WIDTH - CAROUSEL_ITEM_WIDTH) / 2 - CAROUSEL_ITEM_SPACING / 2,
     alignItems: 'center',
-    overflow: 'visible',
   },
   carouselItem: {
     width: CAROUSEL_ITEM_WIDTH,
-    height: CAROUSEL_HEIGHT - 40,
+    height: CAROUSEL_ITEM_WIDTH * (4 / 3),
     marginHorizontal: CAROUSEL_ITEM_SPACING / 2,
     borderRadius: 20,
     backgroundColor: lightColors.surface,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.8)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.85)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.30,
-        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 14 },
+        shadowOpacity: 0.28,
+        shadowRadius: 28,
       },
       android: {
-        elevation: 16,
+        elevation: 18,
       },
     }),
   },
@@ -707,7 +714,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 6,
   },
   paginationDot: {
     width: 7,
@@ -722,76 +729,56 @@ const styles = StyleSheet.create({
     backgroundColor: lightColors.accent,
   },
 
-  // === Brand Section (Middle 30%) ===
+  // === Brand Section (Middle) ===
   brandSection: {
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   logoContainer: {
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  logoCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: lightColors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: lightColors.accent,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  logoText: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.5,
+  logoImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
   },
   brandName: {
     fontSize: 26,
     fontWeight: '800',
     color: lightColors.textPrimary,
     letterSpacing: 0.3,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   tagline: {
     fontSize: 13,
     fontWeight: '500',
     color: lightColors.textSecondary,
     letterSpacing: 1.5,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   brandDescription: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '400',
     color: lightColors.textSecondary,
     textAlign: 'center',
-    lineHeight: 19,
+    lineHeight: 18,
     paddingHorizontal: 16,
-    marginBottom: 14,
+    marginBottom: 10,
   },
   // Statistics Cards
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 10,
+    gap: 8,
   },
   statCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     alignItems: 'center',
-    minWidth: 90,
+    minWidth: 88,
     borderWidth: 1,
     borderColor: lightColors.border,
     ...Platform.select({
@@ -818,20 +805,20 @@ const styles = StyleSheet.create({
     color: lightColors.textSecondary,
   },
 
-  // === Auth Section (Bottom 30%) ===
+  // === Auth Section (Bottom) ===
   authSection: {
     paddingHorizontal: 24,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: lightColors.accent,
-    paddingVertical: 14,
+    paddingVertical: 13,
     borderRadius: 12,
     width: '100%',
-    marginBottom: 10,
+    marginBottom: 8,
     ...Platform.select({
       ios: {
         shadowColor: lightColors.accent,
@@ -861,10 +848,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
-    paddingVertical: 12,
+    paddingVertical: 11,
     borderRadius: 12,
     width: '100%',
-    marginBottom: 12,
+    marginBottom: 8,
     borderWidth: 1.5,
     borderColor: lightColors.accent,
   },
@@ -878,7 +865,7 @@ const styles = StyleSheet.create({
   orDivider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   orDividerLine: {
     flex: 1,
@@ -894,7 +881,7 @@ const styles = StyleSheet.create({
   // Continue as Guest
   guestButton: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   guestButtonText: {
     fontSize: 13,
@@ -909,8 +896,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
-    marginTop: 16,
-    marginBottom: 12,
+    marginTop: 6,
+    marginBottom: 6,
   },
   termsText: {
     fontSize: 11,
@@ -928,13 +915,14 @@ const styles = StyleSheet.create({
   devLoginContainer: {
     paddingHorizontal: 24,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
+    marginBottom: 8,
   },
   devDivider: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   dividerLine: {
     flex: 1,
