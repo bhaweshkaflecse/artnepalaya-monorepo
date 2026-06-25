@@ -38,7 +38,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.62;
 const CAROUSEL_ITEM_SPACING = 2;
 const CAROUSEL_ITEM_FULL = CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING;
-const CAROUSEL_HEIGHT = Math.min(SCREEN_HEIGHT * 0.38, 320);
+const CAROUSEL_HEIGHT = Math.min(SCREEN_HEIGHT * 0.40, 340);
 // Cover Flow overlap: show only ~30% of side cards
 const SIDE_CARD_VISIBLE_FRACTION = 0.30;
 const SIDE_CARD_TRANSLATE = CAROUSEL_ITEM_WIDTH * (1 - SIDE_CARD_VISIBLE_FRACTION) * 0.52;
@@ -416,6 +416,7 @@ export const LoginScreen = () => {
               snapToInterval={CAROUSEL_ITEM_FULL}
               decelerationRate="fast"
               contentContainerStyle={styles.carouselContainer}
+              style={styles.carouselFlatList}
               onViewableItemsChanged={onViewableItemsChanged}
               viewabilityConfig={viewabilityConfig}
               onScroll={Animated.event(
@@ -423,6 +424,7 @@ export const LoginScreen = () => {
                 { useNativeDriver: false }
               )}
               scrollEventThrottle={16}
+              removeClippedSubviews={false}
             />
             {/* Pagination Dots */}
             <View style={styles.paginationContainer}>
@@ -507,6 +509,13 @@ export const LoginScreen = () => {
               )}
             </TouchableOpacity>
 
+            {/* Divider between Continue and Sign up */}
+            <View style={styles.orDivider}>
+              <View style={styles.orDividerLine} />
+              <Text style={styles.orDividerText}>or</Text>
+              <View style={styles.orDividerLine} />
+            </View>
+
             {/* Secondary: Sign up with Google */}
             <TouchableOpacity
               style={[styles.secondaryButton, isLoading && styles.buttonDisabled]}
@@ -518,13 +527,6 @@ export const LoginScreen = () => {
               <Text style={styles.secondaryButtonText}>Sign up with Google</Text>
             </TouchableOpacity>
 
-            {/* Divider */}
-            <View style={styles.orDivider}>
-              <View style={styles.orDividerLine} />
-              <Text style={styles.orDividerText}>or</Text>
-              <View style={styles.orDividerLine} />
-            </View>
-
             {/* Continue as Guest */}
             <TouchableOpacity
               style={styles.guestButton}
@@ -535,7 +537,7 @@ export const LoginScreen = () => {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Terms Text with tappable links */}
+          {/* Terms Text with tappable links - pushed toward bottom */}
           <View style={styles.termsContainer}>
             <Text style={styles.termsText}>By continuing, you agree to our </Text>
             <TouchableOpacity
@@ -634,9 +636,13 @@ const styles = StyleSheet.create({
 
   // === Hero Section (Top 40%) ===
   heroSection: {
-    height: SCREEN_HEIGHT * 0.38,
+    height: SCREEN_HEIGHT * 0.40,
     justifyContent: 'center',
-    marginBottom: 4,
+    marginTop: 16,
+    marginBottom: 14,
+    overflow: 'visible',
+  },
+  carouselFlatList: {
     overflow: 'visible',
   },
   carouselContainer: {
@@ -903,7 +909,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
-    marginBottom: 16,
+    marginTop: 16,
+    marginBottom: 12,
   },
   termsText: {
     fontSize: 11,
