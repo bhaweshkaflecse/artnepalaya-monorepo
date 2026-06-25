@@ -38,7 +38,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.62;
 const CAROUSEL_ITEM_SPACING = 12;
 const CAROUSEL_ITEM_FULL = CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING;
-const CAROUSEL_HEIGHT = SCREEN_HEIGHT * 0.38;
+const CAROUSEL_HEIGHT = Math.min(SCREEN_HEIGHT * 0.38, 320);
 
 /**
  * Generates a unique device identifier for token binding.
@@ -522,14 +522,14 @@ export const LoginScreen = () => {
           <View style={styles.termsContainer}>
             <Text style={styles.termsText}>By continuing, you agree to our </Text>
             <TouchableOpacity
-              onPress={() => navigation.navigate('CmsPage', { slug: 'terms-conditions', title: 'Terms of Service' })}
+              onPress={() => (navigation as any).navigate('CmsPage', { slug: 'terms-conditions', title: 'Terms of Service' })}
               activeOpacity={0.7}
             >
               <Text style={styles.termsLink}>Terms of Service</Text>
             </TouchableOpacity>
             <Text style={styles.termsText}> and </Text>
             <TouchableOpacity
-              onPress={() => navigation.navigate('CmsPage', { slug: 'privacy-policy', title: 'Privacy Policy' })}
+              onPress={() => (navigation as any).navigate('CmsPage', { slug: 'privacy-policy', title: 'Privacy Policy' })}
               activeOpacity={0.7}
             >
               <Text style={styles.termsLink}>Privacy Policy</Text>
