@@ -652,61 +652,58 @@ export const CreateScreen = () => {
           <Text style={styles.complianceTitleText}>Content Declaration</Text>
 
           {/* AI Generated */}
-          <TouchableOpacity
-            onPress={() => setIsAIGenerated(!isAIGenerated)}
-            style={styles.complianceRow}
-          >
-            <Ionicons
-              name={isAIGenerated ? 'checkbox' : 'square-outline'}
-              size={24}
-              color={isAIGenerated ? lightColors.accent : lightColors.textSecondary}
-            />
-            <View style={styles.complianceTextWrap}>
-              <Text style={styles.complianceLabel}>This artwork was created with AI tools</Text>
-              <Text style={styles.complianceHelper}>AI-assisted or AI-generated content</Text>
-            </View>
+          <View style={styles.complianceRow}>
+            <TouchableOpacity onPress={() => setIsAIGenerated(!isAIGenerated)} style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1, gap: 12 }}>
+              <Ionicons
+                name={isAIGenerated ? 'checkbox' : 'square-outline'}
+                size={24}
+                color={isAIGenerated ? lightColors.accent : lightColors.textSecondary}
+              />
+              <View style={styles.complianceTextWrap}>
+                <Text style={styles.complianceLabel}>This artwork was created with AI tools</Text>
+                <Text style={styles.complianceHelper}>AI-assisted or AI-generated content</Text>
+              </View>
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => Alert.alert('AI Content Disclosure', 'AI-assisted content includes artwork created or enhanced using artificial intelligence tools such as Midjourney, DALL-E, Stable Diffusion, etc.')}>
               <Feather name="info" size={14} color={lightColors.textSecondary} />
             </TouchableOpacity>
-          </TouchableOpacity>
+          </View>
 
           {/* Original Content */}
-          <TouchableOpacity
-            onPress={() => setIsOriginalContent(!isOriginalContent)}
-            style={styles.complianceRow}
-          >
-            <Ionicons
-              name={isOriginalContent ? 'checkbox' : 'square-outline'}
-              size={24}
-              color={isOriginalContent ? lightColors.accent : lightColors.textSecondary}
-            />
-            <View style={styles.complianceTextWrap}>
-              <Text style={styles.complianceLabel}>I confirm this artwork is NOT AI-generated</Text>
-              <Text style={styles.complianceHelper}>Original creative work declaration</Text>
-            </View>
+          <View style={styles.complianceRow}>
+            <TouchableOpacity onPress={() => setIsOriginalContent(!isOriginalContent)} style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1, gap: 12 }}>
+              <Ionicons
+                name={isOriginalContent ? 'checkbox' : 'square-outline'}
+                size={24}
+                color={isOriginalContent ? lightColors.accent : lightColors.textSecondary}
+              />
+              <View style={styles.complianceTextWrap}>
+                <Text style={styles.complianceLabel}>I confirm this artwork is NOT AI-generated</Text>
+                <Text style={styles.complianceHelper}>Original creative work declaration</Text>
+              </View>
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => Alert.alert('Original Content', 'By checking this, you declare that this artwork is your own original creation and does not infringe on any copyright.')}>
               <Feather name="info" size={14} color={lightColors.textSecondary} />
             </TouchableOpacity>
-          </TouchableOpacity>
+          </View>
 
           {/* NSFW */}
-          <TouchableOpacity
-            onPress={() => setIsNsfw(!isNsfw)}
-            style={[styles.complianceRow, { borderBottomWidth: 0 }]}
-          >
-            <Ionicons
-              name={isNsfw ? 'checkbox' : 'square-outline'}
-              size={24}
-              color={isNsfw ? lightColors.accent : lightColors.textSecondary}
-            />
-            <View style={styles.complianceTextWrap}>
-              <Text style={styles.complianceLabel}>18+ / Mature Content</Text>
-              <Text style={styles.complianceHelper}>Contains sensitive content not suitable for all audiences</Text>
-            </View>
+          <View style={[styles.complianceRow, { borderBottomWidth: 0 }]}>
+            <TouchableOpacity onPress={() => setIsNsfw(!isNsfw)} style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1, gap: 12 }}>
+              <Ionicons
+                name={isNsfw ? 'checkbox' : 'square-outline'}
+                size={24}
+                color={isNsfw ? lightColors.accent : lightColors.textSecondary}
+              />
+              <View style={styles.complianceTextWrap}>
+                <Text style={styles.complianceLabel}>18+ / Mature Content</Text>
+                <Text style={styles.complianceHelper}>Contains sensitive content not suitable for all audiences</Text>
+              </View>
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => Alert.alert('Mature Content', 'Mark content as mature if it contains nudity, violence, or other content not suitable for audiences under 18.')}>
               <Feather name="info" size={14} color={lightColors.textSecondary} />
             </TouchableOpacity>
-          </TouchableOpacity>
+          </View>
         </Animated.View>
 
         {/* Guest Warning Card */}

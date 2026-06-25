@@ -386,7 +386,7 @@ export const LoginScreen = () => {
               viewabilityConfig={viewabilityConfig}
               onScroll={Animated.event(
                 [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-                { useNativeDriver: true }
+                { useNativeDriver: false }
               )}
               scrollEventThrottle={16}
             />
