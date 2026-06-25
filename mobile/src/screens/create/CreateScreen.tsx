@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -23,6 +25,7 @@ import { prependPost as prependMyPost } from '../../store/slices/userSlice';
 
 const MAX_IMAGES = 5;
 const MAX_VIDEOS = 1;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const FALLBACK_ARTWORK_TYPES = [
   'Painting',
@@ -49,6 +52,35 @@ export const CreateScreen = () => {
   const [isOriginalContent, setIsOriginalContent] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const publishScaleAnim = useRef(new Animated.Value(1)).current;
+  const progressSlideAnim = useRef(new Animated.Value(100)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  useEffect(() => {
+    if (isPublishing) {
+      Animated.timing(progressSlideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(progressSlideAnim, {
+        toValue: 100,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isPublishing]);
 
   useEffect(() => {
     const fetchArtworkTypes = async () => {
@@ -328,32 +360,57 @@ export const CreateScreen = () => {
 
   const canPublish = mediaItems.length > 0 && !isPublishing;
 
+  const handlePublishPress = () => {
+    Animated.sequence([
+      Animated.timing(publishScaleAnim, { toValue: 0.92, duration: 80, useNativeDriver: true }),
+      Animated.timing(publishScaleAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
+    ]).start(() => {
+      handlePublish();
+    });
+  };
+
+  const goToPrevMedia = () => {
+    if (activePreviewIndex > 0) {
+      setActivePreviewIndex(activePreviewIndex - 1);
+    }
+  };
+
+  const goToNextMedia = () => {
+    if (activePreviewIndex < mediaItems.length - 1) {
+      setActivePreviewIndex(activePreviewIndex + 1);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Header */}
+      {/* PUBLISH HEADER */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>New Post</Text>
-        <TouchableOpacity
-          onPress={handlePublish}
-          disabled={!canPublish}
-        >
-          {isPublishing ? (
-            <View style={{ alignItems: 'center' }}>
-              <ActivityIndicator size="small" color={lightColors.accent} />
-              <Text style={{ fontSize: 11, color: lightColors.accent, marginTop: 2 }}>
-                Uploading... {uploadProgress}%
-              </Text>
-            </View>
-          ) : (
-            <Text style={[styles.publishBtn, !canPublish && styles.disabledText]}>
-              Publish
-            </Text>
-          )}
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Feather name="arrow-left" size={22} color={lightColors.textPrimary} />
         </TouchableOpacity>
+        <Text style={styles.headerTitle}>Upload Artwork</Text>
+        <Animated.View style={{ transform: [{ scale: publishScaleAnim }] }}>
+          <TouchableOpacity
+            onPress={handlePublishPress}
+            disabled={!canPublish}
+            style={[
+              styles.publishPill,
+              !canPublish && styles.publishPillDisabled,
+            ]}
+          >
+            {isPublishing ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={[styles.publishPillText, !canPublish && styles.publishPillTextDisabled]}>
+                Publish
+              </Text>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Guest Info Card */}
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* GUEST INFO CARD */}
         {isGuest && (
           <View style={styles.guestInfoCard}>
             <Feather name="info" size={20} color="#2563EB" style={styles.guestInfoIcon} />
@@ -368,27 +425,105 @@ export const CreateScreen = () => {
           </View>
         )}
 
-        {/* Media Picker */}
-        <TouchableOpacity style={styles.mediaContainer} onPress={pickImage}>
-          {mediaItems.length > 0 ? (
-            <Image source={{ uri: mediaItems[activePreviewIndex]?.uri || mediaItems[0].uri }} style={styles.previewImage} />
-          ) : (
-            <View style={styles.placeholder}>
-              <Feather name="image" size={32} color={lightColors.textSecondary} />
-              <Text style={styles.placeholderText}>Tap to select artwork</Text>
-              <Text style={styles.placeholderSubtext}>{'Up to 5 images and 1 video\nMaximum total size: 100MB'}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        {/* PUBLISH STATUS BANNER */}
+        <Animated.View style={[
+          styles.statusBanner,
+          mediaItems.length > 0 ? styles.statusBannerReady : styles.statusBannerWarning,
+          { opacity: fadeAnim },
+        ]}>
+          <View style={styles.statusBannerLeft}>
+            <Feather
+              name={mediaItems.length > 0 ? 'check-circle' : 'alert-circle'}
+              size={18}
+              color={mediaItems.length > 0 ? '#16A34A' : '#D97706'}
+            />
+            <Text style={[
+              styles.statusBannerText,
+              { color: mediaItems.length > 0 ? '#16A34A' : '#D97706' },
+            ]}>
+              {mediaItems.length > 0 ? 'Ready to publish' : 'Minimum 1 artwork required'}
+            </Text>
+          </View>
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusBadgeText}>Media {mediaItems.length}/6</Text>
+          </View>
+        </Animated.View>
 
-        {/* Media Counters */}
-        {mediaItems.length > 0 && (
-          <Text style={styles.mediaCount}>
-            {mediaItems.filter((m) => m.type === 'image').length}/{MAX_IMAGES} Images, {mediaItems.filter((m) => m.type === 'video').length}/{MAX_VIDEOS} Video
-          </Text>
+        {/* LARGE HERO PREVIEW */}
+        <Animated.View style={[styles.heroContainer, { opacity: fadeAnim }]}>
+          <TouchableOpacity
+            style={styles.heroTouchable}
+            onPress={mediaItems.length === 0 ? pickImage : undefined}
+            activeOpacity={mediaItems.length === 0 ? 0.7 : 1}
+          >
+            {mediaItems.length > 0 ? (
+              <View style={styles.heroPreview}>
+                <Image
+                  source={{ uri: mediaItems[activePreviewIndex]?.uri || mediaItems[0].uri }}
+                  style={styles.heroImage}
+                  resizeMode="cover"
+                />
+                {/* Cover badge on first item */}
+                {activePreviewIndex === 0 && (
+                  <View style={styles.coverBadge}>
+                    <Text style={styles.coverBadgeText}>Cover</Text>
+                  </View>
+                )}
+                {/* Video badge */}
+                {mediaItems[activePreviewIndex]?.type === 'video' && (
+                  <View style={styles.videoBadge}>
+                    <Feather name="play-circle" size={16} color="#FFFFFF" />
+                    <Text style={styles.videoBadgeText}>Video</Text>
+                  </View>
+                )}
+                {/* Position indicator */}
+                <View style={styles.positionIndicator}>
+                  <Text style={styles.positionText}>
+                    {activePreviewIndex + 1}/{mediaItems.length}
+                  </Text>
+                </View>
+                {/* Navigation arrows */}
+                {activePreviewIndex > 0 && (
+                  <TouchableOpacity style={[styles.navArrow, styles.navArrowLeft]} onPress={goToPrevMedia}>
+                    <Feather name="chevron-left" size={20} color={lightColors.textPrimary} />
+                  </TouchableOpacity>
+                )}
+                {activePreviewIndex < mediaItems.length - 1 && (
+                  <TouchableOpacity style={[styles.navArrow, styles.navArrowRight]} onPress={goToNextMedia}>
+                    <Feather name="chevron-right" size={20} color={lightColors.textPrimary} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            ) : (
+              <View style={styles.heroPlaceholder}>
+                <View style={styles.heroPlaceholderIcon}>
+                  <Feather name="upload-cloud" size={40} color={lightColors.textSecondary} />
+                </View>
+                <Text style={styles.heroPlaceholderTitle}>Tap to select artwork</Text>
+                <Text style={styles.heroPlaceholderSubtitle}>
+                  Choose images or video from your gallery
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* PAGINATION DOTS */}
+        {mediaItems.length > 1 && (
+          <View style={styles.paginationDots}>
+            {mediaItems.map((_, index) => (
+              <View
+                key={`dot-${index}`}
+                style={[
+                  styles.dot,
+                  activePreviewIndex === index ? styles.dotActive : styles.dotInactive,
+                ]}
+              />
+            ))}
+          </View>
         )}
 
-        {/* Thumbnail Strip */}
+        {/* THUMBNAIL STRIP */}
         {mediaItems.length > 0 && (
           <ScrollView
             horizontal
@@ -419,129 +554,150 @@ export const CreateScreen = () => {
                 </TouchableOpacity>
               </View>
             ))}
+            {/* Add Media card */}
             <TouchableOpacity style={styles.thumbnailAddBtn} onPress={pickImage}>
               <Feather name="plus" size={20} color={lightColors.textSecondary} />
+              <Text style={styles.thumbnailAddText}>Add</Text>
             </TouchableOpacity>
           </ScrollView>
         )}
 
-        {/* Media guidance text */}
-        <Text style={styles.mediaGuidanceText}>
-          You may need to select images and video separately.
-        </Text>
+        {/* UPLOAD LIMITS */}
+        <View style={styles.limitsContainer}>
+          <Text style={styles.limitsText}>
+            Up to 5 images + 1 video | JPG, PNG, WEBP, MP4 | Max 10MB/image, 50MB/video
+          </Text>
+        </View>
 
-        {/* Description */}
-        <TextInput
-          style={styles.input}
-          placeholder="Write a description..."
-          placeholderTextColor={lightColors.textSecondary}
-          multiline
-          maxLength={2000}
-          value={description}
-          onChangeText={setDescription}
-        />
+        {/* DESCRIPTION FIELD */}
+        <Animated.View style={[styles.fieldContainer, { opacity: fadeAnim }]}>
+          <Text style={styles.fieldLabel}>Description</Text>
+          <View style={styles.textAreaContainer}>
+            <TextInput
+              style={styles.textArea}
+              placeholder="Describe your artwork..."
+              placeholderTextColor={lightColors.textSecondary}
+              multiline
+              maxLength={2000}
+              value={description}
+              onChangeText={setDescription}
+              textAlignVertical="top"
+            />
+            <Text style={styles.charCounter}>
+              {description.length}/2000
+            </Text>
+          </View>
+        </Animated.View>
 
-        {/* Tags */}
-        <TextInput
-          style={styles.input}
-          placeholder="Add tags (comma separated)"
-          placeholderTextColor={lightColors.textSecondary}
-          value={tags}
-          onChangeText={setTags}
-        />
-
-        {/* Artwork Type Selector */}
-        <Text style={styles.sectionLabel}>Artwork Type</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipRow}
-        >
-          {artworkTypes.map((type) => (
-            <TouchableOpacity
-              key={type}
-              style={[
-                styles.chip,
-                artworkType.includes(type) && styles.chipActive,
-              ]}
-              onPress={() => toggleArtworkType(type)}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  artworkType.includes(type) && styles.chipTextActive,
-                ]}
-              >
-                {type}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Custom Artwork Type Input */}
-        {artworkType.includes('Other') && (
+        {/* KEYWORDS/TAGS FIELD */}
+        <Animated.View style={[styles.fieldContainer, { opacity: fadeAnim }]}>
+          <Text style={styles.fieldLabel}>Keywords / Tags</Text>
           <TextInput
-            style={styles.customTypeInput}
-            placeholder="Specify your artwork type..."
+            style={styles.tagInput}
+            placeholder="landscape, oil painting, Nepal"
             placeholderTextColor={lightColors.textSecondary}
-            value={customArtworkType}
-            onChangeText={setCustomArtworkType}
-            maxLength={50}
+            value={tags}
+            onChangeText={setTags}
           />
-        )}
+          <Text style={styles.helperText}>Separate with commas (e.g., landscape, oil painting, Nepal)</Text>
+        </Animated.View>
 
-        {/* AI-Assisted / AI-Generated Declaration */}
-        <View style={styles.aiDeclarationContainer}>
+        {/* ARTWORK TYPES */}
+        <Animated.View style={[styles.fieldContainer, { opacity: fadeAnim }]}>
+          <Text style={styles.fieldLabel}>Artwork Type</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+          >
+            {artworkTypes.map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[
+                  styles.chip,
+                  artworkType.includes(type) && styles.chipActive,
+                ]}
+                onPress={() => toggleArtworkType(type)}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    artworkType.includes(type) && styles.chipTextActive,
+                  ]}
+                >
+                  {type}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Custom Artwork Type Input */}
+          {artworkType.includes('Other') && (
+            <TextInput
+              style={styles.customTypeInput}
+              placeholder="Specify your artwork type..."
+              placeholderTextColor={lightColors.textSecondary}
+              value={customArtworkType}
+              onChangeText={setCustomArtworkType}
+              maxLength={50}
+            />
+          )}
+        </Animated.View>
+
+        {/* COMPLIANCE SECTION */}
+        <Animated.View style={[styles.complianceCard, { opacity: fadeAnim }]}>
+          <Text style={styles.complianceTitleText}>Content Declaration</Text>
+
+          {/* AI Generated */}
           <TouchableOpacity
             onPress={() => setIsAIGenerated(!isAIGenerated)}
-            style={styles.checkbox}
+            style={styles.complianceRow}
           >
             <Ionicons
               name={isAIGenerated ? 'checkbox' : 'square-outline'}
-              size={26}
+              size={24}
               color={isAIGenerated ? lightColors.accent : lightColors.textSecondary}
             />
+            <View style={styles.complianceTextWrap}>
+              <Text style={styles.complianceLabel}>This artwork was created with AI tools</Text>
+              <Text style={styles.complianceHelper}>AI-assisted or AI-generated content</Text>
+            </View>
+            <Feather name="info" size={14} color={lightColors.textSecondary} />
           </TouchableOpacity>
-          <Text style={styles.declarationText}>
-            AI-Assisted / AI-Generated - This artwork was created with AI tools
-            or generated by AI.
-          </Text>
-        </View>
 
-        {/* Original Content Declaration */}
-        <View style={styles.nsfwContainer}>
+          {/* Original Content */}
           <TouchableOpacity
             onPress={() => setIsOriginalContent(!isOriginalContent)}
-            style={styles.checkbox}
+            style={styles.complianceRow}
           >
             <Ionicons
               name={isOriginalContent ? 'checkbox' : 'square-outline'}
-              size={26}
+              size={24}
               color={isOriginalContent ? lightColors.accent : lightColors.textSecondary}
             />
+            <View style={styles.complianceTextWrap}>
+              <Text style={styles.complianceLabel}>I confirm this artwork is NOT AI-generated</Text>
+              <Text style={styles.complianceHelper}>Original creative work declaration</Text>
+            </View>
+            <Feather name="info" size={14} color={lightColors.textSecondary} />
           </TouchableOpacity>
-          <Text style={styles.nsfwText}>
-            Original Content - This is my original creative work.
-          </Text>
-        </View>
 
-        {/* NSFW Toggle */}
-        <View style={styles.nsfwContainer}>
+          {/* NSFW */}
           <TouchableOpacity
             onPress={() => setIsNsfw(!isNsfw)}
-            style={styles.checkbox}
+            style={[styles.complianceRow, { borderBottomWidth: 0 }]}
           >
             <Ionicons
               name={isNsfw ? 'checkbox' : 'square-outline'}
-              size={26}
+              size={24}
               color={isNsfw ? lightColors.accent : lightColors.textSecondary}
             />
+            <View style={styles.complianceTextWrap}>
+              <Text style={styles.complianceLabel}>18+ / Mature Content</Text>
+              <Text style={styles.complianceHelper}>Contains sensitive content not suitable for all audiences</Text>
+            </View>
           </TouchableOpacity>
-          <Text style={styles.nsfwText}>
-            18+ / Sensitive Content - This artwork contains mature or sensitive
-            content that may not be suitable for all audiences.
-          </Text>
-        </View>
+        </Animated.View>
 
         {/* Guest Warning Card */}
         {isGuest && (
@@ -552,7 +708,31 @@ export const CreateScreen = () => {
             </Text>
           </View>
         )}
+
+        {/* Bottom spacer for floating progress */}
+        <View style={{ height: 80 }} />
       </ScrollView>
+
+      {/* FLOATING UPLOAD PROGRESS */}
+      {isPublishing && (
+        <Animated.View
+          style={[
+            styles.floatingProgress,
+            { transform: [{ translateY: progressSlideAnim }] },
+          ]}
+        >
+          <View style={styles.floatingProgressInner}>
+            <View style={styles.floatingProgressHeader}>
+              <Feather name="upload-cloud" size={22} color={lightColors.accent} />
+              <Text style={styles.floatingProgressTitle}>Uploading artwork...</Text>
+              <Text style={styles.floatingProgressPercent}>{uploadProgress}%</Text>
+            </View>
+            <View style={styles.progressBarBg}>
+              <View style={[styles.progressBarFill, { width: `${uploadProgress}%` }]} />
+            </View>
+          </View>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 };
@@ -566,85 +746,241 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: lightColors.border,
   },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: lightColors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
     color: lightColors.textPrimary,
+    letterSpacing: -0.3,
   },
-  publishBtn: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: lightColors.accent,
+  publishPill: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    minWidth: 80,
+    alignItems: 'center',
   },
-  disabledText: {
-    color: '#CCC',
+  publishPillDisabled: {
+    backgroundColor: '#E5E5E5',
+  },
+  publishPillText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  publishPillTextDisabled: {
+    color: '#999999',
   },
   content: {
     padding: 16,
     paddingBottom: 48,
   },
-  mediaContainer: {
-    width: '100%',
-    aspectRatio: 1,
-    backgroundColor: lightColors.surface,
-    borderRadius: 8,
-    overflow: 'hidden',
+  statusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
     marginBottom: 16,
+  },
+  statusBannerReady: {
+    backgroundColor: '#F0FFF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  statusBannerWarning: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  statusBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusBannerText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  statusBadge: {
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: lightColors.textSecondary,
+  },
+  heroContainer: {
+    marginBottom: 12,
+  },
+  heroTouchable: {
+    width: '100%',
+    aspectRatio: 4 / 5,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: lightColors.surface,
     borderWidth: 1,
     borderColor: lightColors.border,
-    borderStyle: 'dashed',
   },
-  previewImage: {
+  heroPreview: {
+    flex: 1,
+    position: 'relative',
+  },
+  heroImage: {
     width: '100%',
     height: '100%',
   },
-  placeholder: {
+  heroPlaceholder: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 32,
   },
-  placeholderText: {
-    marginTop: 8,
-    color: lightColors.textSecondary,
-    fontSize: 15,
-    fontWeight: '500',
+  heroPlaceholderIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: lightColors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  placeholderSubtext: {
-    marginTop: 4,
-    color: lightColors.textSecondary,
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  mediaCount: {
-    fontSize: 13,
-    color: lightColors.accent,
-    marginBottom: 12,
-    textAlign: 'center',
+  heroPlaceholderTitle: {
+    fontSize: 16,
     fontWeight: '600',
+    color: lightColors.textPrimary,
+    marginBottom: 6,
+  },
+  heroPlaceholderSubtitle: {
+    fontSize: 13,
+    color: lightColors.textSecondary,
+    textAlign: 'center',
+  },
+  coverBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  coverBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  videoBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  videoBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  positionIndicator: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  positionText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  navArrow: {
+    position: 'absolute',
+    top: '50%',
+    marginTop: -18,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  navArrowLeft: {
+    left: 10,
+  },
+  navArrowRight: {
+    right: 10,
+  },
+  paginationDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+    gap: 6,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  dotActive: {
+    backgroundColor: '#FF3B30',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  dotInactive: {
+    backgroundColor: '#D1D5DB',
   },
   thumbnailStrip: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
+    gap: 10,
+    marginBottom: 14,
     paddingHorizontal: 2,
+    paddingVertical: 4,
   },
   thumbnailWrapper: {
     position: 'relative',
   },
   thumbnailItem: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
+    width: 68,
+    height: 68,
+    borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: 'transparent',
   },
   thumbnailItemActive: {
-    borderColor: lightColors.accent,
+    borderColor: '#FF3B30',
   },
   thumbnailImage: {
     width: '100%',
@@ -652,12 +988,12 @@ const styles = StyleSheet.create({
   },
   thumbnailVideoIcon: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    bottom: 4,
+    left: 4,
+    backgroundColor: 'rgba(0,0,0,0.7)',
     borderRadius: 8,
-    width: 16,
-    height: 16,
+    width: 18,
+    height: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -674,47 +1010,98 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   thumbnailAddBtn: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    borderWidth: 1,
+    width: 68,
+    height: 68,
+    borderRadius: 10,
+    borderWidth: 1.5,
     borderColor: lightColors.border,
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: lightColors.surface,
   },
-  input: {
-    borderBottomWidth: 1,
-    borderBottomColor: lightColors.border,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: lightColors.textPrimary,
-    marginBottom: 16,
+  thumbnailAddText: {
+    fontSize: 10,
+    color: lightColors.textSecondary,
+    marginTop: 2,
+    fontWeight: '500',
   },
-  sectionLabel: {
+  limitsContainer: {
+    backgroundColor: lightColors.surface,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: lightColors.border,
+  },
+  limitsText: {
+    fontSize: 12,
+    color: lightColors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  fieldContainer: {
+    marginBottom: 20,
+  },
+  fieldLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: lightColors.textPrimary,
-    marginBottom: 10,
-    marginTop: 4,
+    marginBottom: 8,
+  },
+  textAreaContainer: {
+    backgroundColor: lightColors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: lightColors.border,
+    padding: 14,
+    minHeight: 120,
+  },
+  textArea: {
+    fontSize: 15,
+    color: lightColors.textPrimary,
+    lineHeight: 22,
+    minHeight: 90,
+  },
+  charCounter: {
+    fontSize: 11,
+    color: lightColors.textSecondary,
+    textAlign: 'right',
+    marginTop: 6,
+  },
+  tagInput: {
+    backgroundColor: lightColors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: lightColors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: lightColors.textPrimary,
+  },
+  helperText: {
+    fontSize: 12,
+    color: lightColors.textSecondary,
+    marginTop: 6,
+    marginLeft: 4,
   },
   chipRow: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 20,
+    paddingVertical: 2,
   },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: lightColors.border,
     backgroundColor: lightColors.surface,
   },
   chipActive: {
-    borderColor: lightColors.accent,
-    backgroundColor: '#FFF0EF',
+    borderColor: '#FF3B30',
+    backgroundColor: '#FF3B30',
   },
   chipText: {
     fontSize: 13,
@@ -722,68 +1109,70 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   chipTextActive: {
-    color: lightColors.accent,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   customTypeInput: {
     borderWidth: 1,
     borderColor: lightColors.border,
-    borderRadius: 8,
+    borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 14,
     color: lightColors.textPrimary,
     backgroundColor: lightColors.surface,
-    marginBottom: 16,
-  },
-  mediaGuidanceText: {
-    fontSize: 12,
-    color: lightColors.textSecondary,
-    marginBottom: 16,
-    fontStyle: 'italic',
-  },
-  aiDeclarationContainer: {
-    flexDirection: 'row',
-    backgroundColor: lightColors.surface,
-    padding: 16,
-    borderRadius: 8,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: lightColors.border,
-  },
-  checkbox: {
-    marginRight: 12,
-    marginTop: 2,
-  },
-  declarationText: {
-    flex: 1,
-    fontSize: 13,
-    color: lightColors.textPrimary,
-    lineHeight: 20,
-  },
-  nsfwContainer: {
-    flexDirection: 'row',
-    backgroundColor: lightColors.surface,
-    padding: 16,
-    borderRadius: 8,
     marginTop: 12,
+  },
+  complianceCard: {
+    backgroundColor: lightColors.surface,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: lightColors.border,
+    padding: 16,
+    marginBottom: 16,
   },
-  nsfwText: {
-    flex: 1,
-    fontSize: 13,
+  complianceTitleText: {
+    fontSize: 14,
+    fontWeight: '700',
     color: lightColors.textPrimary,
-    lineHeight: 20,
+    marginBottom: 14,
+  },
+  complianceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: lightColors.border,
+    gap: 12,
+  },
+  complianceTextWrap: {
+    flex: 1,
+  },
+  complianceLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: lightColors.textPrimary,
+    lineHeight: 18,
+  },
+  complianceHelper: {
+    fontSize: 11,
+    color: lightColors.textSecondary,
+    marginTop: 2,
+    lineHeight: 16,
   },
   guestInfoCard: {
     flexDirection: 'row',
     backgroundColor: '#EFF6FF',
     padding: 14,
-    borderRadius: 8,
+    borderRadius: 14,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#BFDBFE',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   guestInfoIcon: {
     marginRight: 10,
@@ -795,7 +1184,7 @@ const styles = StyleSheet.create({
   guestInfoText: {
     fontSize: 14,
     color: '#1E40AF',
-    fontWeight: '500',
+    fontWeight: '600',
     lineHeight: 20,
   },
   guestInfoSubtext: {
@@ -808,11 +1197,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#FEF2F2',
     padding: 14,
-    borderRadius: 8,
+    borderRadius: 14,
     marginTop: 16,
     borderWidth: 1,
     borderColor: '#FECACA',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   guestWarningIcon: {
     marginRight: 10,
@@ -823,5 +1217,51 @@ const styles = StyleSheet.create({
     color: '#DC2626',
     fontWeight: '500',
     lineHeight: 18,
+  },
+  floatingProgress: {
+    position: 'absolute',
+    bottom: 20,
+    left: 16,
+    right: 16,
+  },
+  floatingProgressInner: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: lightColors.border,
+  },
+  floatingProgressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  floatingProgressTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: lightColors.textPrimary,
+  },
+  floatingProgressPercent: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: lightColors.accent,
+  },
+  progressBarBg: {
+    height: 6,
+    backgroundColor: lightColors.border,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#FF3B30',
+    borderRadius: 3,
   },
 });
