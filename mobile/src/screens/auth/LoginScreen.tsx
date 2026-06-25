@@ -36,12 +36,14 @@ WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.62;
+// Cover Flow sizing: center item at ~55% of screen width so neighbors (~30% visible) fit
+const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.55;
 const CAROUSEL_ITEM_HEIGHT = CAROUSEL_ITEM_WIDTH * (4 / 3);
-const CAROUSEL_ITEM_SPACING = 12;
+const CAROUSEL_ITEM_SPACING = 8;
 const CAROUSEL_ITEM_FULL = CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING;
-const CAROUSEL_HEIGHT = Math.max(SCREEN_HEIGHT * 0.42, CAROUSEL_ITEM_HEIGHT + 24);
-const SIDE_OVERLAP_INWARD = CAROUSEL_ITEM_WIDTH * 0.32;
+const CAROUSEL_HEIGHT = Math.max(SCREEN_HEIGHT * 0.40, CAROUSEL_ITEM_HEIGHT + 32);
+// How far neighbors translate inward to create the classic Cover Flow overlap effect
+const SIDE_OVERLAP_INWARD = CAROUSEL_ITEM_WIDTH * 0.28;
 
 /**
  * Generates a unique device identifier for token binding.
@@ -337,44 +339,49 @@ export const LoginScreen = () => {
       (index + 2) * CAROUSEL_ITEM_FULL,
     ];
 
+    // Center item full size; immediate neighbors at 0.75; far items at 0.6
     const scale = scrollX.interpolate({
       inputRange,
-      outputRange: [0.55, 0.72, 1.0, 0.72, 0.55],
+      outputRange: [0.6, 0.75, 1.0, 0.75, 0.6],
       extrapolate: 'clamp',
     });
 
+    // 3D rotation: neighbors tilt inward at 35deg, far items at 55deg
     const rotateY = scrollX.interpolate({
       inputRange,
-      outputRange: ['50deg', '25deg', '0deg', '-25deg', '-50deg'],
+      outputRange: ['55deg', '35deg', '0deg', '-35deg', '-55deg'],
       extrapolate: 'clamp',
     });
 
+    // Keep neighbors clearly visible (0.85 opacity) so users can see them
     const opacity = scrollX.interpolate({
       inputRange,
-      outputRange: [0.3, 0.7, 1.0, 0.7, 0.3],
+      outputRange: [0.4, 0.85, 1.0, 0.85, 0.4],
       extrapolate: 'clamp',
     });
 
     // Pull neighbors inward to create visual overlap (classic Cover Flow)
+    // This makes the center card appear to overlap the side cards
     const translateX = scrollX.interpolate({
       inputRange,
       outputRange: [
-        SIDE_OVERLAP_INWARD * 1.6,
+        SIDE_OVERLAP_INWARD * 1.8,
         SIDE_OVERLAP_INWARD,
         0,
         -SIDE_OVERLAP_INWARD,
-        -SIDE_OVERLAP_INWARD * 1.6,
+        -SIDE_OVERLAP_INWARD * 1.8,
       ],
       extrapolate: 'clamp',
     });
 
-    const shadowOpacityAnim = scrollX.interpolate({
+    // Z-index simulation: center item on top, neighbors behind
+    const zIndex = scrollX.interpolate({
       inputRange: [
         (index - 1) * CAROUSEL_ITEM_FULL,
         index * CAROUSEL_ITEM_FULL,
         (index + 1) * CAROUSEL_ITEM_FULL,
       ],
-      outputRange: [0.05, 0.4, 0.05],
+      outputRange: [1, 10, 1],
       extrapolate: 'clamp',
     });
 
@@ -385,13 +392,13 @@ export const LoginScreen = () => {
           styles.carouselItem,
           {
             transform: [
-              { perspective: 1200 },
+              { perspective: 1000 },
               { translateX },
               { scale },
               { rotateY },
             ],
             opacity,
-            ...(Platform.OS === 'ios' ? { shadowOpacity: shadowOpacityAnim } : {}),
+            zIndex,
           },
         ]}
       >
@@ -411,8 +418,8 @@ export const LoginScreen = () => {
               ) : null}
             </>
           ) : (
-            <View style={[styles.carouselPlaceholder, { backgroundColor: item.color || lightColors.surface }]}>
-              <Feather name="image" size={36} color={lightColors.textSecondary} />
+            <View style={[styles.carouselPlaceholder, { backgroundColor: item.color || '#F0E8E0' }]}>
+              <Feather name="image" size={32} color={lightColors.textSecondary} />
             </View>
           )}
         </View>
@@ -633,12 +640,12 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
 
-  // === Hero Section (Top ~42%) ===
+  // === Hero Section (Top ~40%) ===
   heroSection: {
     height: CAROUSEL_HEIGHT,
     justifyContent: 'center',
-    marginTop: 4,
-    marginBottom: 6,
+    marginTop: 8,
+    marginBottom: 4,
     overflow: 'visible',
   },
   carouselContainer: {
@@ -649,19 +656,19 @@ const styles = StyleSheet.create({
     width: CAROUSEL_ITEM_WIDTH,
     height: CAROUSEL_ITEM_HEIGHT,
     marginHorizontal: CAROUSEL_ITEM_SPACING / 2,
-    borderRadius: 22,
-    backgroundColor: lightColors.surface,
+    borderRadius: 20,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.85)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 16 },
-        shadowOpacity: 0.35,
-        shadowRadius: 30,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.3,
+        shadowRadius: 24,
       },
       android: {
-        elevation: 20,
+        elevation: 16,
+        overflow: 'hidden',
       },
     }),
   },
@@ -703,74 +710,74 @@ const styles = StyleSheet.create({
   brandSection: {
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   logoContainer: {
-    marginBottom: 4,
+    marginBottom: 3,
   },
   logoImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 11,
   },
   brandName: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800',
     color: lightColors.textPrimary,
     letterSpacing: 0.3,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   tagline: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
     color: lightColors.textSecondary,
     letterSpacing: 1.5,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   brandDescription: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '400',
     color: lightColors.textSecondary,
     textAlign: 'center',
-    lineHeight: 18,
-    paddingHorizontal: 16,
-    marginBottom: 10,
+    lineHeight: 16,
+    paddingHorizontal: 20,
+    marginBottom: 8,
   },
   // Statistics Cards
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 8,
+    gap: 7,
   },
   statCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
     alignItems: 'center',
-    minWidth: 88,
+    minWidth: 82,
     borderWidth: 1,
     borderColor: lightColors.border,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
       },
       android: {
-        elevation: 3,
+        elevation: 2,
       },
     }),
   },
   statNumber: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: lightColors.textPrimary,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
     color: lightColors.textSecondary,
   },
@@ -778,7 +785,7 @@ const styles = StyleSheet.create({
   // === Auth Section (Bottom) ===
   authSection: {
     paddingHorizontal: 24,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   primaryButton: {
     flexDirection: 'row',
@@ -788,7 +795,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: 12,
     width: '100%',
-    marginBottom: 8,
+    marginBottom: 6,
     ...Platform.select({
       ios: {
         shadowColor: lightColors.accent,
@@ -817,11 +824,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255,255,255,0.85)',
     paddingVertical: 11,
     borderRadius: 12,
     width: '100%',
-    marginBottom: 8,
+    marginBottom: 6,
     borderWidth: 1.5,
     borderColor: lightColors.accent,
   },
@@ -835,7 +842,7 @@ const styles = StyleSheet.create({
   orDivider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   orDividerLine: {
     flex: 1,
@@ -866,8 +873,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
-    marginTop: 6,
-    marginBottom: 20,
+    marginTop: 4,
+    marginBottom: 16,
   },
   termsText: {
     fontSize: 11,
@@ -885,7 +892,7 @@ const styles = StyleSheet.create({
   devLoginContainer: {
     paddingHorizontal: 24,
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 60,
     marginBottom: 8,
   },
   devDivider: {
