@@ -36,9 +36,12 @@ const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.62;
-const CAROUSEL_ITEM_SPACING = 12;
+const CAROUSEL_ITEM_SPACING = 2;
 const CAROUSEL_ITEM_FULL = CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING;
 const CAROUSEL_HEIGHT = Math.min(SCREEN_HEIGHT * 0.38, 320);
+// Cover Flow overlap: show only ~30% of side cards
+const SIDE_CARD_VISIBLE_FRACTION = 0.30;
+const SIDE_CARD_TRANSLATE = CAROUSEL_ITEM_WIDTH * (1 - SIDE_CARD_VISIBLE_FRACTION) * 0.52;
 
 /**
  * Generates a unique device identifier for token binding.
@@ -295,25 +298,25 @@ export const LoginScreen = () => {
 
     const scale = scrollX.interpolate({
       inputRange,
-      outputRange: [0.55, 0.72, 1.0, 0.72, 0.55],
+      outputRange: [0.50, 0.68, 1.0, 0.68, 0.50],
       extrapolate: 'clamp',
     });
 
     const rotateY = scrollX.interpolate({
       inputRange,
-      outputRange: ['35deg', '18deg', '0deg', '-18deg', '-35deg'],
+      outputRange: ['45deg', '22deg', '0deg', '-22deg', '-45deg'],
       extrapolate: 'clamp',
     });
 
     const opacity = scrollX.interpolate({
       inputRange,
-      outputRange: [0.2, 0.5, 1.0, 0.5, 0.2],
+      outputRange: [0.15, 0.6, 1.0, 0.6, 0.15],
       extrapolate: 'clamp',
     });
 
     const translateX = scrollX.interpolate({
       inputRange,
-      outputRange: [50, 35, 0, -35, -50],
+      outputRange: [SIDE_CARD_TRANSLATE * 1.6, SIDE_CARD_TRANSLATE, 0, -SIDE_CARD_TRANSLATE, -SIDE_CARD_TRANSLATE * 1.6],
       extrapolate: 'clamp',
     });
 
@@ -323,7 +326,18 @@ export const LoginScreen = () => {
         index * CAROUSEL_ITEM_FULL,
         (index + 1) * CAROUSEL_ITEM_FULL,
       ],
-      outputRange: [0.05, 0.25, 0.05],
+      outputRange: [0.05, 0.35, 0.05],
+      extrapolate: 'clamp',
+    });
+
+    // Z-layering: center card gets highest elevation, neighbors lower
+    const elevationValue = scrollX.interpolate({
+      inputRange: [
+        (index - 1) * CAROUSEL_ITEM_FULL,
+        index * CAROUSEL_ITEM_FULL,
+        (index + 1) * CAROUSEL_ITEM_FULL,
+      ],
+      outputRange: [2, 20, 2],
       extrapolate: 'clamp',
     });
 
@@ -333,38 +347,42 @@ export const LoginScreen = () => {
           styles.carouselItem,
           {
             transform: [
-              { perspective: 1000 },
+              { perspective: 1200 },
               { translateX },
               { scale },
               { rotateY },
             ],
             opacity,
             ...(Platform.OS === 'ios' ? { shadowOpacity } : {}),
+            ...(Platform.OS === 'android' ? { elevation: elevationValue } : {}),
+            zIndex: index === activeCarouselIndex ? 10 : 1,
           },
         ]}
       >
-        {item.url ? (
-          <>
-            <Image
-              source={{ uri: item.url }}
-              style={styles.carouselImage}
-              resizeMode="cover"
-            />
-            {item.artist ? (
-              <View style={styles.artistOverlay}>
-                <Feather name="user" size={10} color="#FFFFFF" />
-                <Text style={styles.artistOverlayText}>@{item.artist}</Text>
-              </View>
-            ) : null}
-          </>
-        ) : (
-          <View style={[styles.carouselPlaceholder, { backgroundColor: item.color || lightColors.surface }]}>
-            <Feather name="image" size={32} color={lightColors.textSecondary} />
-          </View>
-        )}
+        <View style={styles.carouselItemInner}>
+          {item.url ? (
+            <>
+              <Image
+                source={{ uri: item.url }}
+                style={styles.carouselImage}
+                resizeMode="cover"
+              />
+              {item.artist ? (
+                <View style={styles.artistOverlay}>
+                  <Feather name="user" size={10} color="#FFFFFF" />
+                  <Text style={styles.artistOverlayText}>@{item.artist}</Text>
+                </View>
+              ) : null}
+            </>
+          ) : (
+            <View style={[styles.carouselPlaceholder, { backgroundColor: item.color || lightColors.surface }]}>
+              <Feather name="image" size={32} color={lightColors.textSecondary} />
+            </View>
+          )}
+        </View>
       </Animated.View>
     );
-  }, [scrollX]);
+  }, [scrollX, activeCarouselIndex]);
 
   // Placeholder carousel items
   const placeholderMedia = [
@@ -602,31 +620,38 @@ const styles = StyleSheet.create({
     height: SCREEN_HEIGHT * 0.38,
     justifyContent: 'center',
     marginBottom: 4,
+    overflow: 'visible',
   },
   carouselContainer: {
     paddingHorizontal: (SCREEN_WIDTH - CAROUSEL_ITEM_WIDTH) / 2 - CAROUSEL_ITEM_SPACING / 2,
     alignItems: 'center',
+    overflow: 'visible',
   },
   carouselItem: {
     width: CAROUSEL_ITEM_WIDTH,
     height: CAROUSEL_HEIGHT - 40,
     marginHorizontal: CAROUSEL_ITEM_SPACING / 2,
     borderRadius: 20,
-    overflow: 'hidden',
     backgroundColor: lightColors.surface,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.8)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.25,
-        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.30,
+        shadowRadius: 24,
       },
       android: {
-        elevation: 12,
+        elevation: 16,
       },
     }),
+  },
+  carouselItemInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 18,
+    overflow: 'hidden',
   },
   carouselImage: {
     width: '100%',
