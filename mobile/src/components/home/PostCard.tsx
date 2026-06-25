@@ -41,6 +41,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const mediaIndexRef = useRef(0);
 
   const isOwnPost = currentUser && post.authorId._id === currentUser.id;
 
@@ -126,13 +127,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       // First tap - set timeout for single-tap navigation
       tapTimeout.current = setTimeout(() => {
         tapTimeout.current = null;
-        navigation.navigate('PostDetail', { postId: post._id, initialMediaIndex: currentMediaIndex });
+        navigation.navigate('PostDetail', { postId: post._id, initialMediaIndex: mediaIndexRef.current });
       }, 300);
     }
   };
 
   const handleMomentumScrollEnd = useCallback((e: any) => {
     const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    mediaIndexRef.current = index;
     setCurrentMediaIndex(index);
   }, []);
 
@@ -325,7 +327,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          snapToInterval={SCREEN_WIDTH}
           decelerationRate="fast"
           getItemLayout={getItemLayout}
           onMomentumScrollEnd={handleMomentumScrollEnd}

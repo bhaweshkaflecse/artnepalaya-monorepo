@@ -32,7 +32,6 @@ import { removePost as removeUserPost } from '../../store/slices/userSlice';
 type PostDetailRouteProp = RouteProp<{ PostDetail: { postId: string; initialMediaIndex?: number } }, 'PostDetail'>;
 
 const { width: screenWidth } = Dimensions.get('window');
-const MEDIA_ITEM_HEIGHT = screenWidth * (5 / 4); // aspectRatio 4/5 means height = width * 5/4
 
 export const PostDetailScreen = () => {
   const route = useRoute<PostDetailRouteProp>();
