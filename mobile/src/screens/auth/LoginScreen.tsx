@@ -11,9 +11,10 @@ import {
   Platform,
   Animated,
   Dimensions,
-  FlatList,
   Image,
   ScrollView,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { Feather, AntDesign } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -35,12 +36,12 @@ WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.64;
-const CAROUSEL_ITEM_SPACING = 16;
+const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.62;
+const CAROUSEL_ITEM_HEIGHT = CAROUSEL_ITEM_WIDTH * (4 / 3);
+const CAROUSEL_ITEM_SPACING = 12;
 const CAROUSEL_ITEM_FULL = CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING;
-const CAROUSEL_HEIGHT = SCREEN_HEIGHT * 0.42;
-// Cover Flow: large spacing ensures FlatList renders neighbors, then translateX pulls them inward
-const SIDE_OVERLAP_INWARD = CAROUSEL_ITEM_WIDTH * 0.28;
+const CAROUSEL_HEIGHT = Math.max(SCREEN_HEIGHT * 0.42, CAROUSEL_ITEM_HEIGHT + 24);
+const SIDE_OVERLAP_INWARD = CAROUSEL_ITEM_WIDTH * 0.32;
 
 /**
  * Generates a unique device identifier for token binding.
@@ -61,9 +62,10 @@ export const LoginScreen = () => {
   // Carousel state
   const authBackgroundMedia = useAppSelector((state) => state.app.authBackgroundMedia);
   const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
-  const carouselRef = useRef<FlatList>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
   const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
+  const isUserScrolling = useRef(false);
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -91,16 +93,76 @@ export const LoginScreen = () => {
     ]).start();
   }, []);
 
+  // Placeholder carousel items
+  const placeholderMedia = [
+    { url: '', type: 'placeholder' as const, color: '#F8F0E8' },
+    { url: '', type: 'placeholder' as const, color: '#F0E8E0' },
+    { url: '', type: 'placeholder' as const, color: '#E8E0D8' },
+    { url: '', type: 'placeholder' as const, color: '#F5EDE5' },
+    { url: '', type: 'placeholder' as const, color: '#EDE5DD' },
+  ];
+
+  const baseData = authBackgroundMedia.length > 0 ? authBackgroundMedia : placeholderMedia;
+
+  // Circular carousel: prepend last item, append first item
+  const carouselData = baseData.length > 1
+    ? [baseData[baseData.length - 1], ...baseData, baseData[0]]
+    : baseData;
+
+  const realItemCount = baseData.length;
+  const hasCircular = baseData.length > 1;
+
+  // Initial scroll offset (to position 1 which is the real first item)
+  const initialOffset = hasCircular ? CAROUSEL_ITEM_FULL : 0;
+
+  // Set initial scroll position after mount
+  useEffect(() => {
+    if (hasCircular && scrollViewRef.current) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ x: initialOffset, animated: false });
+      }, 50);
+    }
+  }, [hasCircular, initialOffset]);
+
+  // Handle circular scroll reset (snap to real item when landing on clones)
+  const handleScrollEnd = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const currentIndex = Math.round(offsetX / CAROUSEL_ITEM_FULL);
+
+    if (hasCircular) {
+      if (currentIndex === 0) {
+        // Landed on prepended clone (last item) -> jump to real last
+        const realLastOffset = realItemCount * CAROUSEL_ITEM_FULL;
+        scrollViewRef.current?.scrollTo({ x: realLastOffset, animated: false });
+        setActiveCarouselIndex(realItemCount - 1);
+      } else if (currentIndex === realItemCount + 1) {
+        // Landed on appended clone (first item) -> jump to real first
+        const realFirstOffset = CAROUSEL_ITEM_FULL;
+        scrollViewRef.current?.scrollTo({ x: realFirstOffset, animated: false });
+        setActiveCarouselIndex(0);
+      } else {
+        setActiveCarouselIndex(currentIndex - 1);
+      }
+    } else {
+      setActiveCarouselIndex(currentIndex);
+    }
+    isUserScrolling.current = false;
+  }, [hasCircular, realItemCount]);
+
   // Auto-scroll carousel (gated by screen focus)
   useFocusEffect(
     useCallback(() => {
-      if (authBackgroundMedia.length <= 1) return;
+      if (realItemCount <= 1) return;
 
       autoScrollTimer.current = setInterval(() => {
+        if (isUserScrolling.current) return;
+
         setActiveCarouselIndex((prev) => {
-          const next = (prev + 1) % authBackgroundMedia.length;
-          carouselRef.current?.scrollToOffset({
-            offset: next * CAROUSEL_ITEM_FULL,
+          const next = (prev + 1) % realItemCount;
+          // In circular mode, real items are offset by 1
+          const scrollIndex = hasCircular ? next + 1 : next;
+          scrollViewRef.current?.scrollTo({
+            x: scrollIndex * CAROUSEL_ITEM_FULL,
             animated: true,
           });
           return next;
@@ -113,17 +175,11 @@ export const LoginScreen = () => {
           autoScrollTimer.current = null;
         }
       };
-    }, [authBackgroundMedia.length])
+    }, [realItemCount, hasCircular])
   );
 
   /**
    * IMPORTANT: Google OAuth in Expo Go (SDK 50)
-   * 
-   * The Expo auth proxy (auth.expo.io) has been deprecated and Google now rejects
-   * exp:// redirect URIs. This means Google Sign-In CANNOT work in Expo Go.
-   * 
-   * For development: Use the "Developer Login" button below (visible in __DEV__ mode).
-   * For production: Build with EAS Dev Client. See /GOOGLE_OAUTH_MIGRATION.md for full guide.
    */
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: GOOGLE_WEB_CLIENT_ID,
@@ -271,18 +327,8 @@ export const LoginScreen = () => {
     }).start();
   }, []);
 
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) {
-      setActiveCarouselIndex(viewableItems[0].index ?? 0);
-    }
-  }).current;
-
-  const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 50,
-  }).current;
-
-  // Render carousel item with premium Cover Flow interpolation
-  const renderCarouselItem = useCallback(({ item, index }: { item: { url: string; type: string; color?: string; artist?: string; caption?: string }; index: number }) => {
+  // Render a single carousel item with Cover Flow transforms
+  const renderCarouselItem = (item: any, index: number) => {
     const inputRange = [
       (index - 2) * CAROUSEL_ITEM_FULL,
       (index - 1) * CAROUSEL_ITEM_FULL,
@@ -293,52 +339,48 @@ export const LoginScreen = () => {
 
     const scale = scrollX.interpolate({
       inputRange,
-      outputRange: [0.50, 0.68, 1.0, 0.68, 0.50],
+      outputRange: [0.55, 0.72, 1.0, 0.72, 0.55],
       extrapolate: 'clamp',
     });
 
     const rotateY = scrollX.interpolate({
       inputRange,
-      outputRange: ['45deg', '22deg', '0deg', '-22deg', '-45deg'],
+      outputRange: ['50deg', '25deg', '0deg', '-25deg', '-50deg'],
       extrapolate: 'clamp',
     });
 
     const opacity = scrollX.interpolate({
       inputRange,
-      outputRange: [0.15, 0.6, 1.0, 0.6, 0.15],
+      outputRange: [0.3, 0.7, 1.0, 0.7, 0.3],
       extrapolate: 'clamp',
     });
 
     // Pull neighbors inward to create visual overlap (classic Cover Flow)
     const translateX = scrollX.interpolate({
       inputRange,
-      outputRange: [SIDE_OVERLAP_INWARD * 1.4, SIDE_OVERLAP_INWARD, 0, -SIDE_OVERLAP_INWARD, -SIDE_OVERLAP_INWARD * 1.4],
+      outputRange: [
+        SIDE_OVERLAP_INWARD * 1.6,
+        SIDE_OVERLAP_INWARD,
+        0,
+        -SIDE_OVERLAP_INWARD,
+        -SIDE_OVERLAP_INWARD * 1.6,
+      ],
       extrapolate: 'clamp',
     });
 
-    const shadowOpacity = scrollX.interpolate({
+    const shadowOpacityAnim = scrollX.interpolate({
       inputRange: [
         (index - 1) * CAROUSEL_ITEM_FULL,
         index * CAROUSEL_ITEM_FULL,
         (index + 1) * CAROUSEL_ITEM_FULL,
       ],
-      outputRange: [0.05, 0.35, 0.05],
-      extrapolate: 'clamp',
-    });
-
-    // Z-layering: center card gets highest elevation, neighbors lower
-    const elevationValue = scrollX.interpolate({
-      inputRange: [
-        (index - 1) * CAROUSEL_ITEM_FULL,
-        index * CAROUSEL_ITEM_FULL,
-        (index + 1) * CAROUSEL_ITEM_FULL,
-      ],
-      outputRange: [2, 20, 2],
+      outputRange: [0.05, 0.4, 0.05],
       extrapolate: 'clamp',
     });
 
     return (
       <Animated.View
+        key={`carousel-${index}`}
         style={[
           styles.carouselItem,
           {
@@ -349,9 +391,7 @@ export const LoginScreen = () => {
               { rotateY },
             ],
             opacity,
-            ...(Platform.OS === 'ios' ? { shadowOpacity } : {}),
-            ...(Platform.OS === 'android' ? { elevation: elevationValue } : {}),
-            zIndex: index === activeCarouselIndex ? 10 : 1,
+            ...(Platform.OS === 'ios' ? { shadowOpacity: shadowOpacityAnim } : {}),
           },
         ]}
       >
@@ -372,78 +412,55 @@ export const LoginScreen = () => {
             </>
           ) : (
             <View style={[styles.carouselPlaceholder, { backgroundColor: item.color || lightColors.surface }]}>
-              <Feather name="image" size={32} color={lightColors.textSecondary} />
+              <Feather name="image" size={36} color={lightColors.textSecondary} />
             </View>
           )}
         </View>
       </Animated.View>
     );
-  }, [scrollX, activeCarouselIndex]);
-
-  // Placeholder carousel items
-  const placeholderMedia = [
-    { url: '', type: 'placeholder' as const, color: lightColors.surface },
-    { url: '', type: 'placeholder' as const, color: lightColors.border },
-    { url: '', type: 'placeholder' as const, color: lightColors.surface },
-  ];
-
-  const carouselData = authBackgroundMedia.length > 0 ? authBackgroundMedia : placeholderMedia;
+  };
 
   return (
     <View style={styles.root}>
-      {/* Premium gradient background: warm cream top fading to white bottom */}
-      {/* TODO: When mobile/assets/loginimage.png is ready, replace gradient layers with:
-          <Image source={require('../../../assets/loginimage.png')} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
-      */}
-      <View style={styles.gradientBase} />
-      <View style={styles.gradientWarmMid} />
-      <View style={styles.gradientWarmTop} />
-      <View style={styles.gradientSkyHint} />
+      {/* Background image */}
+      <Image
+        source={require('../../../assets/loginimage.png')}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
+      {/* Subtle overlay for readability if needed */}
+      <View style={styles.backgroundOverlay} />
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          style={styles.outerScrollView}
+          contentContainerStyle={styles.outerScrollContent}
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          {/* === TOP 40% - Hero Carousel Section === */}
+          {/* === TOP ~42% - Hero Carousel Section (ScrollView-based Cover Flow) === */}
           <View style={styles.heroSection}>
-            <Animated.FlatList
-              ref={carouselRef}
-              data={carouselData}
-              renderItem={renderCarouselItem}
-              keyExtractor={(_, index) => `carousel-${index}`}
+            <Animated.ScrollView
+              ref={scrollViewRef as any}
               horizontal
               showsHorizontalScrollIndicator={false}
               snapToInterval={CAROUSEL_ITEM_FULL}
               decelerationRate="fast"
               contentContainerStyle={styles.carouselContainer}
-              style={styles.carouselFlatList}
-              onViewableItemsChanged={onViewableItemsChanged}
-              viewabilityConfig={viewabilityConfig}
+              onScrollBeginDrag={() => { isUserScrolling.current = true; }}
+              onMomentumScrollEnd={handleScrollEnd}
               onScroll={Animated.event(
                 [{ nativeEvent: { contentOffset: { x: scrollX } } }],
                 { useNativeDriver: false }
               )}
               scrollEventThrottle={16}
-              removeClippedSubviews={false}
-            />
-            {/* Pagination Dots */}
-            <View style={styles.paginationContainer}>
-              {carouselData.map((_, index) => (
-                <View
-                  key={`dot-${index}`}
-                  style={[
-                    styles.paginationDot,
-                    index === activeCarouselIndex && styles.paginationDotActive,
-                  ]}
-                />
-              ))}
-            </View>
+              contentOffset={{ x: initialOffset, y: 0 }}
+            >
+              {carouselData.map((item, index) => renderCarouselItem(item, index))}
+            </Animated.ScrollView>
           </View>
 
-          {/* === MIDDLE 30% - Brand Section === */}
+          {/* === MIDDLE - Brand Section === */}
           <Animated.View
             style={[
               styles.brandSection,
@@ -485,7 +502,7 @@ export const LoginScreen = () => {
             </View>
           </Animated.View>
 
-          {/* === BOTTOM 30% - Authentication Section === */}
+          {/* === BOTTOM - Authentication Section === */}
           <Animated.View
             style={[
               styles.authSection,
@@ -514,7 +531,7 @@ export const LoginScreen = () => {
               )}
             </TouchableOpacity>
 
-            {/* Divider between Continue and Sign up */}
+            {/* Divider */}
             <View style={styles.orDivider}>
               <View style={styles.orDividerLine} />
               <Text style={styles.orDividerText}>or</Text>
@@ -542,10 +559,7 @@ export const LoginScreen = () => {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Spacer pushes bottom content toward screen edge */}
-          <View style={{ flex: 1, minHeight: 4 }} />
-
-          {/* Terms Text with tappable links */}
+          {/* Terms Text with tappable links - final visible content before fold */}
           <View style={styles.termsContainer}>
             <Text style={styles.termsText}>By continuing, you agree to our </Text>
             <TouchableOpacity
@@ -563,7 +577,7 @@ export const LoginScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Developer Login (QA Only) */}
+          {/* Developer Login (QA Only) - below the fold */}
           <View style={styles.devLoginContainer}>
             <View style={styles.devDivider}>
               <View style={styles.dividerLine} />
@@ -597,60 +611,34 @@ export const LoginScreen = () => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  // Premium gradient simulation -- warm cream top fading to clean white bottom
-  gradientBase: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#FFFFFF',
-  },
-  gradientWarmMid: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: SCREEN_HEIGHT * 0.55,
     backgroundColor: '#FFFBF5',
-    opacity: 0.6,
   },
-  gradientWarmTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: SCREEN_HEIGHT * 0.30,
-    backgroundColor: '#FFF8F0',
-    opacity: 0.5,
+  backgroundImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
   },
-  gradientSkyHint: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: SCREEN_HEIGHT * 0.12,
-    backgroundColor: '#FFF5E8',
-    opacity: 0.25,
+  backgroundOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 252, 248, 0.15)',
   },
   safeArea: {
     flex: 1,
   },
-  scrollView: {
+  outerScrollView: {
     flex: 1,
   },
-  scrollContent: {
+  outerScrollContent: {
     flexGrow: 1,
-    paddingBottom: 12,
+    paddingBottom: 24,
   },
 
   // === Hero Section (Top ~42%) ===
   heroSection: {
     height: CAROUSEL_HEIGHT,
     justifyContent: 'center',
-    marginTop: 8,
-    marginBottom: 8,
-    overflow: 'visible',
-  },
-  carouselFlatList: {
+    marginTop: 4,
+    marginBottom: 6,
     overflow: 'visible',
   },
   carouselContainer: {
@@ -659,28 +647,28 @@ const styles = StyleSheet.create({
   },
   carouselItem: {
     width: CAROUSEL_ITEM_WIDTH,
-    height: CAROUSEL_ITEM_WIDTH * (4 / 3),
+    height: CAROUSEL_ITEM_HEIGHT,
     marginHorizontal: CAROUSEL_ITEM_SPACING / 2,
-    borderRadius: 20,
+    borderRadius: 22,
     backgroundColor: lightColors.surface,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.85)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 14 },
-        shadowOpacity: 0.28,
-        shadowRadius: 28,
+        shadowOffset: { width: 0, height: 16 },
+        shadowOpacity: 0.35,
+        shadowRadius: 30,
       },
       android: {
-        elevation: 18,
+        elevation: 20,
       },
     }),
   },
   carouselItemInner: {
     width: '100%',
     height: '100%',
-    borderRadius: 18,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   carouselImage: {
@@ -709,24 +697,6 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  paginationDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: lightColors.border,
-    marginHorizontal: 4,
-  },
-  paginationDotActive: {
-    width: 22,
-    borderRadius: 4,
-    backgroundColor: lightColors.accent,
   },
 
   // === Brand Section (Middle) ===
@@ -897,7 +867,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 32,
     marginTop: 6,
-    marginBottom: 6,
+    marginBottom: 20,
   },
   termsText: {
     fontSize: 11,
@@ -911,11 +881,11 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
 
-  // Dev Login
+  // Dev Login - positioned below fold
   devLoginContainer: {
     paddingHorizontal: 24,
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: 40,
     marginBottom: 8,
   },
   devDivider: {
