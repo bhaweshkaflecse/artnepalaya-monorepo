@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  FlatList,
+  Dimensions,
   Share,
   Animated,
   Alert,
@@ -23,6 +25,8 @@ import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice'
 import { toggleLike, toggleSave, removePost as removeFeedPost } from '../../store/slices/feedSlice';
 import { removePost as removeUserPost } from '../../store/slices/userSlice';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 interface PostCardProps {
   post: Post;
 }
@@ -36,6 +40,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [isSaved, setIsSaved] = useState(post.isSavedByMe || false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
   const isOwnPost = currentUser && post.authorId._id === currentUser.id;
 
@@ -121,10 +126,51 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       // First tap - set timeout for single-tap navigation
       tapTimeout.current = setTimeout(() => {
         tapTimeout.current = null;
-        navigation.navigate('PostDetail', { postId: post._id });
+        navigation.navigate('PostDetail', { postId: post._id, initialMediaIndex: currentMediaIndex });
       }, 300);
     }
   };
+
+  const handleMomentumScrollEnd = useCallback((e: any) => {
+    const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    setCurrentMediaIndex(index);
+  }, []);
+
+  const getItemLayout = useCallback((_data: any, index: number) => ({
+    length: SCREEN_WIDTH,
+    offset: SCREEN_WIDTH * index,
+    index,
+  }), []);
+
+  const renderMediaItem = useCallback(({ item }: { item: any }) => {
+    const isVideo = item.type === 'video';
+    const imageUrl = isVideo && item.url
+      ? getVideoThumbnailUrl(item.url)
+      : item.url;
+
+    return (
+      <TouchableWithoutFeedback onPress={handleImageTap}>
+        <View style={[styles.imageWrapper, { width: SCREEN_WIDTH }]}>
+          {imageUrl ? (
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.image}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Feather name="image" size={48} color={darkColors.textSecondary} />
+            </View>
+          )}
+          {isVideo && (
+            <View style={styles.videoOverlay}>
+              <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
+            </View>
+          )}
+        </View>
+      </TouchableWithoutFeedback>
+    );
+  }, [handleImageTap]);
 
   const navigateToProfile = () => {
     if (currentUser && post.authorId._id === currentUser.id) {
@@ -271,52 +317,56 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         </View>
       )}
 
-      {/* Image with single-tap (PostDetail) and double-tap (like) */}
-      <TouchableWithoutFeedback onPress={handleImageTap}>
-        <View style={styles.imageWrapper}>
-          {(() => {
-            const isVideo = post.media?.[0]?.type === 'video';
-            const imageUrl = isVideo && post.media[0]?.url
-              ? getVideoThumbnailUrl(post.media[0].url)
-              : getPrimaryImageUrl(post.media);
-            return imageUrl ? (
-              <Image
-                source={{ uri: imageUrl }}
-                style={styles.image}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Feather name="image" size={48} color={darkColors.textSecondary} />
-              </View>
-            );
-          })()}
-          {/* Video play icon overlay */}
-          {post.media?.[0]?.type === 'video' && (
-            <View style={styles.videoOverlay}>
-              <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
-            </View>
-          )}
-          {/* Heart animation overlay */}
-          <Animated.View
-            style={[
-              styles.heartOverlay,
-              {
-                transform: [{ scale: heartScale }],
-                opacity: heartOpacity,
-              },
-            ]}
-          >
-            <Ionicons name="heart" size={80} color="#FFFFFF" />
-          </Animated.View>
-          {post.media && post.media.length > 1 && (
-            <View style={styles.mediaBadge}>
-              <Feather name="layers" size={12} color="#FFFFFF" />
-              <Text style={styles.mediaBadgeText}>{post.media.length}</Text>
-            </View>
-          )}
+      {/* Media Carousel with single-tap (PostDetail) and double-tap (like) */}
+      <View style={styles.mediaContainer}>
+        <FlatList
+          data={post.media}
+          keyExtractor={(item, index) => `${item.url}-${index}`}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={SCREEN_WIDTH}
+          decelerationRate="fast"
+          getItemLayout={getItemLayout}
+          onMomentumScrollEnd={handleMomentumScrollEnd}
+          renderItem={renderMediaItem}
+        />
+        {/* Heart animation overlay */}
+        <Animated.View
+          style={[
+            styles.heartOverlay,
+            {
+              transform: [{ scale: heartScale }],
+              opacity: heartOpacity,
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <Ionicons name="heart" size={80} color="#FFFFFF" />
+        </Animated.View>
+        {/* Media count badge */}
+        {post.media && post.media.length > 1 && (
+          <View style={styles.mediaBadge}>
+            <Feather name="layers" size={12} color="#FFFFFF" />
+            <Text style={styles.mediaBadgeText}>{post.media.length}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Pagination Dots */}
+      {post.media && post.media.length > 1 && (
+        <View style={styles.paginationDots}>
+          {post.media.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.dot,
+                index === currentMediaIndex ? styles.dotActive : styles.dotInactive,
+              ]}
+            />
+          ))}
         </View>
-      </TouchableWithoutFeedback>
+      )}
 
       {/* Actions */}
       <View style={styles.actions}>
@@ -574,5 +624,28 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
+  },
+  mediaContainer: {
+    width: '100%',
+    aspectRatio: 4 / 5,
+    position: 'relative',
+  },
+  paginationDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 3,
+  },
+  dotActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  dotInactive: {
+    backgroundColor: 'rgba(255,255,255,0.4)',
   },
 });

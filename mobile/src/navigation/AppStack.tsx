@@ -17,7 +17,7 @@ import { Post } from '../services/post.service';
 
 export type AppStackParamList = {
   MainTabs: undefined;
-  PostDetail: { postId: string };
+  PostDetail: { postId: string; initialMediaIndex?: number };
   EditPost: { postId: string; post: Post };
   Notifications: undefined;
   EditProfile: undefined;

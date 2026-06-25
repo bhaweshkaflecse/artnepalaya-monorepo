@@ -29,14 +29,15 @@ import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice'
 import { toggleLike, toggleSave, removePost as removeFeedPost } from '../../store/slices/feedSlice';
 import { removePost as removeUserPost } from '../../store/slices/userSlice';
 
-type PostDetailRouteProp = RouteProp<{ PostDetail: { postId: string } }, 'PostDetail'>;
+type PostDetailRouteProp = RouteProp<{ PostDetail: { postId: string; initialMediaIndex?: number } }, 'PostDetail'>;
 
 const { width: screenWidth } = Dimensions.get('window');
+const MEDIA_ITEM_HEIGHT = screenWidth * (5 / 4); // aspectRatio 4/5 means height = width * 5/4
 
 export const PostDetailScreen = () => {
   const route = useRoute<PostDetailRouteProp>();
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
-  const { postId } = route.params;
+  const { postId, initialMediaIndex = 0 } = route.params;
 
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +47,7 @@ export const PostDetailScreen = () => {
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [shouldPlay, setShouldPlay] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(initialMediaIndex);
 
   const isGuest = useAppSelector(selectIsGuest);
   const currentUser = useAppSelector(selectUser);
@@ -377,6 +378,12 @@ export const PostDetailScreen = () => {
             showsHorizontalScrollIndicator={false}
             snapToInterval={screenWidth}
             decelerationRate="fast"
+            initialScrollIndex={initialMediaIndex}
+            getItemLayout={(_data, index) => ({
+              length: screenWidth,
+              offset: screenWidth * index,
+              index,
+            })}
             onMomentumScrollEnd={(e) => {
               const index = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
               setCurrentIndex(index);

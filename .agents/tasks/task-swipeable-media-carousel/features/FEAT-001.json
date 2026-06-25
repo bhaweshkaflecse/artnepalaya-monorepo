@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Implement swipeable media carousel in PostCard for multi-media posts, update AppStack route params to pass initialMediaIndex, and update PostDetailScreen to accept and use it.",
+  "status": "in_progress",
+  "steps": [
+    "1. Update AppStackParamList in mobile/src/navigation/AppStack.tsx: Change PostDetail params from `{ postId: string }` to `{ postId: string; initialMediaIndex?: number }` to support passing the current carousel index when navigating from the feed.",
+    "2. Update PostDetailScreen in mobile/src/screens/post/PostDetailScreen.tsx: (a) Update the RouteProp type to include `initialMediaIndex?: number`. (b) Extract `initialMediaIndex` from route.params (default 0). (c) Initialize the `currentIndex` state with `initialMediaIndex` instead of 0. (d) Add a ref to the FlatList and use `initialScrollIndex={initialMediaIndex}` prop, plus `getItemLayout` for the FlatList to enable instant scroll to the correct index on mount.",
+    "3. Rewrite the media section of PostCard in mobile/src/components/home/PostCard.tsx: (a) Add a `currentMediaIndex` state (default 0). (b) Add a FlatList ref. (c) Replace the single TouchableWithoutFeedback+Image block with a horizontal FlatList that renders all items in `post.media`. (d) FlatList props: `horizontal`, `pagingEnabled`, `showsHorizontalScrollIndicator={false}`, `snapToInterval={cardWidth}` (use Dimensions or onLayout to get the card width), `decelerationRate='fast'`, `getItemLayout` for performance. (e) Track current index using `onMomentumScrollEnd` (calculate index from contentOffset.x / cardWidth). (f) Each item in the FlatList is wrapped in a `TouchableWithoutFeedback` that calls `handleImageTap` for that specific item (preserving double-tap-to-like and single-tap-to-navigate behavior PER media item). (g) For image items: render `<Image source={{ uri: item.url }} style={styles.image} resizeMode='cover' />`. For video items: render the video thumbnail with `getVideoThumbnailUrl(item.url)` and show a play icon overlay. (h) The heart animation overlay (`Animated.View` with heart icon) should be positioned absolutely over the FlatList container (not per-item) so it shows over the current visible media item. (i) The media count badge stays in its current position (top-right, absolute) over the FlatList container.",
+    "4. Add pagination dots below the FlatList in PostCard: (a) Only render if `post.media.length > 1`. (b) Row of small circles (6px diameter), centered horizontally below the media. (c) Active dot: accent color or white (matching the dark theme - use #FFFFFF for active). (d) Inactive dots: rgba(255,255,255,0.4). (e) Use the same dot styling pattern as PostDetailScreen (6px width, 6px height, borderRadius 3, marginHorizontal 3).",
+    "5. Update the single-tap navigation in PostCard's handleImageTap to pass the current media index: Change `navigation.navigate('PostDetail', { postId: post._id })` to `navigation.navigate('PostDetail', { postId: post._id, initialMediaIndex: currentMediaIndex })`.",
+    "6. Ensure backward compatibility: Posts with only 1 media item should render identically to before (single image, no dots, no FlatList overhead - OR still use FlatList with 1 item which is visually identical). The FlatList approach with 1 item is acceptable since it's functionally identical."
+  ],
+  "acceptance_criteria": [
+    "Posts with multiple media items show a swipeable horizontal carousel in the feed",
+    "Pagination dots appear below the media for multi-media posts (not for single-media posts)",
+    "The media count badge (layers icon + count) remains visible in the top-right corner for multi-media posts",
+    "Double-tap on any media item in the carousel triggers the like animation and like action",
+    "Single-tap on any media item navigates to PostDetail with the current carousel index passed as initialMediaIndex",
+    "PostDetailScreen starts at the correct media index when opened from a specific carousel position",
+    "AppStackParamList includes optional initialMediaIndex in PostDetail params",
+    "Video items in the carousel show a thumbnail with play icon overlay",
+    "Heart animation displays over the current visible media item"
+  ],
+  "verification": [
+    "Run `cd /projects/sandbox/artnepalaya-monorepo/mobile && npx tsc --noEmit` to verify TypeScript compilation passes with no errors in the modified files",
+    "Verify the AppStackParamList type includes initialMediaIndex by reading AppStack.tsx",
+    "Verify PostDetailScreen reads initialMediaIndex from params and uses it for FlatList initialScrollIndex",
+    "Verify PostCard renders a horizontal FlatList for media with pagination dots"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
