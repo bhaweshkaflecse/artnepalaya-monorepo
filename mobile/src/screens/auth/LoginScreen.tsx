@@ -38,7 +38,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.58;
 const CAROUSEL_ITEM_SPACING = 12;
 const CAROUSEL_ITEM_FULL = CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING;
-const CAROUSEL_HEIGHT = CAROUSEL_ITEM_WIDTH * (4 / 3); // portrait 3:4 ratio
+const CAROUSEL_HEIGHT = Math.min(SCREEN_HEIGHT * 0.26, 200);
 
 /**
  * Generates a unique device identifier for token binding.
@@ -424,32 +424,20 @@ export const LoginScreen = () => {
               },
             ]}
           >
-            <View style={styles.logoIcon}>
-              <Feather name="aperture" size={40} color={lightColors.accent} />
-            </View>
             <Text style={styles.brandName}>ArtNepalaya</Text>
-            <Text style={styles.tagline}>Discover . Share . Inspire</Text>
+            <Text style={styles.tagline}>Discover {'\u00B7'} Share {'\u00B7'} Inspire</Text>
           </Animated.View>
 
-          {/* Statistics Cards */}
+          {/* Statistics - Ultra-compact inline */}
           <Animated.View
             style={[
-              styles.statsRow,
+              styles.statsInline,
               { opacity: fadeAnim },
             ]}
           >
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>18K+</Text>
-              <Text style={styles.statLabel}>Artists</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>75K+</Text>
-              <Text style={styles.statLabel}>Artworks</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{'\u{1F1F3}\u{1F1F5}'}</Text>
-              <Text style={styles.statLabel}>Made in Nepal</Text>
-            </View>
+            <Text style={styles.statsInlineText}>
+              18K+ Artists  {'\u00B7'}  75K+ Artworks  {'\u00B7'}  Made in Nepal {'\u{1F1F3}\u{1F1F5}'}
+            </Text>
           </Animated.View>
 
           {/* Authentication Buttons */}
@@ -492,9 +480,18 @@ export const LoginScreen = () => {
             </TouchableOpacity>
           </Animated.View>
 
+          {/* Continue as Guest */}
+          <TouchableOpacity
+            style={styles.guestButton}
+            onPress={handleSkip}
+            activeOpacity={0.6}
+          >
+            <Text style={styles.guestButtonText}>Continue as Guest</Text>
+          </TouchableOpacity>
+
           {/* Terms Text */}
           <Text style={styles.termsText}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
+            By continuing, you agree to our Terms & Privacy Policy
           </Text>
 
           {/* Developer Login (QA Only) */}
@@ -540,13 +537,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 40,
+    flexGrow: 1,
+    paddingBottom: 20,
   },
 
   // Carousel
   carouselSection: {
-    marginTop: 16,
-    marginBottom: 16,
+    marginTop: 12,
+    marginBottom: 12,
   },
   carouselContainer: {
     paddingHorizontal: (SCREEN_WIDTH - CAROUSEL_ITEM_WIDTH) / 2 - CAROUSEL_ITEM_SPACING / 2,
@@ -620,70 +618,39 @@ const styles = StyleSheet.create({
   brandingSection: {
     alignItems: 'center',
     paddingHorizontal: 32,
-    marginBottom: 16,
-  },
-  logoIcon: {
     marginBottom: 12,
   },
   brandName: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: lightColors.textPrimary,
     letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  tagline: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: lightColors.textSecondary,
-    letterSpacing: 2,
-    marginBottom: 8,
-  },
-  // Statistics
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 20,
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: lightColors.surface,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: lightColors.border,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: lightColors.textPrimary,
     marginBottom: 4,
   },
-  statLabel: {
+  tagline: {
     fontSize: 12,
     fontWeight: '500',
     color: lightColors.textSecondary,
+    letterSpacing: 1.5,
+    marginBottom: 12,
+  },
+
+  // Statistics - inline
+  statsInline: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  statsInlineText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: lightColors.textSecondary,
+    textAlign: 'center',
   },
 
   // Auth Buttons
   authSection: {
     paddingHorizontal: 24,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   primaryButton: {
     flexDirection: 'row',
@@ -691,9 +658,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: lightColors.accent,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 12,
     width: '100%',
-    marginBottom: 12,
+    marginBottom: 10,
     ...Platform.select({
       ios: {
         shadowColor: lightColors.accent,
@@ -723,9 +690,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
-    paddingVertical: 15,
-    borderRadius: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
     width: '100%',
+    marginBottom: 8,
     borderWidth: 1.5,
     borderColor: lightColors.accent,
   },
@@ -736,20 +704,34 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
+  // Continue as Guest
+  guestButton: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  guestButtonText: {
+    fontSize: 13,
+    color: lightColors.textSecondary,
+    fontWeight: '400',
+  },
+
   // Terms
   termsText: {
-    fontSize: 11,
+    fontSize: 10,
     color: lightColors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 48,
-    lineHeight: 16,
-    marginBottom: 8,
+    lineHeight: 14,
+    marginBottom: 12,
+    opacity: 0.7,
   },
 
   // Dev Login
   devLoginContainer: {
     paddingHorizontal: 24,
     alignItems: 'center',
+    marginTop: 8,
   },
   devDivider: {
     flexDirection: 'row',
@@ -777,7 +759,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: lightColors.border,
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 20,
     width: '100%',
     backgroundColor: lightColors.surface,
@@ -789,7 +771,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   devLoginText: {
-    fontSize: 13,
+    fontSize: 12,
     color: lightColors.textSecondary,
     fontWeight: '500',
   },

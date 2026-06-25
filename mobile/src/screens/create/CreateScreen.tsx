@@ -25,7 +25,7 @@ import { prependPost as prependMyPost } from '../../store/slices/userSlice';
 
 const MAX_IMAGES = 5;
 const MAX_VIDEOS = 1;
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const FALLBACK_ARTWORK_TYPES = [
   'Painting',
@@ -435,7 +435,7 @@ export const CreateScreen = () => {
           <View style={styles.statusBannerLeft}>
             <Feather
               name={mediaItems.length > 0 ? 'check-circle' : 'alert-circle'}
-              size={18}
+              size={16}
               color={mediaItems.length > 0 ? '#16A34A' : '#D97706'}
             />
             <Text style={[
@@ -566,11 +566,9 @@ export const CreateScreen = () => {
         )}
 
         {/* UPLOAD LIMITS */}
-        <View style={styles.limitsContainer}>
-          <Text style={styles.limitsText}>
-            Up to 5 images + 1 video | JPG, PNG, WEBP, MP4 | Max 10MB/image, 50MB/video
-          </Text>
-        </View>
+        <Text style={styles.limitsText}>
+          5 images + 1 video {'\u00B7'} JPG PNG WEBP MP4 {'\u00B7'} 10MB/img 50MB/vid
+        </Text>
 
         {/* DESCRIPTION FIELD */}
         <Animated.View style={[styles.fieldContainer, { opacity: fadeAnim }]}>
@@ -799,10 +797,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   statusBannerReady: {
     backgroundColor: '#F0FFF4',
@@ -820,7 +818,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statusBannerText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   statusBadge: {
@@ -835,11 +833,11 @@ const styles = StyleSheet.create({
     color: lightColors.textSecondary,
   },
   heroContainer: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   heroTouchable: {
     width: '100%',
-    aspectRatio: 3 / 4,
+    height: Math.min(SCREEN_HEIGHT * 0.32, 280),
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: lightColors.surface,
@@ -951,7 +949,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 8,
     gap: 6,
   },
   dot: {
@@ -970,8 +968,8 @@ const styles = StyleSheet.create({
   },
   thumbnailStrip: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 10,
+    gap: 6,
+    marginBottom: 8,
     paddingHorizontal: 2,
     paddingVertical: 4,
   },
@@ -979,8 +977,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   thumbnailItem: {
-    width: 56,
-    height: 56,
+    width: 52,
+    height: 52,
     borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 2,
@@ -1022,8 +1020,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   thumbnailAddBtn: {
-    width: 56,
-    height: 56,
+    width: 52,
+    height: 52,
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: lightColors.border,
@@ -1038,33 +1036,24 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: '500',
   },
-  limitsContainer: {
-    backgroundColor: lightColors.surface,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: lightColors.border,
-  },
   limitsText: {
-    fontSize: 12,
+    fontSize: 11,
     color: lightColors.textSecondary,
     textAlign: 'center',
-    lineHeight: 18,
+    marginBottom: 12,
   },
   fieldContainer: {
-    marginBottom: 14,
+    marginBottom: 12,
   },
   fieldLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: lightColors.textPrimary,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   textAreaContainer: {
     backgroundColor: lightColors.surface,
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: lightColors.border,
     padding: 10,
@@ -1084,7 +1073,7 @@ const styles = StyleSheet.create({
   },
   tagInput: {
     backgroundColor: lightColors.surface,
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: lightColors.border,
     paddingHorizontal: 14,
@@ -1127,7 +1116,7 @@ const styles = StyleSheet.create({
   customTypeInput: {
     borderWidth: 1,
     borderColor: lightColors.border,
-    borderRadius: 14,
+    borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 14,
@@ -1140,7 +1129,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: lightColors.border,
-    padding: 12,
+    padding: 10,
     marginBottom: 12,
   },
   complianceTitleText: {
@@ -1152,7 +1141,7 @@ const styles = StyleSheet.create({
   complianceRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 12,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: lightColors.border,
     gap: 12,
@@ -1161,7 +1150,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   complianceLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: lightColors.textPrimary,
     lineHeight: 18,
