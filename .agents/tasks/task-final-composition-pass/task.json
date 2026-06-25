@@ -1,0 +1,7 @@
+{
+  "task_id": "task-final-composition-pass",
+  "task_description": "Final UI composition pass for LoginScreen and CreateScreen (Upload Artwork). Redesign viewport composition to match approved mockups: LoginScreen gets 40/30/30 hero/brand/auth layout with gradient, statistics cards, Google icon, divider, tappable terms. CreateScreen gets 3:4 portrait hero, refined thumbnails, hashtag placeholder, lighter content declaration.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

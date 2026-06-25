@@ -1,0 +1,24 @@
+{
+  "project_type": "Expo React Native mobile app (part of monorepo)",
+  "language": "TypeScript/TSX",
+  "build_system": "Expo CLI (cannot install packages - INTEGRATIONS_ONLY network)",
+  "test_framework": "No unit tests in mobile - visual QA only",
+  "build_command": "N/A - cannot run expo in this environment",
+  "test_command": "N/A - visual QA by user",
+  "verification_instructions": "AST validation via TypeScript compiler (npx tsc --noEmit) if available, otherwise syntactic review",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "No setup needed - directly modify files in place",
+  "environment_constraints": "INTEGRATIONS_ONLY network - cannot npm install, cannot add dependencies. Only modify existing code. Available packages: react-native, expo, @expo/vector-icons (Feather, Ionicons, AntDesign, MaterialCommunityIcons, FontAwesome5), react-native-svg (available but unused), expo-linking. NO expo-linear-gradient available - must simulate gradients with layered Views.",
+  "contribution_requirements": "Commit directly to fix/final-stabilization branch with descriptive messages. Preserve all existing functionality.",
+  "key_patterns": "lightColors theme from ../../theme/colors, @expo/vector-icons for icons, useNavigation/useRoute for navigation, CmsPageScreen navigated via {slug, title} params, AuthStack is separate from AppStack",
+  "relevant_files": [
+    "mobile/src/screens/auth/LoginScreen.tsx",
+    "mobile/src/screens/create/CreateScreen.tsx",
+    "mobile/src/theme/colors.ts",
+    "mobile/src/navigation/AuthStack.tsx",
+    "mobile/src/screens/settings/CmsPageScreen.tsx",
+    "mobile/src/screens/profile/SettingsScreen.tsx",
+    "mobile/src/navigation/AppStack.tsx"
+  ],
+  "directory_structure": "mobile/src/screens/auth/ - auth screens, mobile/src/screens/create/ - upload screen, mobile/src/navigation/ - nav stacks, mobile/src/theme/ - colors/theme"
+}
