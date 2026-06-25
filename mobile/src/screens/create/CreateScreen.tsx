@@ -775,8 +775,8 @@ const styles = StyleSheet.create({
   publishPill: {
     backgroundColor: '#FF3B30',
     borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     minWidth: 80,
     alignItems: 'center',
   },
@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   statusBannerReady: {
     backgroundColor: '#F0FFF4',
@@ -835,7 +835,7 @@ const styles = StyleSheet.create({
     color: lightColors.textSecondary,
   },
   heroContainer: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   heroTouchable: {
     width: '100%',
@@ -970,8 +970,8 @@ const styles = StyleSheet.create({
   },
   thumbnailStrip: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 14,
+    gap: 8,
+    marginBottom: 10,
     paddingHorizontal: 2,
     paddingVertical: 4,
   },
@@ -979,8 +979,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   thumbnailItem: {
-    width: 60,
-    height: 60,
+    width: 56,
+    height: 56,
     borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 2,
@@ -988,6 +988,11 @@ const styles = StyleSheet.create({
   },
   thumbnailItemActive: {
     borderColor: '#FF3B30',
+    shadowColor: '#FF3B30',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   thumbnailImage: {
     width: '100%',
@@ -1017,8 +1022,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   thumbnailAddBtn: {
-    width: 60,
-    height: 60,
+    width: 56,
+    height: 56,
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: lightColors.border,
@@ -1038,7 +1043,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    marginBottom: 20,
+    marginBottom: 14,
     borderWidth: 1,
     borderColor: lightColors.border,
   },
@@ -1049,7 +1054,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   fieldContainer: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   fieldLabel: {
     fontSize: 14,
@@ -1062,7 +1067,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: lightColors.border,
-    padding: 14,
+    padding: 10,
     minHeight: 120,
   },
   textArea: {
@@ -1083,7 +1088,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: lightColors.border,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 10,
     fontSize: 15,
     color: lightColors.textPrimary,
   },
@@ -1136,7 +1141,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: lightColors.border,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   complianceTitleText: {
     fontSize: 14,
@@ -1234,7 +1239,7 @@ const styles = StyleSheet.create({
   floatingProgressInner: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 16,
+    padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,

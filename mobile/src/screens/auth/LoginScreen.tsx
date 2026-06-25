@@ -35,7 +35,7 @@ WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.72;
+const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.58;
 const CAROUSEL_ITEM_SPACING = 12;
 const CAROUSEL_ITEM_FULL = CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING;
 const CAROUSEL_HEIGHT = CAROUSEL_ITEM_WIDTH * (4 / 3); // portrait 3:4 ratio
@@ -304,26 +304,28 @@ export const LoginScreen = () => {
   // Render carousel item with Cover Flow interpolation
   const renderCarouselItem = useCallback(({ item, index }: { item: { url: string; type: string; color?: string; artist?: string; caption?: string }; index: number }) => {
     const inputRange = [
+      (index - 2) * CAROUSEL_ITEM_FULL,
       (index - 1) * CAROUSEL_ITEM_FULL,
       index * CAROUSEL_ITEM_FULL,
       (index + 1) * CAROUSEL_ITEM_FULL,
+      (index + 2) * CAROUSEL_ITEM_FULL,
     ];
 
     const scale = scrollX.interpolate({
       inputRange,
-      outputRange: [0.75, 1.0, 0.75],
+      outputRange: [0.65, 0.78, 1.0, 0.78, 0.65],
       extrapolate: 'clamp',
     });
 
     const rotateY = scrollX.interpolate({
       inputRange,
-      outputRange: ['10deg', '0deg', '-10deg'],
+      outputRange: ['18deg', '12deg', '0deg', '-12deg', '-18deg'],
       extrapolate: 'clamp',
     });
 
     const opacity = scrollX.interpolate({
       inputRange,
-      outputRange: [0.6, 1.0, 0.6],
+      outputRange: [0.3, 0.6, 1.0, 0.6, 0.3],
       extrapolate: 'clamp',
     });
 
@@ -423,13 +425,10 @@ export const LoginScreen = () => {
             ]}
           >
             <View style={styles.logoIcon}>
-              <Feather name="aperture" size={56} color={lightColors.accent} />
+              <Feather name="aperture" size={40} color={lightColors.accent} />
             </View>
             <Text style={styles.brandName}>ArtNepalaya</Text>
             <Text style={styles.tagline}>Discover . Share . Inspire</Text>
-            <Text style={styles.description}>
-              Nepal's premier platform for artists and art lovers
-            </Text>
           </Animated.View>
 
           {/* Statistics Cards */}
@@ -493,19 +492,9 @@ export const LoginScreen = () => {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Continue as Guest */}
-          <TouchableOpacity style={styles.guestLink} onPress={handleSkip}>
-            <Text style={styles.guestLinkText}>Continue as Guest</Text>
-          </TouchableOpacity>
-
           {/* Terms Text */}
           <Text style={styles.termsText}>
             By continuing, you agree to our Terms of Service and Privacy Policy
-          </Text>
-
-          {/* Footer */}
-          <Text style={styles.footerText}>
-            Built for Nepal's Creative Community
           </Text>
 
           {/* Developer Login (QA Only) */}
@@ -557,7 +546,7 @@ const styles = StyleSheet.create({
   // Carousel
   carouselSection: {
     marginTop: 16,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   carouselContainer: {
     paddingHorizontal: (SCREEN_WIDTH - CAROUSEL_ITEM_WIDTH) / 2 - CAROUSEL_ITEM_SPACING / 2,
@@ -631,45 +620,38 @@ const styles = StyleSheet.create({
   brandingSection: {
     alignItems: 'center',
     paddingHorizontal: 32,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   logoIcon: {
     marginBottom: 12,
   },
   brandName: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: lightColors.textPrimary,
     letterSpacing: 0.5,
     marginBottom: 6,
   },
   tagline: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '500',
     color: lightColors.textSecondary,
     letterSpacing: 2,
     marginBottom: 8,
   },
-  description: {
-    fontSize: 14,
-    color: lightColors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-
   // Statistics
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     paddingHorizontal: 24,
-    marginBottom: 32,
+    marginBottom: 20,
     gap: 12,
   },
   statCard: {
     flex: 1,
     backgroundColor: lightColors.surface,
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: 12,
+    paddingVertical: 12,
     paddingHorizontal: 8,
     alignItems: 'center',
     borderWidth: 1,
@@ -687,7 +669,7 @@ const styles = StyleSheet.create({
     }),
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: lightColors.textPrimary,
     marginBottom: 4,
@@ -701,14 +683,14 @@ const styles = StyleSheet.create({
   // Auth Buttons
   authSection: {
     paddingHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: lightColors.accent,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 14,
     width: '100%',
     marginBottom: 12,
@@ -754,18 +736,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  // Guest Link
-  guestLink: {
-    alignItems: 'center',
-    paddingVertical: 14,
-  },
-  guestLinkText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: lightColors.textSecondary,
-    textDecorationLine: 'underline',
-  },
-
   // Terms
   termsText: {
     fontSize: 11,
@@ -773,17 +743,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 48,
     lineHeight: 16,
-    marginBottom: 20,
-  },
-
-  // Footer
-  footerText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: lightColors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 24,
-    letterSpacing: 0.3,
+    marginBottom: 8,
   },
 
   // Dev Login
@@ -816,7 +776,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: lightColors.border,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 20,
     width: '100%',

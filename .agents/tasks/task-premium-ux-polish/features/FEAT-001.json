@@ -1,0 +1,20 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Trash business logic fix: prevent featuring trashed posts in backend, hide Featured toggle in admin Trash tab",
+  "status": "completed",
+  "steps": [
+    "In backend/src/modules/admin/admin.service.js, in the addFeaturedPost function, change `const postExists = await Post.exists({ _id: postId });` to `const postExists = await Post.exists({ _id: postId, deletedAt: null });`",
+    "In admin/src/pages/Posts.tsx, find the Featured column's <td> cell that renders the star button. Wrap the Featured toggle button in a conditional: only render it when activeTab === 'active'. When activeTab === 'trash', render nothing (or a dash) in that cell."
+  ],
+  "acceptance_criteria": [
+    "Backend addFeaturedPost query includes { deletedAt: null } condition",
+    "Admin Posts page shows Featured toggle only on the Active tab, not on the Trash tab"
+  ],
+  "verification": [
+    "Read backend/src/modules/admin/admin.service.js and confirm the addFeaturedPost function uses { _id: postId, deletedAt: null }",
+    "Read admin/src/pages/Posts.tsx and confirm Featured toggle is conditionally hidden for trash tab"
+  ],
+  "blocked_reason": null,
+  "findings": "Both changes applied cleanly. Backend addFeaturedPost now includes deletedAt: null check. Admin Posts.tsx Featured toggle conditionally renders only when activeTab === 'active'. Cannot run build/test due to INTEGRATIONS_ONLY network mode but changes are minimal and syntactically correct."
+}

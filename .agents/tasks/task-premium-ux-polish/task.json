@@ -1,0 +1,7 @@
+{
+  "task_id": "task-premium-ux-polish",
+  "task_description": "Premium UX & Beta Polish Sprint: Cover Flow carousel redesign, upload density, trash featured guard, and consistency improvements",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

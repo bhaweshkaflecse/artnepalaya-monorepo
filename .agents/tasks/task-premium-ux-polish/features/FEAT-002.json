@@ -1,0 +1,48 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Premium Cover Flow carousel redesign for LoginScreen + dense layout spacing + UX improvements",
+  "status": "completed",
+  "steps": [
+    "In mobile/src/screens/auth/LoginScreen.tsx, change CAROUSEL_ITEM_WIDTH from SCREEN_WIDTH * 0.72 to SCREEN_WIDTH * 0.58",
+    "CAROUSEL_HEIGHT is already derived from CAROUSEL_ITEM_WIDTH * (4/3) - this is correct for 3:4 portrait ratio, keep as-is",
+    "Enhance 3D interpolation in renderCarouselItem: change scale outputRange from [0.75, 1.0, 0.75] to [0.78, 1.0, 0.78]; change rotateY outputRange from ['10deg', '0deg', '-10deg'] to ['12deg', '0deg', '-12deg']; keep opacity outputRange at [0.6, 1.0, 0.6]; add a second inputRange for further cards: [(index-2)*FULL, (index-1)*FULL, index*FULL, (index+1)*FULL, (index+2)*FULL] with scale [0.65, 0.78, 1.0, 0.78, 0.65], rotateY ['18deg', '12deg', '0deg', '-12deg', '-18deg'], opacity [0.3, 0.6, 1.0, 0.6, 0.3]",
+    "Add perspective: 1000 to the carouselItem style object (it is already in the transform array, confirm it stays)",
+    "Logo icon: change Feather aperture size from 56 to 40 in the branding section",
+    "Brand name fontSize: change from 28 to 24 in styles.brandName",
+    "Tagline fontSize: change from 15 to 13 in styles.tagline",
+    "Remove the description Text element entirely from the branding section JSX (the line that renders 'Nepal's premier platform...')",
+    "Remove the styles.description style definition",
+    "Stats cards: change paddingVertical from 16 to 12 in styles.statCard",
+    "Stats value fontSize: change from 18 to 16 in styles.statValue",
+    "Primary button: change paddingVertical from 16 to 14 in styles.primaryButton",
+    "Remove the 'Continue as Guest' link JSX (the guestLink TouchableOpacity) and its styles (guestLink, guestLinkText)",
+    "Combine terms text and footer into a single line: replace termsText and footerText with a single element that says 'By continuing, you agree to our Terms of Service and Privacy Policy'",
+    "Remove styles.footerText definition",
+    "Carousel section: change marginBottom from 24 to 16 in styles.carouselSection",
+    "Branding section: change marginBottom from 24 to 16 in styles.brandingSection",
+    "Stats row: change marginBottom from 32 to 20 in styles.statsRow",
+    "Auth section: change marginBottom from 16 to 12 in styles.authSection",
+    "QA section (devLoginContainer): ensure marginTop or equivalent spacing reduces. Currently no explicit marginTop but reduce spacing. The termsText marginBottom should be reduced to 8 to tighten layout before QA section.",
+    "Ensure all borderRadius values are consistent: 12 for cards (statCard currently 16 - change to 12), 14 for inputs, 20 for buttons/pills (devLoginButton borderRadius from 10 to 12)"
+  ],
+  "acceptance_criteria": [
+    "CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.58",
+    "CAROUSEL_HEIGHT uses 4/3 ratio (portrait 3:4)",
+    "3D interpolation uses extended input range for further cards with scale 0.65, rotateY 18deg, opacity 0.3",
+    "Adjacent cards: scale 0.78, rotateY 12deg, opacity 0.6",
+    "perspective: 1000 is in the carouselItem transform",
+    "Logo size is 40, brandName fontSize 24, tagline fontSize 13",
+    "Description text is removed",
+    "Continue as Guest link is removed",
+    "Terms and footer merged into single line",
+    "Carousel marginBottom 16, branding marginBottom 16, statsRow marginBottom 20, authSection marginBottom 12",
+    "statCard paddingVertical 12, statValue fontSize 16, primaryButton paddingVertical 14",
+    "borderRadius: 12 for stat cards, 12 for devLoginButton"
+  ],
+  "verification": [
+    "Read mobile/src/screens/auth/LoginScreen.tsx and confirm all dimension/spacing/interpolation values match requirements"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes applied successfully. INTEGRATIONS_ONLY network mode - cannot run npm/tsc for build verification, but all changes are style/layout-only modifications (no logic changes, no new imports, no type changes). Removed styles.description, styles.guestLink, styles.guestLinkText, styles.footerText. Removed corresponding JSX elements. No dangling references confirmed via grep."
+}

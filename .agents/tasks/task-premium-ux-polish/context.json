@@ -1,0 +1,21 @@
+{
+  "project_type": "Monorepo: React Native (Expo) mobile app + Node.js Express backend + React admin panel",
+  "language": "TypeScript (mobile/admin), JavaScript (backend)",
+  "build_system": "npm workspaces, Expo CLI for mobile, Vite for admin",
+  "test_framework": "No test runner observed; manual verification only",
+  "build_command": "N/A - INTEGRATIONS_ONLY network, cannot npm install",
+  "test_command": "N/A - no test suite available",
+  "verification_instructions": "Verify via AST/syntax validation (npx tsc --noEmit) if available, otherwise manual file review",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "N/A - cannot install dependencies",
+  "environment_constraints": "INTEGRATIONS_ONLY network - cannot npm install, pull images, or access external registries. Only file modifications and git push are possible.",
+  "contribution_requirements": "Single commit with descriptive message. Push to fix/final-stabilization branch.",
+  "key_patterns": "Mobile uses StyleSheet.create with lightColors theme. Backend uses ES modules with mongoose. Admin uses React functional components with hooks.",
+  "relevant_files": [
+    "mobile/src/screens/auth/LoginScreen.tsx",
+    "mobile/src/screens/create/CreateScreen.tsx",
+    "backend/src/modules/admin/admin.service.js",
+    "admin/src/pages/Posts.tsx"
+  ],
+  "directory_structure": "mobile/ - React Native Expo app, backend/ - Express.js API, admin/ - React admin panel"
+}

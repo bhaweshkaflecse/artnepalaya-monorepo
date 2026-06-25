@@ -323,18 +323,22 @@ export const Posts = () => {
                       {post.tags?.join(', ') || '-'}
                     </td>
                     <td className="px-5 py-3.5">
-                      <button
-                        onClick={() => handleFeatureToggle(post._id, isFeatured)}
-                        disabled={actionLoading === post._id}
-                        className={`p-1.5 rounded-lg transition-colors duration-150 ${
-                          isFeatured
-                            ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100'
-                            : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
-                        } disabled:opacity-50`}
-                        title={isFeatured ? 'Remove from Featured' : 'Add to Featured'}
-                      >
-                        {isFeatured ? <Star size={16} fill="currentColor" /> : <StarOff size={16} />}
-                      </button>
+                      {activeTab === 'active' ? (
+                        <button
+                          onClick={() => handleFeatureToggle(post._id, isFeatured)}
+                          disabled={actionLoading === post._id}
+                          className={`p-1.5 rounded-lg transition-colors duration-150 ${
+                            isFeatured
+                              ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100'
+                              : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
+                          } disabled:opacity-50`}
+                          title={isFeatured ? 'Remove from Featured' : 'Add to Featured'}
+                        >
+                          {isFeatured ? <Star size={16} fill="currentColor" /> : <StarOff size={16} />}
+                        </button>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-5 py-3.5">
                       {activeTab === 'active' ? (

@@ -116,7 +116,7 @@ export const getFeaturedPosts = async () => {
 };
 
 export const addFeaturedPost = async (postId, adminId) => {
-  const postExists = await Post.exists({ _id: postId });
+  const postExists = await Post.exists({ _id: postId, deletedAt: null });
   if (!postExists) throw Object.assign(new Error('Post not found'), { status: 404 });
 
   const currentCount = await FeaturedPost.countDocuments();
