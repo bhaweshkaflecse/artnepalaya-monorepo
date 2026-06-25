@@ -1,0 +1,42 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Redesign LoginScreen.tsx to match premium Apple HIG / Airbnb quality with hero artwork carousel, statistics cards, improved branding, and future-ready authentication buttons. All existing business logic (Google OAuth, Dev Login, Guest mode, SignUp navigation) must be preserved exactly as-is.",
+  "status": "in_progress",
+  "steps": [
+    "Rewrite mobile/src/screens/auth/LoginScreen.tsx with the following visual structure while keeping ALL existing state, hooks, effects, and handler functions unchanged:",
+    "1. HERO CAROUSEL SECTION (top ~40% of screen): Create a horizontal FlatList-based artwork carousel using the existing authBackgroundMedia from useAppSelector((state) => state.app). Display large centered artwork images with partial previous/next artwork visible (use snapToInterval, horizontal, pagingEnabled=false with item width ~80% of screen width). Add pagination dots below carousel. Auto-scroll with setInterval every 4 seconds using Animated API.",
+    "2. BRANDING SECTION: Large centered logo using Feather 'aperture' icon (size 56). Below: 'ArtNepalaya' in bold 28pt. Below: 'Discover . Share . Inspire' tagline. Below: Short description text 'Nepal's premier platform for artists and art lovers'.",
+    "3. STATISTICS CARDS: Three side-by-side rounded cards with soft shadows: '18K+ Artists', '75K+ Artworks', 'Made in Nepal'. Use lightColors.surface background, rounded corners (16), subtle border, centered text.",
+    "4. AUTHENTICATION BUTTONS: Primary 'Continue with Google' - filled red (#FF3B30) button, full width, rounded (14), Google icon (Feather 'mail'). Secondary 'Sign up with Google' - outlined button with red border, Google icon. Preserve existing handleGoogleLogin and handleSignUp logic exactly.",
+    "5. TERMS TEXT: Small centered text 'By continuing, you agree to our Terms of Service and Privacy Policy' with subtle color.",
+    "6. FOOTER: 'Built for Nepal's Creative Community' centered at bottom.",
+    "7. DEV LOGIN SECTION: Keep existing Developer Login section exactly as current implementation but move it below all auth buttons. Clearly label 'Developer Login (QA Only)'. Preserve handleDevLogin, devLoading, devError state exactly.",
+    "8. SKIP BUTTON: Keep existing handleSkip as 'Continue as Guest' link below auth buttons.",
+    "9. ANIMATIONS: Use React Native Animated API only (no reanimated). Fade-in on mount for branding section, scale animation on button press, carousel auto-scroll.",
+    "10. REMOVE AnimatedBackground usage since the new design has a white/light background with the carousel as the hero visual instead of the full-screen background image.",
+    "11. Use lightColors from theme/colors.ts for the redesign (white background design). The current dark overlay design is being replaced with a clean light theme.",
+    "12. Ensure responsive layout using Dimensions and percentage-based sizing that works on Android, iOS, tablets, and small phones."
+  ],
+  "acceptance_criteria": [
+    "LoginScreen renders without errors with all existing imports resolving correctly",
+    "Google OAuth flow (handleGoogleLogin, useIdTokenAuthRequest, response handling) is preserved exactly",
+    "Developer Login (handleDevLogin) continues to work with existing API call to /auth/admin-login",
+    "Guest mode (handleSkip with SecureStore and setGuest dispatch) is preserved",
+    "SignUp navigation (handleSignUp) is preserved",
+    "WebBrowser.maybeCompleteAuthSession() call is preserved at module level",
+    "registerForPushNotifications is still called after successful auth",
+    "fetchAuthConfig dispatch on mount is preserved",
+    "No new npm dependencies introduced - only using React Native Animated, StyleSheet, existing @expo/vector-icons",
+    "Visual output matches premium Apple HIG / Airbnb quality design with proper spacing, rounded components, and soft shadows"
+  ],
+  "verification": [
+    "Read the final LoginScreen.tsx and verify all handler functions (handleGoogleLogin, handleAuthSuccess, handleDevLogin, handleSkip, handleSignUp) have identical logic to the original",
+    "Verify all imports resolve to existing modules (no new packages)",
+    "Verify the component exports as named export { LoginScreen }",
+    "Verify WebBrowser.maybeCompleteAuthSession() is called at module level",
+    "Verify Google.useIdTokenAuthRequest hook is configured with same client IDs"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
