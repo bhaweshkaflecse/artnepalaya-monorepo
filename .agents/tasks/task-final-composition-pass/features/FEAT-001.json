@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Complete LoginScreen premium composition redesign - 40% hero / 30% brand / 30% auth viewport layout with Cover Flow refinement, gradient background, statistics cards, Google icon, divider, tappable terms links, and brand section with description",
+  "status": "in_progress",
+  "steps": [
+    "1. Modify mobile/src/navigation/AuthStack.tsx to add CmsPageScreen so Terms/Privacy links can navigate from the LoginScreen. Import CmsPageScreen from '../screens/settings/CmsPageScreen' and add a 'CmsPage' screen with params {slug: string, title: string}.",
+    "2. Rewrite mobile/src/screens/auth/LoginScreen.tsx with the following viewport composition: TOP 40% - Hero section with warm-white-to-cream simulated gradient background (use stacked absolute-positioned Views with background colors like '#FFFFFF' and '#FFFBF5' since LinearGradient is not available). Increase CAROUSEL_HEIGHT to approximately SCREEN_HEIGHT * 0.38 (no max cap, or cap at 320). Increase CAROUSEL_ITEM_WIDTH to SCREEN_WIDTH * 0.62. Refine Cover Flow: perspective 1000, rotateY +/-35deg for far items and +/-18deg for neighbors, scale 0.55/0.72/1.0, translateX overlap +/-35 for neighbors. Add thin white border (borderWidth: 2, borderColor: 'rgba(255,255,255,0.8)'), large borderRadius: 20, soft shadows (shadowRadius: 20, shadowOpacity: 0.25). The carousel items should feel like floating artworks.",
+    "3. MIDDLE 30% - Brand section with: (a) A logo/icon using AntDesign 'appstore1' or a custom circle with the 'A' letter styled as a logo placeholder, (b) 'ArtNepalaya' heading at fontSize 26 fontWeight 800, (c) 'Discover . Share . Inspire' tagline, (d) A short description paragraph like 'Nepal's premier platform for artists and art lovers. Showcase your creativity to the world.' in textSecondary, (e) Statistics CARDS row - three cards side by side with soft shadows, each containing a number (18K+, 75K+, text) and label (Artists, Artworks, Made in Nepal). Cards should have backgroundColor white, borderRadius 14, padding, soft shadow (shadowOpacity 0.08, shadowRadius 8), border 1px lightColors.border.",
+    "4. BOTTOM 30% - Auth section: (a) Replace Feather 'mail' icon in the Google button with AntDesign 'google' icon (size 20, color white) for primary button and AntDesign 'google' (size 18, color accent) for secondary button. (b) Add a divider between primary+secondary buttons group and the 'Continue as Guest' button - styled with flexDirection row, a line on each side, 'or' text in the middle (like the QA divider pattern but with 'or' text). (c) Keep 'Continue as Guest' as tertiary text link. (d) Terms text: Replace single non-tappable text with a View containing Text and individually tappable TouchableOpacity for 'Terms of Service' (navigates to CmsPage with slug 'terms-conditions', title 'Terms of Service') and 'Privacy Policy' (navigates to CmsPage with slug 'privacy-policy', title 'Privacy Policy'). These links should be colored in lightColors.accent (red). (e) QA Developer Login stays at the very bottom.",
+    "5. Ensure all existing functionality is preserved: Google OAuth flow, guest login, dev login, carousel auto-scroll, auth state management, push notification registration. Only visual/layout changes.",
+    "6. Reduce unnecessary spacing throughout. The overall layout should feel balanced across the viewport - not compressed at top with empty space at bottom."
+  ],
+  "acceptance_criteria": [
+    "LoginScreen renders without syntax/runtime errors (valid TSX)",
+    "Carousel occupies approximately top 40% of viewport (CAROUSEL_HEIGHT is roughly SCREEN_HEIGHT * 0.38)",
+    "Brand section includes statistics cards with shadow styling",
+    "Google button uses AntDesign 'google' icon instead of Feather 'mail'",
+    "A divider with 'or' text separates auth buttons from guest option",
+    "Terms of Service and Privacy Policy are individually tappable TouchableOpacity components colored in accent red",
+    "Tapping Terms navigates to CmsPage with slug 'terms-conditions'",
+    "Tapping Privacy navigates to CmsPage with slug 'privacy-policy'",
+    "All existing auth flows (Google, Guest, Dev) remain functional",
+    "Background uses warm white/cream layered views to simulate gradient"
+  ],
+  "verification": [
+    "Read the modified LoginScreen.tsx and confirm all imports resolve to existing modules",
+    "Read AuthStack.tsx and confirm CmsPageScreen is properly added",
+    "Verify no new package imports that aren't in package.json",
+    "Check that all navigation.navigate calls use valid screen names"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -15,7 +15,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, AntDesign } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
 import * as Google from 'expo-auth-session/providers/google';
@@ -35,10 +35,10 @@ WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.58;
+const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.62;
 const CAROUSEL_ITEM_SPACING = 12;
 const CAROUSEL_ITEM_FULL = CAROUSEL_ITEM_WIDTH + CAROUSEL_ITEM_SPACING;
-const CAROUSEL_HEIGHT = Math.min(SCREEN_HEIGHT * 0.26, 200);
+const CAROUSEL_HEIGHT = SCREEN_HEIGHT * 0.38;
 
 /**
  * Generates a unique device identifier for token binding.
@@ -122,19 +122,13 @@ export const LoginScreen = () => {
    * 
    * For development: Use the "Developer Login" button below (visible in __DEV__ mode).
    * For production: Build with EAS Dev Client. See /GOOGLE_OAUTH_MIGRATION.md for full guide.
-   * 
-   * The Google button below is kept for when running in an EAS Development Build
-   * where native Google Sign-In will work with proper client IDs.
    */
-  // Use the Google provider hook - handles Expo Go proxy and native redirects automatically
-  // Only use the web client ID in Expo Go to force the Expo auth proxy flow
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: GOOGLE_WEB_CLIENT_ID,
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || undefined,
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || undefined,
   });
 
-  // Debug: log request configuration to verify correct redirect and response type
   useEffect(() => {
     if (request) {
       console.log('[GoogleAuth] Request configured:', {
@@ -146,7 +140,6 @@ export const LoginScreen = () => {
     }
   }, [request]);
 
-  // Handle the auth response when it comes back
   useEffect(() => {
     if (response?.type === 'success') {
       const idToken = response.params.id_token;
@@ -168,27 +161,21 @@ export const LoginScreen = () => {
 
   const handleAuthSuccess = async (idToken: string) => {
     try {
-      // Generate or retrieve a device identifier
       let deviceId = await SecureStore.getItemAsync('deviceId');
       if (!deviceId) {
         deviceId = getDeviceId();
         await SecureStore.setItemAsync('deviceId', deviceId);
       }
 
-      // Send the Google ID token to the backend for verification and JWT exchange
       const authResponse = await authService.googleLogin(idToken, deviceId);
-
       const { user, accessToken, refreshToken } = authResponse.data;
 
-      // Persist tokens and user data securely
       await SecureStore.setItemAsync('accessToken', accessToken);
       await SecureStore.setItemAsync('refreshToken', refreshToken);
       await SecureStore.setItemAsync('userData', JSON.stringify(user));
 
-      // Update Redux auth state - this triggers navigation to MainTabs
       dispatch(setCredentials({ user, accessToken, refreshToken }));
 
-      // Register for push notifications after successful login
       registerForPushNotifications().catch((err) =>
         console.warn('[LoginScreen] Push notification registration failed:', err)
       );
@@ -197,7 +184,6 @@ export const LoginScreen = () => {
         error?.response?.data?.error?.message ||
         error?.message ||
         'An unexpected error occurred during sign-in.';
-
       Alert.alert('Sign-In Failed', message, [{ text: 'OK' }]);
     } finally {
       setIsLoading(false);
@@ -214,7 +200,6 @@ export const LoginScreen = () => {
       );
       return;
     }
-
     setIsLoading(true);
     await promptAsync();
   };
@@ -223,7 +208,6 @@ export const LoginScreen = () => {
     await SecureStore.deleteItemAsync('accessToken');
     await SecureStore.deleteItemAsync('refreshToken');
 
-    // Generate a unique guest username
     let guestUsername = await SecureStore.getItemAsync('guestUsername');
     if (!guestUsername) {
       const chars = '0123456789ABCDEF';
@@ -235,9 +219,7 @@ export const LoginScreen = () => {
       await SecureStore.setItemAsync('guestUsername', guestUsername);
     }
 
-    // Store a default display name for guests
     await SecureStore.setItemAsync('guestDisplayName', 'Guest Explorer');
-
     dispatch(setGuest({ guestUsername }));
   };
 
@@ -301,7 +283,7 @@ export const LoginScreen = () => {
     itemVisiblePercentThreshold: 50,
   }).current;
 
-  // Render carousel item with premium Cover Flow interpolation (depth, overlap, shadows)
+  // Render carousel item with premium Cover Flow interpolation
   const renderCarouselItem = useCallback(({ item, index }: { item: { url: string; type: string; color?: string; artist?: string; caption?: string }; index: number }) => {
     const inputRange = [
       (index - 2) * CAROUSEL_ITEM_FULL,
@@ -313,37 +295,35 @@ export const LoginScreen = () => {
 
     const scale = scrollX.interpolate({
       inputRange,
-      outputRange: [0.6, 0.75, 1.0, 0.75, 0.6],
+      outputRange: [0.55, 0.72, 1.0, 0.72, 0.55],
       extrapolate: 'clamp',
     });
 
     const rotateY = scrollX.interpolate({
       inputRange,
-      outputRange: ['25deg', '15deg', '0deg', '-15deg', '-25deg'],
+      outputRange: ['35deg', '18deg', '0deg', '-18deg', '-35deg'],
       extrapolate: 'clamp',
     });
 
     const opacity = scrollX.interpolate({
       inputRange,
-      outputRange: [0.25, 0.55, 1.0, 0.55, 0.25],
+      outputRange: [0.2, 0.5, 1.0, 0.5, 0.2],
       extrapolate: 'clamp',
     });
 
-    // Cover Flow overlap: neighbors slide toward center, creating depth layering
     const translateX = scrollX.interpolate({
       inputRange,
-      outputRange: [40, 25, 0, -25, -40],
+      outputRange: [50, 35, 0, -35, -50],
       extrapolate: 'clamp',
     });
 
-    // Elevated shadow for center item (iOS), reduced for neighbors
     const shadowOpacity = scrollX.interpolate({
       inputRange: [
         (index - 1) * CAROUSEL_ITEM_FULL,
         index * CAROUSEL_ITEM_FULL,
         (index + 1) * CAROUSEL_ITEM_FULL,
       ],
-      outputRange: [0.08, 0.3, 0.08],
+      outputRange: [0.05, 0.25, 0.05],
       extrapolate: 'clamp',
     });
 
@@ -353,7 +333,7 @@ export const LoginScreen = () => {
           styles.carouselItem,
           {
             transform: [
-              { perspective: 800 },
+              { perspective: 1000 },
               { translateX },
               { scale },
               { rotateY },
@@ -386,7 +366,7 @@ export const LoginScreen = () => {
     );
   }, [scrollX]);
 
-  // Placeholder carousel items when no media is loaded (solid color surfaces, no external network)
+  // Placeholder carousel items
   const placeholderMedia = [
     { url: '', type: 'placeholder' as const, color: lightColors.surface },
     { url: '', type: 'placeholder' as const, color: lightColors.border },
@@ -397,6 +377,10 @@ export const LoginScreen = () => {
 
   return (
     <View style={styles.root}>
+      {/* Simulated warm white to cream gradient background */}
+      <View style={styles.gradientLayer1} />
+      <View style={styles.gradientLayer2} />
+
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
           style={styles.scrollView}
@@ -404,8 +388,8 @@ export const LoginScreen = () => {
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          {/* Hero Carousel Section */}
-          <View style={styles.carouselSection}>
+          {/* === TOP 40% - Hero Carousel Section === */}
+          <View style={styles.heroSection}>
             <Animated.FlatList
               ref={carouselRef}
               data={carouselData}
@@ -438,33 +422,47 @@ export const LoginScreen = () => {
             </View>
           </View>
 
-          {/* Branding Section */}
+          {/* === MIDDLE 30% - Brand Section === */}
           <Animated.View
             style={[
-              styles.brandingSection,
+              styles.brandSection,
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }],
               },
             ]}
           >
+            {/* Logo placeholder */}
+            <View style={styles.logoContainer}>
+              <View style={styles.logoCircle}>
+                <Text style={styles.logoText}>A</Text>
+              </View>
+            </View>
+
             <Text style={styles.brandName}>ArtNepalaya</Text>
             <Text style={styles.tagline}>Discover {'\u00B7'} Share {'\u00B7'} Inspire</Text>
-          </Animated.View>
-
-          {/* Statistics - Ultra-compact inline */}
-          <Animated.View
-            style={[
-              styles.statsInline,
-              { opacity: fadeAnim },
-            ]}
-          >
-            <Text style={styles.statsInlineText}>
-              18K+ Artists  {'\u00B7'}  75K+ Artworks  {'\u00B7'}  Made in Nepal {'\u{1F1F3}\u{1F1F5}'}
+            <Text style={styles.brandDescription}>
+              Nepal's premier platform for artists and art lovers.{'\n'}Showcase your creativity to the world.
             </Text>
+
+            {/* Statistics Cards */}
+            <View style={styles.statsRow}>
+              <View style={styles.statCard}>
+                <Text style={styles.statNumber}>18K+</Text>
+                <Text style={styles.statLabel}>Artists</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statNumber}>75K+</Text>
+                <Text style={styles.statLabel}>Artworks</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statNumber}>{'\u{1F1F3}\u{1F1F5}'}</Text>
+                <Text style={styles.statLabel}>Made in Nepal</Text>
+              </View>
+            </View>
           </Animated.View>
 
-          {/* Authentication Buttons */}
+          {/* === BOTTOM 30% - Authentication Section === */}
           <Animated.View
             style={[
               styles.authSection,
@@ -487,7 +485,7 @@ export const LoginScreen = () => {
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <>
-                  <Feather name="mail" size={20} color="#FFFFFF" style={styles.buttonIcon} />
+                  <AntDesign name="google" size={20} color="#FFFFFF" style={styles.buttonIcon} />
                   <Text style={styles.primaryButtonText}>Continue with Google</Text>
                 </>
               )}
@@ -499,24 +497,44 @@ export const LoginScreen = () => {
               onPress={handleSignUp}
               activeOpacity={0.7}
             >
-              <Feather name="mail" size={18} color={lightColors.accent} style={styles.buttonIcon} />
+              <AntDesign name="google" size={18} color={lightColors.accent} style={styles.buttonIcon} />
               <Text style={styles.secondaryButtonText}>Sign up with Google</Text>
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.orDivider}>
+              <View style={styles.orDividerLine} />
+              <Text style={styles.orDividerText}>or</Text>
+              <View style={styles.orDividerLine} />
+            </View>
+
+            {/* Continue as Guest */}
+            <TouchableOpacity
+              style={styles.guestButton}
+              onPress={handleSkip}
+              activeOpacity={0.6}
+            >
+              <Text style={styles.guestButtonText}>Continue as Guest</Text>
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Continue as Guest */}
-          <TouchableOpacity
-            style={styles.guestButton}
-            onPress={handleSkip}
-            activeOpacity={0.6}
-          >
-            <Text style={styles.guestButtonText}>Continue as Guest</Text>
-          </TouchableOpacity>
-
-          {/* Terms Text */}
-          <Text style={styles.termsText}>
-            By continuing, you agree to our Terms & Privacy Policy
-          </Text>
+          {/* Terms Text with tappable links */}
+          <View style={styles.termsContainer}>
+            <Text style={styles.termsText}>By continuing, you agree to our </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('CmsPage', { slug: 'terms-conditions', title: 'Terms of Service' })}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.termsLink}>Terms of Service</Text>
+            </TouchableOpacity>
+            <Text style={styles.termsText}> and </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('CmsPage', { slug: 'privacy-policy', title: 'Privacy Policy' })}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.termsLink}>Privacy Policy</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Developer Login (QA Only) */}
           <View style={styles.devLoginContainer}>
@@ -552,7 +570,21 @@ export const LoginScreen = () => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: lightColors.background,
+    backgroundColor: '#FFFFFF',
+  },
+  // Simulated gradient layers
+  gradientLayer1: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF',
+  },
+  gradientLayer2: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#FFFBF5',
+    opacity: 0.6,
   },
   safeArea: {
     flex: 1,
@@ -562,33 +594,37 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 16,
+    paddingBottom: 20,
   },
 
-  // Carousel
-  carouselSection: {
-    marginTop: 8,
-    marginBottom: 8,
+  // === Hero Section (Top 40%) ===
+  heroSection: {
+    height: SCREEN_HEIGHT * 0.38,
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   carouselContainer: {
     paddingHorizontal: (SCREEN_WIDTH - CAROUSEL_ITEM_WIDTH) / 2 - CAROUSEL_ITEM_SPACING / 2,
+    alignItems: 'center',
   },
   carouselItem: {
     width: CAROUSEL_ITEM_WIDTH,
-    height: CAROUSEL_HEIGHT,
+    height: CAROUSEL_HEIGHT - 40,
     marginHorizontal: CAROUSEL_ITEM_SPACING / 2,
-    borderRadius: 24,
+    borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: lightColors.surface,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.8)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.2,
-        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.25,
+        shadowRadius: 20,
       },
       android: {
-        elevation: 8,
+        elevation: 12,
       },
     }),
   },
@@ -638,43 +674,106 @@ const styles = StyleSheet.create({
     backgroundColor: lightColors.accent,
   },
 
-  // Branding
-  brandingSection: {
+  // === Brand Section (Middle 30%) ===
+  brandSection: {
     alignItems: 'center',
-    paddingHorizontal: 32,
-    marginBottom: 6,
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  logoContainer: {
+    marginBottom: 8,
+  },
+  logoCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: lightColors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: lightColors.accent,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  logoText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
   },
   brandName: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '800',
     color: lightColors.textPrimary,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     marginBottom: 4,
   },
   tagline: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     color: lightColors.textSecondary,
     letterSpacing: 1.5,
-    marginBottom: 6,
+    marginBottom: 8,
   },
-
-  // Statistics - inline
-  statsInline: {
+  brandDescription: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: lightColors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 19,
+    paddingHorizontal: 16,
+    marginBottom: 14,
+  },
+  // Statistics Cards
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  statCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     alignItems: 'center',
-    marginBottom: 12,
+    minWidth: 90,
+    borderWidth: 1,
+    borderColor: lightColors.border,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
-  statsInlineText: {
+  statNumber: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: lightColors.textPrimary,
+    marginBottom: 2,
+  },
+  statLabel: {
     fontSize: 11,
     fontWeight: '500',
     color: lightColors.textSecondary,
-    textAlign: 'center',
   },
 
-  // Auth Buttons
+  // === Auth Section (Bottom 30%) ===
   authSection: {
     paddingHorizontal: 24,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   primaryButton: {
     flexDirection: 'row',
@@ -717,7 +816,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     width: '100%',
-    marginBottom: 8,
+    marginBottom: 12,
     borderWidth: 1.5,
     borderColor: lightColors.accent,
   },
@@ -727,29 +826,53 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
   },
-
+  // Or Divider
+  orDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  orDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: lightColors.border,
+  },
+  orDividerText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: lightColors.textSecondary,
+    marginHorizontal: 14,
+  },
   // Continue as Guest
   guestButton: {
     alignItems: 'center',
-    paddingVertical: 6,
-    marginBottom: 6,
+    paddingVertical: 8,
   },
   guestButtonText: {
-    fontSize: 12,
+    fontSize: 13,
     color: lightColors.textSecondary,
     fontWeight: '400',
-    opacity: 0.75,
   },
 
   // Terms
+  termsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    marginBottom: 16,
+  },
   termsText: {
-    fontSize: 10,
+    fontSize: 11,
     color: lightColors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: 48,
-    lineHeight: 14,
-    marginBottom: 8,
-    opacity: 0.7,
+    lineHeight: 16,
+  },
+  termsLink: {
+    fontSize: 11,
+    color: lightColors.accent,
+    fontWeight: '600',
+    lineHeight: 16,
   },
 
   // Dev Login
