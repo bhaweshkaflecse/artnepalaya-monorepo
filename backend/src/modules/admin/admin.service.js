@@ -146,6 +146,9 @@ export const getPosts = async (page = 1, limit = 15, search = '', deleted = fals
       { caption: { $regex: safeSearch, $options: 'i' } },
       { tags: { $regex: safeSearch, $options: 'i' } }
     ];
+    if (/^[0-9a-fA-F]{24}$/.test(search)) {
+      query.$or.push({ _id: search });
+    }
   }
   const [posts, totalItems] = await Promise.all([
     Post.find(query)

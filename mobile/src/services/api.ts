@@ -19,6 +19,7 @@ function getBaseUrl(): string {
 }
 
 const BASE_URL: string = getBaseUrl();
+console.log('[API] BASE_URL:', BASE_URL);
 
 // Runtime store injection to avoid circular dependency:
 // store/index.ts -> feedSlice.ts -> post.service.ts -> api.ts -> store/index.ts

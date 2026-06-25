@@ -12,7 +12,8 @@ const globalPopupSchema = new mongoose.Schema({
   isArchived: { type: Boolean, default: false },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   startsAt: { type: Date, default: null },
-  endsAt: { type: Date, default: null }
+  endsAt: { type: Date, default: null },
+  priority: { type: Number, default: 0 }
 }, { timestamps: true });
 
 export const GlobalPopup = mongoose.model('GlobalPopup', globalPopupSchema);
