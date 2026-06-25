@@ -504,7 +504,7 @@ export const CreateScreen = () => {
                 </View>
                 <Text style={styles.heroPlaceholderTitle}>Tap to select artwork</Text>
                 <Text style={styles.heroPlaceholderSubtitle}>
-                  Choose images or video from your gallery
+                  Up to 5 images + 1 video | JPG, PNG, WEBP, MP4 | Max 10MB/image, 50MB/video
                 </Text>
               </View>
             )}
@@ -595,7 +595,7 @@ export const CreateScreen = () => {
           <Text style={styles.fieldLabel}>Keywords / Tags</Text>
           <TextInput
             style={styles.tagInput}
-            placeholder="landscape, oil painting, Nepal"
+            placeholder="# Add keywords separated by commas"
             placeholderTextColor={lightColors.textSecondary}
             value={tags}
             onChangeText={setTags}
@@ -654,7 +654,7 @@ export const CreateScreen = () => {
             <TouchableOpacity onPress={() => setIsAIGenerated(!isAIGenerated)} style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1, gap: 12 }}>
               <Ionicons
                 name={isAIGenerated ? 'checkbox' : 'square-outline'}
-                size={24}
+                size={20}
                 color={isAIGenerated ? lightColors.accent : lightColors.textSecondary}
               />
               <View style={styles.complianceTextWrap}>
@@ -672,7 +672,7 @@ export const CreateScreen = () => {
             <TouchableOpacity onPress={() => setIsOriginalContent(!isOriginalContent)} style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1, gap: 12 }}>
               <Ionicons
                 name={isOriginalContent ? 'checkbox' : 'square-outline'}
-                size={24}
+                size={20}
                 color={isOriginalContent ? lightColors.accent : lightColors.textSecondary}
               />
               <View style={styles.complianceTextWrap}>
@@ -690,7 +690,7 @@ export const CreateScreen = () => {
             <TouchableOpacity onPress={() => setIsNsfw(!isNsfw)} style={{ flexDirection: 'row', alignItems: 'flex-start', flex: 1, gap: 12 }}>
               <Ionicons
                 name={isNsfw ? 'checkbox' : 'square-outline'}
-                size={24}
+                size={20}
                 color={isNsfw ? lightColors.accent : lightColors.textSecondary}
               />
               <View style={styles.complianceTextWrap}>
@@ -833,16 +833,21 @@ const styles = StyleSheet.create({
     color: lightColors.textSecondary,
   },
   heroContainer: {
-    marginBottom: 4,
+    marginBottom: 10,
   },
   heroTouchable: {
     width: '100%',
-    height: Math.min(SCREEN_HEIGHT * 0.28, 240),
-    borderRadius: 16,
+    height: Math.min((SCREEN_WIDTH - 24) * 1.2, SCREEN_HEIGHT * 0.45),
+    borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: lightColors.surface,
     borderWidth: 1,
     borderColor: lightColors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   heroPreview: {
     flex: 1,
@@ -868,7 +873,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   heroPlaceholderTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: lightColors.textPrimary,
     marginBottom: 6,
@@ -949,7 +954,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
     gap: 6,
   },
   dot: {
@@ -968,8 +973,8 @@ const styles = StyleSheet.create({
   },
   thumbnailStrip: {
     flexDirection: 'row',
-    gap: 6,
-    marginBottom: 8,
+    gap: 10,
+    marginBottom: 12,
     paddingHorizontal: 2,
     paddingVertical: 2,
   },
@@ -977,14 +982,15 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   thumbnailItem: {
-    width: 52,
-    height: 52,
-    borderRadius: 10,
+    width: 60,
+    height: 60,
+    borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: 'transparent',
   },
   thumbnailItemActive: {
+    borderWidth: 2.5,
     borderColor: '#FF3B30',
     shadowColor: '#FF3B30',
     shadowOffset: { width: 0, height: 2 },
@@ -1009,20 +1015,20 @@ const styles = StyleSheet.create({
   },
   thumbnailRemoveBtn: {
     position: 'absolute',
-    top: -6,
-    right: -6,
+    top: -5,
+    right: -5,
     backgroundColor: '#FF3B30',
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+    borderRadius: 9,
+    width: 18,
+    height: 18,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
   },
   thumbnailAddBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 10,
+    width: 60,
+    height: 60,
+    borderRadius: 12,
     borderWidth: 1.5,
     borderColor: lightColors.border,
     borderStyle: 'dashed',
@@ -1043,7 +1049,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   fieldContainer: {
-    marginBottom: 10,
+    marginBottom: 14,
   },
   fieldLabel: {
     fontSize: 13,
@@ -1129,12 +1135,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: lightColors.border,
-    padding: 10,
+    padding: 12,
     marginBottom: 12,
   },
   complianceTitleText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: lightColors.textPrimary,
     marginBottom: 14,
   },
@@ -1151,7 +1157,7 @@ const styles = StyleSheet.create({
   },
   complianceLabel: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: lightColors.textPrimary,
     lineHeight: 18,
   },
