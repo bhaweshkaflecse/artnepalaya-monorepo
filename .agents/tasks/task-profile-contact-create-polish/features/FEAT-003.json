@@ -1,0 +1,25 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Create Flow Polish: Rename 'Artwork Post' to 'Artwork Related Post' in both CreateSelectorScreen and CreateScreen header, then redesign CreateSelectorScreen with premium visual presentation including improved spacing, hierarchy, card composition, icon treatment, typography, shadows, and disabled 'Coming Soon' cards that look production-ready.",
+  "status": "in_progress",
+  "steps": [
+    "MOBILE - CreateSelectorScreen.tsx: Change the artwork card title from 'Artwork Post' to 'Artwork Related Post'. Redesign the entire screen for premium feel: (a) improve header with subtitle explaining the creation entry point, (b) redesign cards with larger icon containers using accent-tinted backgrounds, better typography hierarchy with bolder titles and lighter descriptions, subtle elevation/shadows for depth, (c) make disabled 'Coming Soon' cards look polished and production-ready with reduced opacity but still premium styling (no grey-out that looks broken), (d) improve spacing between cards and overall padding, (e) add artwork-oriented visual identity through color accents and composition",
+    "MOBILE - CreateScreen.tsx: Change the header title text from 'Artwork Post' to 'Artwork Related Post' at approximately line 392"
+  ],
+  "acceptance_criteria": [
+    "CreateSelectorScreen shows 'Artwork Related Post' instead of 'Artwork Post'",
+    "CreateScreen header shows 'Artwork Related Post' instead of 'Artwork Post'",
+    "CreateSelectorScreen has improved visual hierarchy with better spacing, typography, shadows",
+    "Disabled 'Coming Soon' cards look premium and production-ready (not just dimmed)",
+    "All existing navigation and functionality is preserved",
+    "No new dependencies or packages introduced"
+  ],
+  "verification": [
+    "Read mobile/src/screens/create/CreateSelectorScreen.tsx and confirm 'Artwork Related Post' title and premium styling",
+    "Read mobile/src/screens/create/CreateScreen.tsx and confirm header says 'Artwork Related Post'",
+    "Verify no import changes that would require new packages"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
