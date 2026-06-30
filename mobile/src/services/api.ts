@@ -5,21 +5,13 @@ import { setTokens, logout } from '../store/slices/authSlice';
 
 // Expo provides EXPO_PUBLIC_* env vars through the Metro bundler.
 // We declare the type inline to avoid requiring @types/node.
-declare const process: { env: { EXPO_PUBLIC_API_URL?: string } };
+import { ENV } from '../config/env';
 
-function getBaseUrl(): string {
-  const url = process.env.EXPO_PUBLIC_API_URL;
-  if (!url) {
-    // In development this will appear in Metro console as a clear message
-    // eslint-disable-next-line no-console
-    console.error('[API] EXPO_PUBLIC_API_URL is not set. Copy .env.example to .env and configure it.');
-    return 'http://10.0.2.2:8080/api/v1'; // Safe fallback for Android emulator
-  }
-  return url;
+const BASE_URL = ENV.API_URL;
+
+if (__DEV__) {
+  console.log('[API] BASE_URL:', ENV.API_URL);
 }
-
-const BASE_URL: string = getBaseUrl();
-if (__DEV__) console.log('[API] BASE_URL:', BASE_URL);
 
 // Runtime store injection to avoid circular dependency:
 // store/index.ts -> feedSlice.ts -> post.service.ts -> api.ts -> store/index.ts

@@ -22,7 +22,7 @@ services:
     container_name: art_backend
     # Uses .env by default; switch to .env.development or .env.production as needed
     env_file:
-      - .env
+      - .env.development
     depends_on:
       mongodb:
         condition: service_started

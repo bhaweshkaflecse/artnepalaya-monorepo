@@ -12,6 +12,7 @@ import { CmsPageScreen } from '../screens/settings/CmsPageScreen';
 import { CreateScreen } from '../screens/create/CreateScreen';
 import { setupNotificationListeners } from '../services/pushNotification.service';
 import { connectSocket, disconnectSocket } from '../services/socket.service';
+import { ENV } from '../config/env';
 import { useAppSelector } from '../store';
 import { selectAccessToken } from '../store/slices/authSlice';
 import { Post } from '../services/post.service';
@@ -50,9 +51,7 @@ export const AppStack = () => {
     if (isAuthenticated && accessToken) {
       console.log('[AppStack] Socket init - isAuthenticated:', isAuthenticated, 'tokenLength:', accessToken?.length);
       // Derive socket server URL by stripping '/api/v1' from the API URL
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8080/api/v1';
-      const serverUrl = apiUrl.replace(/\/api\/v1\/?$/, '');
-      connectSocket(accessToken, serverUrl);
+      connectSocket(accessToken, ENV.SOCKET_URL);
     } else {
       disconnectSocket();
     }
