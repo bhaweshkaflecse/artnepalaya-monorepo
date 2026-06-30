@@ -1,0 +1,38 @@
+{
+  "id": "FEAT-005",
+  "type": "feat",
+  "description": "Phase 5: Feed Recommendation Engine - Implement a modular signal-based recommendation system in the backend. Add getUserFeedSignals() function, implement 80/20 preference-matched vs discovery split, store configurable weights in AppConfig, add artworkType index to Post model. Users without interests get the current algorithm unchanged. No Admin Panel UI for weights.",
+  "status": "in_progress",
+  "steps": [
+    "1. In backend/src/modules/posts/post.model.js, add an index on artworkType: postSchema.index({ artworkType: 1 }); (after the existing tags index). This optimizes queries filtering by artwork type for the recommendation engine.",
+    "2. Create a new file backend/src/modules/posts/recommendation.service.js. This module implements the signal aggregation layer with the following exports: (a) getUserFeedSignals(userId) - fetches user's interests from User model, returns a structured signals object; (b) getRecommendationWeights() - fetches weights from AppConfig (key: 'feed_recommendation_weights'), returns defaults if not set; (c) buildRecommendedFeed(userId, cursor, limit, showMatureContent) - the main recommendation function that implements the 80/20 split.",
+    "3. In recommendation.service.js, implement getUserFeedSignals(userId): Fetch the user document, extract interests array, return { interestSignals: user.interests || [], hasPreferences: (user.interests && user.interests.length > 0) }. This is designed to be extensible - future signals (follow graph, interaction history) can be added to this return object without restructuring.",
+    "4. In recommendation.service.js, implement getRecommendationWeights(): Query AppConfig.findOne({ key: 'feed_recommendation_weights' }). If found, return config.value. If not found, return sensible defaults: { preferenceWeight: 0.8, discoveryWeight: 0.2, popularityLikeMultiplier: 3, popularitySaveMultiplier: 5, recencyBoostHours: 48 }.",
+    "5. In recommendation.service.js, implement buildRecommendedFeed(userId, cursor, limit, showMatureContent): (a) Call getUserFeedSignals(userId); (b) If !signals.hasPreferences, return null (caller falls back to existing algorithm); (c) If hasPreferences: fetch posts matching artworkType filter (using $in with interestSignals) for 80% of limit slots, fetch remaining 20% from non-matching posts for discovery; (d) Apply popularity scoring from weights; (e) Return combined and sorted results with cursor pagination.",
+    "6. In backend/src/modules/posts/post.service.js, modify the getFeed function: Before the existing algorithm, attempt to use the recommendation engine. Import buildRecommendedFeed from './recommendation.service.js'. At the start of getFeed, if userId is provided, call buildRecommendedFeed(userId, cursor, limit, showMatureContent). If it returns a non-null result, use that. If it returns null (user has no preferences), fall through to the existing algorithm unchanged.",
+    "7. Ensure backward compatibility: The existing getFeed algorithm remains the complete fallback. The recommendation engine only activates when: (a) user is authenticated AND (b) user has interests set. All existing feed behavior for guests and users without preferences is unchanged.",
+    "8. In the recommendation.service.js buildRecommendedFeed function, apply the same safety filters as the existing getFeed: exclude soft-deleted posts (deletedAt: null), exclude posts from banned/suspended users, apply NSFW filtering based on showMatureContent parameter."
+  ],
+  "acceptance_criteria": [
+    "Post model has index on artworkType field",
+    "recommendation.service.js exists with getUserFeedSignals, getRecommendationWeights, and buildRecommendedFeed exports",
+    "getUserFeedSignals returns structured signals object with user interests",
+    "getRecommendationWeights reads from AppConfig with sensible defaults as fallback",
+    "buildRecommendedFeed implements 80/20 split between preference-matched and discovery posts",
+    "buildRecommendedFeed returns null when user has no preferences (triggering fallback)",
+    "post.service.js getFeed integrates recommendation engine with graceful fallback",
+    "Existing feed algorithm is unchanged for guests and users without interests",
+    "All safety filters applied: deletedAt null, inactive users excluded, NSFW filtering",
+    "No Admin Panel UI added for weights configuration",
+    "Signal aggregator is modular - new signals can be added without restructuring",
+    "Weights stored in AppConfig with key 'feed_recommendation_weights'"
+  ],
+  "verification": [
+    "Read post.model.js and confirm artworkType index exists",
+    "Read recommendation.service.js and confirm all three exported functions exist with correct logic",
+    "Read post.service.js getFeed and confirm it calls buildRecommendedFeed with proper fallback",
+    "Verify recommendation.service.js applies safety filters (deletedAt, inactive users, NSFW)"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

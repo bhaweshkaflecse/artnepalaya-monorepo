@@ -49,4 +49,7 @@ postSchema.index({ authorId: 1, _id: -1 });
 // 3. Optimize the in-memory ranking query (tag matching)
 postSchema.index({ tags: 1 });
 
+// 4. Optimize recommendation engine queries filtering by artwork type
+postSchema.index({ artworkType: 1 });
+
 export const Post = mongoose.model('Post', postSchema);

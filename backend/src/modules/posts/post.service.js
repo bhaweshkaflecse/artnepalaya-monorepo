@@ -9,6 +9,7 @@ import * as tagService from '../tags/tag.service.js';
 import * as notificationService from '../notifications/notification.service.js';
 import { emitToFeed } from '../../realtime/emitter.js';
 import { EVENTS } from '../../realtime/events.js';
+import { buildRecommendedFeed } from './recommendation.service.js';
 
 // THE FIX: Using our new functional cache imports!
 import { getOrSetCache, invalidateCache } from '../../shared/utils/cache.js';
@@ -120,6 +121,39 @@ export const getSinglePost = async (postId, userId, showMatureContent = false) =
 
 export const getFeed = async (userId, cursor, limit, showMatureContent) => {
   limit = limit || 15;
+
+  // Recommendation engine: attempt personalized feed for authenticated users with interests
+  if (userId) {
+    try {
+      const recommendedFeed = await buildRecommendedFeed(userId, cursor, limit, showMatureContent);
+      if (recommendedFeed !== null) {
+        // Per-user like/save hydration for recommended feed
+        if (recommendedFeed.data.length > 0) {
+          const postIds = recommendedFeed.data.map(p => p._id);
+          const [likes, saves] = await Promise.all([
+            Like.find({ userId, postId: { $in: postIds } }).select('postId').lean(),
+            Save.find({ userId, postId: { $in: postIds } }).select('postId').lean(),
+          ]);
+          const likedSet = new Set(likes.map(l => l.postId.toString()));
+          const savedSet = new Set(saves.map(s => s.postId.toString()));
+
+          recommendedFeed.data.forEach(post => {
+            post.isLikedByMe = likedSet.has(post._id.toString());
+            post.isSavedByMe = savedSet.has(post._id.toString());
+          });
+        } else {
+          recommendedFeed.data.forEach(post => {
+            post.isLikedByMe = false;
+            post.isSavedByMe = false;
+          });
+        }
+        return recommendedFeed;
+      }
+    } catch (err) {
+      // Graceful fallback: if recommendation engine fails, continue to existing algorithm
+      console.error('Recommendation engine error, falling back to default feed:', err.message);
+    }
+  }
 
   // Determine if NSFW content should be filtered
   const filterNsfw = !userId || !showMatureContent;
