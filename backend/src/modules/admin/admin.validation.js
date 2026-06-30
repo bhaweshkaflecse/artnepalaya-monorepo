@@ -5,7 +5,8 @@ export const queryPaginationSchema = z.object({
   query: z.object({
     page: z.string().regex(/^\d+$/).transform(Number).default("1"),
     limit: z.string().regex(/^\d+$/).transform(Number).default("50"),
-    status: z.string().optional()
+    status: z.string().optional(),
+    search: z.string().optional()
   })
 });
 
