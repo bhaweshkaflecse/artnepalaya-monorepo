@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Modal,
   Alert,
+  // NOTE: Clipboard from react-native is deprecated. Migrate to expo-clipboard when available.
   Clipboard,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';

@@ -13,6 +13,7 @@ interface UserData {
   verifiedType?: string | null;
   status: string;
   avatarUrl?: string;
+  interests?: string[];
 }
 
 interface Meta {
@@ -225,6 +226,18 @@ export const Users = () => {
                         <BadgeCheck size={14} className="text-blue-500" />
                       )}
                     </span>
+                    {user.interests && user.interests.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {user.interests.map((interest) => (
+                          <span
+                            key={interest}
+                            className="inline-block px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-medium rounded-full"
+                          >
+                            {interest}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td className="px-5 py-3.5 text-sm text-gray-500">{user.email}</td>
                   <td className="px-5 py-3.5 text-sm">{user.role}</td>
