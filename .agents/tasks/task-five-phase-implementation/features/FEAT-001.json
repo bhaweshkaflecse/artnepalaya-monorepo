@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Phase 1: Admin User Search - Fix backend search to include fullName field, and fix frontend to debounce search input and cancel stale requests",
+  "status": "completed",
+  "steps": [
+    "1. In backend/src/modules/admin/admin.service.js, in the getUsers function, add { fullName: { $regex: safeSearch, $options: 'i' } } to the existing $or filter array (currently only has username and email).",
+    "2. In admin/src/pages/Users.tsx, the search input fires fetchUsers on every keystroke via the useEffect that depends on searchQuery. Add debouncing: import useCallback or a debounce pattern, and implement a 300ms debounce on the search effect. Use a useRef-based approach with setTimeout/clearTimeout since we cannot install lodash.",
+    "3. In admin/src/pages/Users.tsx, implement request cancellation using AbortController. Create an AbortController ref, abort the previous request before starting a new one, and pass the signal to the api.get call. This prevents stale responses from overwriting newer results.",
+    "4. Update the search input placeholder from 'Search by username or email...' to 'Search by name, username, or email...' to reflect the new fullName search capability."
+  ],
+  "acceptance_criteria": [
+    "Backend getUsers $or filter includes fullName regex in addition to username and email",
+    "Frontend search input is debounced (300ms delay before firing API call)",
+    "Previous in-flight search requests are cancelled when a new search is initiated",
+    "Search placeholder text reflects the new search capability",
+    "All existing search functionality (username, email) still works",
+    "Pagination still resets to page 1 on new search"
+  ],
+  "verification": [
+    "Read admin.service.js and confirm $or array has 3 entries: username, email, fullName",
+    "Read Users.tsx and confirm debounce logic with setTimeout/clearTimeout pattern exists",
+    "Read Users.tsx and confirm AbortController is used with api.get signal option",
+    "Verify placeholder text updated"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes implemented successfully. Backend $or filter now has 3 entries (username, email, fullName). Frontend uses useRef-based debounce (300ms) with setTimeout/clearTimeout and AbortController for request cancellation. Axios CanceledError is caught to avoid setting error state on aborted requests. node -c validates backend JS syntax. TSX brace/paren/bracket balance confirmed. Committed as ab80767."
+}
