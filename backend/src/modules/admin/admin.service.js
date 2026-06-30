@@ -30,7 +30,8 @@ export const getUsers = async (page, limit, search) => {
     const safeSearch = escapeRegex(search);
     filter.$or = [
       { username: { $regex: safeSearch, $options: 'i' } },
-      { email: { $regex: safeSearch, $options: 'i' } }
+      { email: { $regex: safeSearch, $options: 'i' } },
+      { fullName: { $regex: safeSearch, $options: 'i' } }
     ];
   }
   const [users, totalItems] = await Promise.all([

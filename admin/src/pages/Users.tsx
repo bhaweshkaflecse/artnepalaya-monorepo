@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Search, BadgeCheck } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -38,24 +38,52 @@ export const Users = () => {
   const [verifyModal, setVerifyModal] = useState<{ userId: string; username: string } | null>(null);
   const [verifyType, setVerifyType] = useState<string>('artist');
 
-  const fetchUsers = useCallback(async (pageNum: number, search: string) => {
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchUsers = useCallback(async (pageNum: number, search: string, signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
       const res = await api.get('/admin/users', {
         params: { page: pageNum, limit: 50, search: search || undefined },
+        signal,
       });
       setUsers(res.data.data);
       setMeta(res.data.meta);
-    } catch {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'CanceledError') return;
+      if (signal?.aborted) return;
       setError('Failed to load users. Please try again.');
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    fetchUsers(page, searchQuery);
+    // Clear any existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Abort any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      fetchUsers(page, searchQuery, controller.signal);
+    }, 300);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [page, searchQuery, fetchUsers]);
 
   const handleStatusChange = async (userId: string, status: string) => {
@@ -126,7 +154,7 @@ export const Users = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
           <input
             type="text"
-            placeholder="Search by username or email..."
+            placeholder="Search by name, username, or email..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
             className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all"
