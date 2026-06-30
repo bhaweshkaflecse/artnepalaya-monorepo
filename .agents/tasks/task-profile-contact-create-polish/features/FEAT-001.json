@@ -1,0 +1,22 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Admin Panel verification and CMS completeness: Add missing 'Data Policy' and 'Information Policy' pages to admin CmsEditor frontend. Verify user search works with fullName + debounce (already implemented). Document that user interests/preferences are intentionally not exposed as separate admin UI.",
+  "status": "completed",
+  "steps": [
+    "In admin/src/pages/CmsEditor.tsx, add { slug: 'data-policy', label: 'Data Policy' } and { slug: 'information-policy', label: 'Information Policy' } to the cmsPages array (backend enum already has them per commit b89a00f)",
+    "Verify admin/src/pages/Users.tsx already has: search input with debounce (300ms via debounceTimerRef), AbortController cancellation (abortControllerRef), and the backend admin.service.js getUsers() searches by username, email, AND fullName via $or query",
+    "Document in feature findings: User interests/preferences are stored as interests: [String] on the User model. They are managed through mobile onboarding and profile editing. The Admin can see user data via the Users page which returns all fields including interests. No separate Admin management UI was built intentionally - these are personal user preferences, not admin-managed categories."
+  ],
+  "acceptance_criteria": [
+    "Admin CmsEditor cmsPages array includes all 8 slugs matching backend enum: privacy-policy, about-us, terms-conditions, community-guidelines, creator-listing-policy, copyright-policy, data-policy, information-policy",
+    "Admin Users page search searches by name, username, and email with debounce + abort (already working)",
+    "No new pages or routes needed - just the CmsEditor array update"
+  ],
+  "verification": [
+    "Read admin/src/pages/CmsEditor.tsx and confirm all 8 CMS page slugs are present in the cmsPages array",
+    "Read admin/src/pages/Users.tsx and confirm debounce + abort + search query param are present"
+  ],
+  "blocked_reason": null,
+  "findings": "CmsEditor.tsx updated from 6 to 8 entries - added data-policy and information-policy. Users.tsx already has debounce (debounceTimerRef), AbortController (abortControllerRef), and search with signal support. User interests are stored as interests: [String] on User model, managed via mobile onboarding/profile - no separate admin UI needed."
+}

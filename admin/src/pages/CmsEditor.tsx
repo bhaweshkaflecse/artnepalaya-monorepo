@@ -19,6 +19,8 @@ const cmsPages: CmsPage[] = [
   { slug: 'community-guidelines', label: 'Community Guidelines' },
   { slug: 'creator-listing-policy', label: 'Creator & Listing Policy' },
   { slug: 'copyright-policy', label: 'Copyright Policy' },
+  { slug: 'data-policy', label: 'Data Policy' },
+  { slug: 'information-policy', label: 'Information Policy' },
 ];
 
 export const CmsEditor = () => {
