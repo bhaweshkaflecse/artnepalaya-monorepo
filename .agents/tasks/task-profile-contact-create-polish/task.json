@@ -1,0 +1,7 @@
+{
+  "task_id": "task-profile-contact-create-polish",
+  "task_description": "Admin panel CMS completeness, profile contact information with WhatsApp/Phone fields and social media validation, and Create flow visual polish with rename to 'Artwork Related Post'",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

@@ -27,6 +27,26 @@ const ROLE_OPTIONS = [
   { label: 'Art Lover', emoji: '❤️', value: 'Art Lover' },
 ];
 
+const BLOCKED_SOCIAL_DOMAINS = [
+  'facebook.com',
+  'fb.com',
+  'm.facebook.com',
+  'm.me',
+  'instagram.com',
+  'x.com',
+  'twitter.com',
+  'tiktok.com',
+  'threads.net',
+  'linkedin.com',
+  'youtube.com',
+];
+
+function containsBlockedSocialDomain(value: string): boolean {
+  if (!value) return false;
+  const lower = value.toLowerCase();
+  return BLOCKED_SOCIAL_DOMAINS.some((domain) => lower.includes(domain));
+}
+
 export const EditProfileScreen = () => {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
@@ -41,12 +61,15 @@ export const EditProfileScreen = () => {
   const [bio, setBio] = useState((profile as any)?.bio || '');
   const [location, setLocation] = useState((profile as any)?.location || '');
   const [website, setWebsite] = useState((profile as any)?.website || '');
+  const [whatsapp, setWhatsapp] = useState((profile as any)?.whatsapp || '');
+  const [contactPhone, setContactPhone] = useState((profile as any)?.contactPhone || '');
   const [selectedRole, setSelectedRole] = useState(displayUser?.role || 'Art Lover');
   const [selectedInterests, setSelectedInterests] = useState<string[]>(
     (profile as any)?.interests || []
   );
   const [artworkTypes, setArtworkTypes] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [contactError, setContactError] = useState('');
 
   useEffect(() => {
     const fetchArtworkTypes = async () => {
@@ -64,6 +87,19 @@ export const EditProfileScreen = () => {
     };
     fetchArtworkTypes();
   }, []);
+
+  const validateContactFields = (): boolean => {
+    if (containsBlockedSocialDomain(website.trim())) {
+      setContactError('Social media links are currently not supported.');
+      return false;
+    }
+    if (containsBlockedSocialDomain(whatsapp.trim())) {
+      setContactError('Social media links are currently not supported.');
+      return false;
+    }
+    setContactError('');
+    return true;
+  };
 
   const handleSave = async () => {
     if (isGuest) {
@@ -87,6 +123,10 @@ export const EditProfileScreen = () => {
       return;
     }
 
+    if (!validateContactFields()) {
+      return;
+    }
+
     setIsSaving(true);
     try {
       const payload: any = {
@@ -95,6 +135,8 @@ export const EditProfileScreen = () => {
         bio: bio.trim(),
         location: location.trim() || null,
         website: website.trim() || null,
+        whatsapp: whatsapp.trim() || null,
+        contactPhone: contactPhone.trim() || null,
         interests: selectedInterests,
       };
       // Only include role if it's a valid non-admin role (Admin role cannot be changed via this form)
@@ -207,16 +249,40 @@ export const EditProfileScreen = () => {
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Website</Text>
+          <Text style={styles.label}>Contact Information</Text>
           <TextInput
             style={styles.input}
             value={website}
-            onChangeText={setWebsite}
+            onChangeText={(text) => { setWebsite(text); setContactError(''); }}
             placeholder="https://yourwebsite.com"
             placeholderTextColor={lightColors.textSecondary}
             autoCapitalize="none"
             maxLength={200}
           />
+          <TextInput
+            style={[styles.input, { marginTop: 10 }]}
+            value={whatsapp}
+            onChangeText={(text) => { setWhatsapp(text); setContactError(''); }}
+            placeholder="WhatsApp number or link"
+            placeholderTextColor={lightColors.textSecondary}
+            autoCapitalize="none"
+            maxLength={200}
+          />
+          <TextInput
+            style={[styles.input, { marginTop: 10 }]}
+            value={contactPhone}
+            onChangeText={setContactPhone}
+            placeholder="Contact phone number"
+            placeholderTextColor={lightColors.textSecondary}
+            keyboardType="phone-pad"
+            maxLength={50}
+          />
+          {!!contactError && (
+            <Text style={styles.contactErrorText}>{contactError}</Text>
+          )}
+          <Text style={styles.contactHelperText}>
+            Only Website, WhatsApp and Phone are currently accepted.
+          </Text>
         </View>
 
         {/* Artwork Role Selector */}
@@ -424,5 +490,15 @@ const styles = StyleSheet.create({
     color: '#1E40AF',
     fontWeight: '500',
     lineHeight: 20,
+  },
+  contactErrorText: {
+    fontSize: 13,
+    color: '#FF3B30',
+    marginTop: 8,
+  },
+  contactHelperText: {
+    fontSize: 12,
+    color: lightColors.textSecondary,
+    marginTop: 8,
   },
 });

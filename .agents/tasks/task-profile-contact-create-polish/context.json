@@ -1,0 +1,36 @@
+{
+  "project_type": "Monorepo: Node.js Express backend + Expo React Native mobile + Vite React TS admin",
+  "language": "JavaScript (backend), TypeScript (mobile + admin)",
+  "build_system": "npm workspaces, no monorepo tooling",
+  "test_framework": "No test files found in the repository",
+  "build_command": "N/A - INTEGRATIONS_ONLY network, cannot run npm install",
+  "test_command": "N/A - no tests present",
+  "verification_instructions": "AST/syntax validation via node --check for backend .js files, TypeScript compilation check for mobile/admin not feasible without node_modules",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "N/A - INTEGRATIONS_ONLY mode",
+  "environment_constraints": "INTEGRATIONS_ONLY network - cannot npm install, cannot run build commands, cannot pull Docker images. Validation must be done via code review and AST checks where possible.",
+  "contribution_requirements": "Commit directly to fix/final-stabilization branch. One commit per logical feature. Follow existing code patterns.",
+  "key_patterns": {
+    "backend_validation": "Zod schemas in user.validation.js with .strict() on body",
+    "backend_model": "Mongoose schemas in user.model.js with type/default/maxlength",
+    "backend_service": "allowedUpdates array whitelist pattern in user.service.js",
+    "mobile_screens": "Functional components with StyleSheet.create, lightColors theme, Feather icons",
+    "admin_pages": "React components with Tailwind CSS, lucide-react icons, api service calls",
+    "admin_cms": "CmsEditor has hardcoded cmsPages array of {slug, label} objects"
+  },
+  "relevant_files": [
+    "backend/src/modules/users/user.model.js",
+    "backend/src/modules/users/user.service.js",
+    "backend/src/modules/users/user.validation.js",
+    "mobile/src/screens/profile/EditProfileScreen.tsx",
+    "mobile/src/screens/profile/ProfileScreen.tsx",
+    "mobile/src/screens/profile/UserProfileScreen.tsx",
+    "mobile/src/screens/create/CreateSelectorScreen.tsx",
+    "mobile/src/screens/create/CreateScreen.tsx",
+    "admin/src/pages/CmsEditor.tsx",
+    "admin/src/pages/Users.tsx",
+    "admin/src/components/AdminLayout.tsx",
+    "admin/src/App.tsx"
+  ],
+  "directory_structure": "backend/src/modules/ (users, posts, admin, etc), mobile/src/screens/ (auth, profile, create, etc), admin/src/pages/ (Dashboard, Users, CmsEditor, etc)"
+}

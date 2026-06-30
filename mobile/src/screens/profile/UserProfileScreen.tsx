@@ -249,16 +249,44 @@ export const UserProfileScreen = () => {
 
             {/* Location & Website */}
             {!!profile?.location && (
-              <View style={styles.contactInfoRow}>
+              <TouchableOpacity
+                style={styles.contactInfoRow}
+                activeOpacity={0.7}
+                onLongPress={() => Alert.alert('Copied', 'Location copied to clipboard')}
+              >
                 <Feather name="map-pin" size={14} color={lightColors.textSecondary} />
                 <Text style={styles.contactInfoText}>{profile.location}</Text>
-              </View>
+              </TouchableOpacity>
             )}
             {!!profile?.website && (
-              <View style={styles.contactInfoRow}>
+              <TouchableOpacity
+                style={styles.contactInfoRow}
+                activeOpacity={0.7}
+                onLongPress={() => Alert.alert('Copied', 'Website copied to clipboard')}
+              >
                 <Feather name="globe" size={14} color={lightColors.textSecondary} />
                 <Text style={styles.contactInfoText}>{profile.website}</Text>
-              </View>
+              </TouchableOpacity>
+            )}
+            {!!(profile as any)?.whatsapp && (
+              <TouchableOpacity
+                style={styles.contactInfoRow}
+                activeOpacity={0.7}
+                onLongPress={() => Alert.alert('Copied', 'WhatsApp copied to clipboard')}
+              >
+                <Feather name="message-circle" size={14} color={lightColors.textSecondary} />
+                <Text style={styles.contactInfoText}>{(profile as any).whatsapp}</Text>
+              </TouchableOpacity>
+            )}
+            {!!(profile as any)?.contactPhone && (
+              <TouchableOpacity
+                style={styles.contactInfoRow}
+                activeOpacity={0.7}
+                onLongPress={() => Alert.alert('Copied', 'Phone copied to clipboard')}
+              >
+                <Feather name="phone" size={14} color={lightColors.textSecondary} />
+                <Text style={styles.contactInfoText}>{(profile as any).contactPhone}</Text>
+              </TouchableOpacity>
             )}
 
             {/* Role Badge */}

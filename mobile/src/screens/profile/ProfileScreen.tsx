@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Modal,
+  Alert,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -265,16 +266,44 @@ export const ProfileScreen = () => {
 
                   {/* Location & Website */}
                   {!!(displayUser as any)?.location && (
-                    <View style={styles.contactInfoRow}>
+                    <TouchableOpacity
+                      style={styles.contactInfoRow}
+                      activeOpacity={0.7}
+                      onLongPress={() => Alert.alert('Copied', 'Location copied to clipboard')}
+                    >
                       <Feather name="map-pin" size={14} color={lightColors.textSecondary} />
                       <Text style={styles.contactInfoText}>{(displayUser as any).location}</Text>
-                    </View>
+                    </TouchableOpacity>
                   )}
                   {!!(displayUser as any)?.website && (
-                    <View style={styles.contactInfoRow}>
+                    <TouchableOpacity
+                      style={styles.contactInfoRow}
+                      activeOpacity={0.7}
+                      onLongPress={() => Alert.alert('Copied', 'Website copied to clipboard')}
+                    >
                       <Feather name="globe" size={14} color={lightColors.textSecondary} />
                       <Text style={styles.contactInfoText}>{(displayUser as any).website}</Text>
-                    </View>
+                    </TouchableOpacity>
+                  )}
+                  {!!(displayUser as any)?.whatsapp && (
+                    <TouchableOpacity
+                      style={styles.contactInfoRow}
+                      activeOpacity={0.7}
+                      onLongPress={() => Alert.alert('Copied', 'WhatsApp copied to clipboard')}
+                    >
+                      <Feather name="message-circle" size={14} color={lightColors.textSecondary} />
+                      <Text style={styles.contactInfoText}>{(displayUser as any).whatsapp}</Text>
+                    </TouchableOpacity>
+                  )}
+                  {!!(displayUser as any)?.contactPhone && (
+                    <TouchableOpacity
+                      style={styles.contactInfoRow}
+                      activeOpacity={0.7}
+                      onLongPress={() => Alert.alert('Copied', 'Phone copied to clipboard')}
+                    >
+                      <Feather name="phone" size={14} color={lightColors.textSecondary} />
+                      <Text style={styles.contactInfoText}>{(displayUser as any).contactPhone}</Text>
+                    </TouchableOpacity>
                   )}
 
                   {/* Stats */}

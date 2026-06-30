@@ -90,6 +90,16 @@ const userSchema = new mongoose.Schema(
       default: null,
       maxlength: 200,
     },
+    whatsapp: {
+      type: String,
+      default: null,
+      maxlength: 200,
+    },
+    contactPhone: {
+      type: String,
+      default: null,
+      maxlength: 50,
+    },
     nsfwBlurEnabled: {
       type: Boolean,
       default: true,

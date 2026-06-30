@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Profile Contact Information: Add WhatsApp and Phone fields to backend user model/validation/service, update mobile EditProfileScreen with contact section (Website + WhatsApp + Phone), add social media link validation blocking known social platforms, update profile display screens (ProfileScreen + UserProfileScreen) to show new fields with long-press to copy and toast feedback.",
+  "status": "in_progress",
+  "steps": [
+    "BACKEND - user.model.js: Add 'whatsapp' field (type: String, default: null, maxlength: 200) and 'contactPhone' field (type: String, default: null, maxlength: 50) to userSchema",
+    "BACKEND - user.service.js: Add 'whatsapp' and 'contactPhone' to the allowedUpdates array",
+    "BACKEND - user.validation.js: Add whatsapp and contactPhone to the updateProfileSchema body. Add a custom Zod refinement for website/whatsapp fields that rejects URLs containing social media domains (facebook.com, fb.com, m.facebook.com, m.me, instagram.com, x.com, twitter.com, tiktok.com, threads.net, linkedin.com, youtube.com). Use case-insensitive matching. Error message: 'Social media links are currently not supported.'",
+    "MOBILE - EditProfileScreen.tsx: Add state variables for whatsapp and contactPhone initialized from profile. Replace the single Website field section with a 'Contact Information' section containing Website, WhatsApp, and Phone fields. Add client-side validation helper that checks for blocked social media domains (same list as backend). Show inline error message 'Social media links are currently not supported.' when validation fails. Add helper text below: 'Only Website, WhatsApp and Phone are currently accepted.' Integrate new fields into the handleSave payload.",
+    "MOBILE - ProfileScreen.tsx: After the existing website display row, add conditional display rows for whatsapp (phone icon) and contactPhone (phone-call icon). Wrap each contact info row in a TouchableOpacity with onLongPress that copies the value to clipboard using react-native Clipboard API and shows a brief Toast/Alert saying 'Copied'. Apply same long-press-to-copy behavior to the website row.",
+    "MOBILE - UserProfileScreen.tsx: Same as ProfileScreen - add whatsapp and contactPhone display rows with long-press copy behavior"
+  ],
+  "acceptance_criteria": [
+    "Backend user.model.js has whatsapp and contactPhone fields with String type and maxlength",
+    "Backend user.service.js allowedUpdates includes 'whatsapp' and 'contactPhone'",
+    "Backend user.validation.js validates whatsapp and contactPhone, rejects social media domains with clear error message",
+    "Mobile EditProfileScreen shows Website, WhatsApp, Phone fields in a Contact Information section",
+    "Mobile EditProfileScreen shows validation error inline when social media link is entered",
+    "Mobile EditProfileScreen shows helper text: 'Only Website, WhatsApp and Phone are currently accepted.'",
+    "Mobile ProfileScreen and UserProfileScreen display whatsapp and contactPhone with long-press copy and toast",
+    "Website field is NOT clickable/tappable as a link - only long-press to copy"
+  ],
+  "verification": [
+    "Read backend/src/modules/users/user.model.js and confirm whatsapp and contactPhone fields exist",
+    "Read backend/src/modules/users/user.service.js and confirm allowedUpdates includes both new fields",
+    "Read backend/src/modules/users/user.validation.js and confirm social media domain blocking validation",
+    "Read mobile/src/screens/profile/EditProfileScreen.tsx and confirm contact section with validation",
+    "Read mobile/src/screens/profile/ProfileScreen.tsx and confirm long-press copy behavior"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

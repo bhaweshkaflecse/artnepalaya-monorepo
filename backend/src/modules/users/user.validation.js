@@ -1,5 +1,25 @@
 import { z } from 'zod';
 
+const BLOCKED_SOCIAL_DOMAINS = [
+  'facebook.com',
+  'fb.com',
+  'm.facebook.com',
+  'm.me',
+  'instagram.com',
+  'x.com',
+  'twitter.com',
+  'tiktok.com',
+  'threads.net',
+  'linkedin.com',
+  'youtube.com',
+];
+
+function containsBlockedSocialDomain(value) {
+  if (!value) return false;
+  const lower = value.toLowerCase();
+  return BLOCKED_SOCIAL_DOMAINS.some((domain) => lower.includes(domain));
+}
+
 export const updateProfileSchema = z.object({
   body: z.object({
     username: z.string().min(3).max(30).trim().optional(),
@@ -20,10 +40,20 @@ export const updateProfileSchema = z.object({
     bio: z.string().max(300).optional(),
     location: z.string().max(100).optional().nullable(),
     website: z.string().max(200).optional().nullable(),
+    whatsapp: z.string().max(200).optional().nullable(),
+    contactPhone: z.string().max(50).optional().nullable(),
     nsfwBlurEnabled: z.boolean().optional(),
     showMatureContent: z.boolean().optional()
     
-  }).strict() // STRICT is crucial here: it prevents hackers from passing {"isAdult": true} or {"status": "active"} in the body
+  }).strict()
+    .refine((data) => {
+      if (data.website && containsBlockedSocialDomain(data.website)) return false;
+      if (data.whatsapp && containsBlockedSocialDomain(data.whatsapp)) return false;
+      return true;
+    }, {
+      message: 'Social media links are currently not supported.',
+      path: ['website'],
+    })
 });
 
 export const paginationSchema = z.object({
