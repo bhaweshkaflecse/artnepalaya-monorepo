@@ -10,9 +10,8 @@ import {
   ActivityIndicator,
   Modal,
   Alert,
-  // NOTE: Clipboard from react-native is deprecated. Migrate to expo-clipboard when available.
-  Clipboard,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Feather } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -254,7 +253,7 @@ export const UserProfileScreen = () => {
               <TouchableOpacity
                 style={styles.contactInfoRow}
                 activeOpacity={0.7}
-                onLongPress={() => { Clipboard.setString(profile.location); Alert.alert('Copied', 'Location copied to clipboard'); }}
+                onLongPress={() => { Clipboard.setStringAsync(profile.location); Alert.alert('Copied', 'Location copied to clipboard'); }}
               >
                 <Feather name="map-pin" size={14} color={lightColors.textSecondary} />
                 <Text style={styles.contactInfoText}>{profile.location}</Text>
@@ -264,7 +263,7 @@ export const UserProfileScreen = () => {
               <TouchableOpacity
                 style={styles.contactInfoRow}
                 activeOpacity={0.7}
-                onLongPress={() => { Clipboard.setString(profile.website); Alert.alert('Copied', 'Website copied to clipboard'); }}
+                onLongPress={() => { Clipboard.setStringAsync(profile.website); Alert.alert('Copied', 'Website copied to clipboard'); }}
               >
                 <Feather name="globe" size={14} color={lightColors.textSecondary} />
                 <Text style={styles.contactInfoText}>{profile.website}</Text>
@@ -274,7 +273,7 @@ export const UserProfileScreen = () => {
               <TouchableOpacity
                 style={styles.contactInfoRow}
                 activeOpacity={0.7}
-                onLongPress={() => { Clipboard.setString((profile as any).whatsapp); Alert.alert('Copied', 'WhatsApp copied to clipboard'); }}
+                onLongPress={() => { Clipboard.setStringAsync((profile as any).whatsapp); Alert.alert('Copied', 'WhatsApp copied to clipboard'); }}
               >
                 <Feather name="message-circle" size={14} color={lightColors.textSecondary} />
                 <Text style={styles.contactInfoText}>{(profile as any).whatsapp}</Text>
@@ -284,7 +283,7 @@ export const UserProfileScreen = () => {
               <TouchableOpacity
                 style={styles.contactInfoRow}
                 activeOpacity={0.7}
-                onLongPress={() => { Clipboard.setString((profile as any).contactPhone); Alert.alert('Copied', 'Phone copied to clipboard'); }}
+                onLongPress={() => { Clipboard.setStringAsync((profile as any).contactPhone); Alert.alert('Copied', 'Phone copied to clipboard'); }}
               >
                 <Feather name="phone" size={14} color={lightColors.textSecondary} />
                 <Text style={styles.contactInfoText}>{(profile as any).contactPhone}</Text>
