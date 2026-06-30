@@ -14,8 +14,9 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
-import { useAppDispatch } from '../../store';
+import { useAppDispatch, useAppSelector } from '../../store';
 import { setOnboardingComplete } from '../../store/slices/appSlice';
+import { selectIsGuest } from '../../store/slices/authSlice';
 import { api } from '../../services/api';
 import { userService } from '../../services/user.service';
 
@@ -66,6 +67,7 @@ const slides: Slide[] = [
 
 export const OnboardingScreen = () => {
   const dispatch = useAppDispatch();
+  const isGuest = useAppSelector(selectIsGuest);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [artworkTypes, setArtworkTypes] = useState<string[]>([]);
@@ -109,7 +111,7 @@ export const OnboardingScreen = () => {
   };
 
   const handleComplete = async () => {
-    if (selectedInterests.length > 0) {
+    if (selectedInterests.length > 0 && !isGuest) {
       setSavingInterests(true);
       try {
         await userService.updateProfile({ interests: selectedInterests });

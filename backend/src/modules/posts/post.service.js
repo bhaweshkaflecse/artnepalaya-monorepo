@@ -4,7 +4,6 @@ import { Like, Save } from './post-interaction.model.js';
 import { Notification } from '../notifications/notification.model.js';
 import { FeaturedPost } from '../admin/featured.model.js';
 import { Report } from '../reports/report.model.js';
-import { User } from '../users/user.model.js';
 import * as tagService from '../tags/tag.service.js';
 import * as notificationService from '../notifications/notification.service.js';
 import { emitToFeed } from '../../realtime/emitter.js';
@@ -13,12 +12,7 @@ import { buildRecommendedFeed } from './recommendation.service.js';
 
 // THE FIX: Using our new functional cache imports!
 import { getOrSetCache, invalidateCache } from '../../shared/utils/cache.js';
-
-// Helper: Get IDs of banned/suspended users for query-level filtering
-const getInactiveUserIds = async () => {
-  const users = await User.find({ status: { $in: ['banned', 'suspended'] } }).select('_id').lean();
-  return users.map(u => u._id);
-}; 
+import { getInactiveUserIds } from '../../shared/utils/userFilters.js';
 
 export const createPost = async (userId, postData) => {
   // BULLETPROOF TAGS FIX: Handle both Strings (from form-data) and Arrays

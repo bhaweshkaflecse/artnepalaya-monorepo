@@ -1,6 +1,7 @@
 import { Post } from './post.model.js';
 import { User } from '../users/user.model.js';
 import { AppConfig } from '../admin/appConfig.model.js';
+import { getInactiveUserIds } from '../../shared/utils/userFilters.js';
 
 // Default recommendation weights - used when AppConfig has no stored value
 const DEFAULT_WEIGHTS = {
@@ -9,12 +10,6 @@ const DEFAULT_WEIGHTS = {
   popularityLikeMultiplier: 3,
   popularitySaveMultiplier: 5,
   recencyBoostHours: 48,
-};
-
-// Helper: Get IDs of banned/suspended users for query-level filtering
-const getInactiveUserIds = async () => {
-  const users = await User.find({ status: { $in: ['banned', 'suspended'] } }).select('_id').lean();
-  return users.map(u => u._id);
 };
 
 /**
@@ -100,35 +95,37 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
   const preferenceSlots = Math.ceil(limit * weights.preferenceWeight);
   const discoverySlots = limit - preferenceSlots;
 
-  // Step 6: Fetch preference-matched posts (artworkType overlaps with user interests)
-  const preferenceQuery = { ...baseQuery, artworkType: { $in: signals.interestSignals } };
-  // Handle cursor in both queries - need to spread carefully if $lt exists
-  if (cursor) {
-    preferenceQuery._id = { $lt: cursor };
-  }
+  // Step 6: Use a single unified query with $or to fetch all candidate posts,
+  // then split into preference/discovery pools in JavaScript.
+  // This eliminates cursor drift because one query = one cursor boundary.
+  // Also filter out legacy posts without artworkType for correct categorization.
+  const totalFetchLimit = limit * 2;
 
-  const preferencePosts = await Post.find(preferenceQuery)
+  const candidatePosts = await Post.find({
+    ...baseQuery,
+    artworkType: { $exists: true, $ne: [] },
+  })
     .sort({ _id: -1 })
-    .limit(preferenceSlots * 2) // Fetch extra to allow scoring/sorting
+    .limit(totalFetchLimit)
     .populate('authorId', 'username avatarUrl role isVerified verifiedType')
     .lean();
 
-  // Step 7: Fetch discovery posts (artworkType does NOT overlap with user interests)
-  const discoveryQuery = { ...baseQuery };
-  if (signals.interestSignals.length > 0) {
-    discoveryQuery.artworkType = { $nin: signals.interestSignals };
-  }
-  if (cursor) {
-    discoveryQuery._id = { $lt: cursor };
+  // Split candidates into preference-matched and discovery pools
+  const interestSet = new Set(signals.interestSignals);
+  const preferencePosts = [];
+  const discoveryPosts = [];
+
+  for (const post of candidatePosts) {
+    const postTypes = Array.isArray(post.artworkType) ? post.artworkType : [];
+    const matchesPreference = postTypes.some(type => interestSet.has(type));
+    if (matchesPreference) {
+      preferencePosts.push(post);
+    } else {
+      discoveryPosts.push(post);
+    }
   }
 
-  const discoveryPosts = await Post.find(discoveryQuery)
-    .sort({ _id: -1 })
-    .limit(discoverySlots * 2) // Fetch extra to allow scoring/sorting
-    .populate('authorId', 'username avatarUrl role isVerified verifiedType')
-    .lean();
-
-  // Step 8: Apply popularity scoring using weights
+  // Step 7: Apply popularity scoring using a Map (no mutation of lean documents)
   const scorePost = (post) => {
     let score = (post.likesCount || 0) * weights.popularityLikeMultiplier +
                 (post.savesCount || 0) * weights.popularitySaveMultiplier;
@@ -144,25 +141,36 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
     return score;
   };
 
-  // Score and sort preference posts
-  preferencePosts.forEach(post => { post._score = scorePost(post); });
-  preferencePosts.sort((a, b) => b._score - a._score);
+  // Use Maps for scores instead of mutating post objects
+  const preferenceScoreMap = new Map();
+  for (const post of preferencePosts) {
+    preferenceScoreMap.set(post._id.toString(), scorePost(post));
+  }
 
-  // Score and sort discovery posts
-  discoveryPosts.forEach(post => { post._score = scorePost(post); });
-  discoveryPosts.sort((a, b) => b._score - a._score);
+  const discoveryScoreMap = new Map();
+  for (const post of discoveryPosts) {
+    discoveryScoreMap.set(post._id.toString(), scorePost(post));
+  }
 
-  // Step 9: Take the top posts from each category
+  // Sort using the maps
+  preferencePosts.sort((a, b) => {
+    return (preferenceScoreMap.get(b._id.toString()) || 0) -
+           (preferenceScoreMap.get(a._id.toString()) || 0);
+  });
+
+  discoveryPosts.sort((a, b) => {
+    return (discoveryScoreMap.get(b._id.toString()) || 0) -
+           (discoveryScoreMap.get(a._id.toString()) || 0);
+  });
+
+  // Step 8: Take the top posts from each category
   const selectedPreference = preferencePosts.slice(0, preferenceSlots);
   const selectedDiscovery = discoveryPosts.slice(0, discoverySlots);
 
-  // Step 10: Combine and interleave (preference posts first, then discovery)
+  // Step 9: Combine and interleave (preference posts first, then discovery)
   const combined = [...selectedPreference, ...selectedDiscovery];
 
-  // Remove internal scoring field
-  combined.forEach(p => delete p._score);
-
-  // Step 11: Determine pagination cursor
+  // Step 10: Determine pagination cursor
   const hasNextPage = preferencePosts.length > preferenceSlots || discoveryPosts.length > discoverySlots;
 
   let nextCursor = null;
