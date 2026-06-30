@@ -11,9 +11,9 @@ services:
     depends_on:
       - backend
       - admin
+    restart: unless-stopped
     networks:
       - artnepalaya-net
-    restart: unless-stopped
 
   backend:
     build:
@@ -27,13 +27,13 @@ services:
     depends_on:
       mongodb:
         condition: service_started
-      postgresql:
-        condition: service_started
       redis:
         condition: service_started
+      postgresql:
+        condition: service_started
+    restart: unless-stopped
     networks:
       - artnepalaya-net
-    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -42,45 +42,45 @@ services:
   admin:
     build:
       context: ../admin
+      dockerfile: Dockerfile
     container_name: art_admin
+    restart: unless-stopped
     networks:
       - artnepalaya-net
-    restart: unless-stopped
 
   mongodb:
     image: mongo:7.0
     container_name: art_mongodb
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    env_file:
+      - .env.production
     volumes:
       - mongodb_data:/data/db
+    restart: unless-stopped
     networks:
       - artnepalaya-net
-    restart: unless-stopped
 
   postgresql:
     image: postgres:16-alpine
     container_name: art_postgresql
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+    env_file:
+      - .env.production
     volumes:
       - postgresql_data:/var/lib/postgresql/data
+    restart: unless-stopped
     networks:
       - artnepalaya-net
-    restart: unless-stopped
 
   redis:
     image: redis:7.2-alpine
     container_name: art_redis
+    env_file:
+      - .env.production
     command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
+    restart: unless-stopped
     networks:
       - artnepalaya-net
-    restart: unless-stopped
 
 networks:
   artnepalaya-net:
