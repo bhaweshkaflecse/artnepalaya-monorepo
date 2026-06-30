@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Fix profile update validation: proper domain matching, per-field error messages, phone-only validation for WhatsApp/Phone, add missing blocked domains (snapchat.com, snap.com), update mobile error handling to surface backend errors, update placeholders and helper text",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. Fix backend/src/modules/users/user.validation.js - Replace naive `lower.includes(domain)` with proper domain boundary matching. The function must extract the domain from the URL/value and check if it matches a blocked domain (considering www. prefixes, subdomains, paths). Use a regex or URL parsing approach that checks for domain boundaries (e.g., protocol://, leading dot, or start of string). Also add 'snapchat.com', 'snap.com' to BLOCKED_SOCIAL_DOMAINS.",
     "2. Fix backend/src/modules/users/user.validation.js - Replace single .refine() with separate per-field refinements using .superRefine() so each field gets its own specific error message: 'Facebook profile links are not supported', 'Instagram profile links are not supported', 'X/Twitter profile links are not supported', etc. For website, the error should name the specific platform detected. Pinterest should be ALLOWED (remove from blocked if present, or explicitly allow it).",
@@ -28,5 +28,5 @@
     "Verify EditProfileScreen.tsx has no TypeScript syntax issues by checking the file structure"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "node --check requires unset NODE_OPTIONS due to sandbox preload module. All 19 domain matching test cases pass (blocked domains detected correctly, no false positives on proxy.com/foxcomp.com/pinterest.com etc). Backend uses .superRefine() for per-field errors. Mobile catch block parses body.fieldName prefix from backend validation messages."
 }
