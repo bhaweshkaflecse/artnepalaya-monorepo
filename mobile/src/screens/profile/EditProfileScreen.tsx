@@ -39,12 +39,85 @@ const BLOCKED_SOCIAL_DOMAINS = [
   'threads.net',
   'linkedin.com',
   'youtube.com',
+  'snapchat.com',
+  'snap.com',
 ];
 
-function containsBlockedSocialDomain(value: string): boolean {
-  if (!value) return false;
-  const lower = value.toLowerCase();
-  return BLOCKED_SOCIAL_DOMAINS.some((domain) => lower.includes(domain));
+// Pinterest is explicitly ALLOWED - artists use it as a portfolio platform
+const ALLOWED_DOMAINS = ['pinterest.com'];
+
+// Maps blocked domains to friendly platform names for error messages
+const DOMAIN_PLATFORM_NAMES: Record<string, string> = {
+  'facebook.com': 'Facebook',
+  'fb.com': 'Facebook',
+  'm.facebook.com': 'Facebook',
+  'm.me': 'Facebook',
+  'instagram.com': 'Instagram',
+  'x.com': 'X/Twitter',
+  'twitter.com': 'X/Twitter',
+  'tiktok.com': 'TikTok',
+  'threads.net': 'Threads',
+  'linkedin.com': 'LinkedIn',
+  'youtube.com': 'YouTube',
+  'snapchat.com': 'Snapchat',
+  'snap.com': 'Snapchat',
+};
+
+/**
+ * Checks if a URL/value contains a blocked social media domain using proper
+ * domain boundary matching. Avoids false positives like "proxy.com" matching "x.com".
+ *
+ * Returns the platform name if blocked, or null if allowed.
+ */
+function getBlockedPlatform(value: string): string | null {
+  if (!value) return null;
+
+  let normalized = value.toLowerCase().trim();
+
+  // Strip protocol if present
+  normalized = normalized.replace(/^https?:\/\//, '');
+
+  // Strip trailing path/query/hash for domain extraction
+  const domainPart = normalized.split('/')[0].split('?')[0].split('#')[0];
+
+  // Check if explicitly allowed first (e.g., pinterest.com)
+  for (const allowed of ALLOWED_DOMAINS) {
+    if (domainPart === allowed || domainPart.endsWith('.' + allowed)) {
+      return null;
+    }
+  }
+
+  // Check against blocked domains with proper boundary matching
+  for (const blocked of BLOCKED_SOCIAL_DOMAINS) {
+    // Exact domain match (e.g., "facebook.com")
+    if (domainPart === blocked) {
+      return DOMAIN_PLATFORM_NAMES[blocked] || blocked;
+    }
+    // Subdomain match (e.g., "www.facebook.com", "m.facebook.com")
+    if (domainPart.endsWith('.' + blocked)) {
+      return DOMAIN_PLATFORM_NAMES[blocked] || blocked;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Validates that a value looks like a phone number (digits, +, spaces, dashes, parentheses).
+ * Returns true if valid phone number format, false if it contains URL-like patterns.
+ */
+function isValidPhoneNumber(value: string): boolean {
+  if (!value) return true;
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+
+  // Reject if it looks like a URL
+  if (/(:\/\/|www\.|\.com|\.net|\.org|\.io)/i.test(trimmed)) {
+    return false;
+  }
+
+  // Allow only digits, +, -, spaces, parentheses, and dots (common phone formats)
+  return /^[\d\s+\-().]+$/.test(trimmed);
 }
 
 export const EditProfileScreen = () => {
@@ -89,14 +162,39 @@ export const EditProfileScreen = () => {
   }, []);
 
   const validateContactFields = (): boolean => {
-    if (containsBlockedSocialDomain(website.trim())) {
-      setContactError('Social media links are currently not supported.');
-      return false;
+    // Validate website - check for blocked social domains
+    const websiteVal = website.trim();
+    if (websiteVal) {
+      const blockedPlatform = getBlockedPlatform(websiteVal);
+      if (blockedPlatform) {
+        setContactError(`${blockedPlatform} profile links are not supported.`);
+        return false;
+      }
     }
-    if (containsBlockedSocialDomain(whatsapp.trim())) {
-      setContactError('Social media links are currently not supported.');
-      return false;
+
+    // Validate whatsapp - check for blocked domains and phone format
+    const whatsappVal = whatsapp.trim();
+    if (whatsappVal) {
+      const blockedPlatform = getBlockedPlatform(whatsappVal);
+      if (blockedPlatform) {
+        setContactError(`${blockedPlatform} profile links are not supported.`);
+        return false;
+      }
+      if (!isValidPhoneNumber(whatsappVal)) {
+        setContactError('Please enter a valid WhatsApp number.');
+        return false;
+      }
     }
+
+    // Validate contactPhone - must be phone number only
+    const phoneVal = contactPhone.trim();
+    if (phoneVal) {
+      if (!isValidPhoneNumber(phoneVal)) {
+        setContactError('Please enter a valid phone number.');
+        return false;
+      }
+    }
+
     setContactError('');
     return true;
   };
@@ -149,8 +247,29 @@ export const EditProfileScreen = () => {
       Alert.alert('Success', 'Profile updated successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
-    } catch (_e) {
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    } catch (error: any) {
+      // Surface actual backend validation error messages
+      const backendMessage =
+        error?.response?.data?.error?.message ||
+        error?.response?.data?.message ||
+        null;
+      if (backendMessage) {
+        // Check if the error is a field-specific validation error we can show inline
+        const fieldPrefix = 'body.';
+        if (backendMessage.startsWith(fieldPrefix)) {
+          // Extract the message after "body.fieldName: "
+          const withoutPrefix = backendMessage.substring(fieldPrefix.length);
+          const colonIdx = withoutPrefix.indexOf(': ');
+          const displayMsg = colonIdx >= 0
+            ? withoutPrefix.substring(colonIdx + 2)
+            : withoutPrefix;
+          setContactError(displayMsg);
+        } else {
+          Alert.alert('Error', backendMessage);
+        }
+      } else {
+        Alert.alert('Error', 'Failed to update profile. Please try again.');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -254,7 +373,7 @@ export const EditProfileScreen = () => {
             style={styles.input}
             value={website}
             onChangeText={(text) => { setWebsite(text); setContactError(''); }}
-            placeholder="https://yourwebsite.com"
+            placeholder="www.myportfoliowebsite.com"
             placeholderTextColor={lightColors.textSecondary}
             autoCapitalize="none"
             maxLength={200}
@@ -263,15 +382,16 @@ export const EditProfileScreen = () => {
             style={[styles.input, { marginTop: 10 }]}
             value={whatsapp}
             onChangeText={(text) => { setWhatsapp(text); setContactError(''); }}
-            placeholder="WhatsApp number or link"
+            placeholder="+97798XXXXXXXX or 9801234567"
             placeholderTextColor={lightColors.textSecondary}
             autoCapitalize="none"
+            keyboardType="phone-pad"
             maxLength={200}
           />
           <TextInput
             style={[styles.input, { marginTop: 10 }]}
             value={contactPhone}
-            onChangeText={setContactPhone}
+            onChangeText={(text) => { setContactPhone(text); setContactError(''); }}
             placeholder="Contact phone number"
             placeholderTextColor={lightColors.textSecondary}
             keyboardType="phone-pad"
@@ -281,7 +401,7 @@ export const EditProfileScreen = () => {
             <Text style={styles.contactErrorText}>{contactError}</Text>
           )}
           <Text style={styles.contactHelperText}>
-            Only Website, WhatsApp and Phone are currently accepted.
+            Only Website, WhatsApp Number and Phone Number are currently supported. Social media profile links are not accepted at this time.
           </Text>
         </View>
 
@@ -500,5 +620,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: lightColors.textSecondary,
     marginTop: 8,
+    lineHeight: 17,
   },
 });

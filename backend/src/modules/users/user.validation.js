@@ -12,12 +12,85 @@ const BLOCKED_SOCIAL_DOMAINS = [
   'threads.net',
   'linkedin.com',
   'youtube.com',
+  'snapchat.com',
+  'snap.com',
 ];
 
-function containsBlockedSocialDomain(value) {
-  if (!value) return false;
-  const lower = value.toLowerCase();
-  return BLOCKED_SOCIAL_DOMAINS.some((domain) => lower.includes(domain));
+// Pinterest is explicitly ALLOWED - artists use it as a portfolio platform
+const ALLOWED_DOMAINS = ['pinterest.com'];
+
+// Maps blocked domains to friendly platform names for error messages
+const DOMAIN_PLATFORM_NAMES = {
+  'facebook.com': 'Facebook',
+  'fb.com': 'Facebook',
+  'm.facebook.com': 'Facebook',
+  'm.me': 'Facebook',
+  'instagram.com': 'Instagram',
+  'x.com': 'X/Twitter',
+  'twitter.com': 'X/Twitter',
+  'tiktok.com': 'TikTok',
+  'threads.net': 'Threads',
+  'linkedin.com': 'LinkedIn',
+  'youtube.com': 'YouTube',
+  'snapchat.com': 'Snapchat',
+  'snap.com': 'Snapchat',
+};
+
+/**
+ * Checks if a URL/value contains a blocked social media domain using proper
+ * domain boundary matching. Avoids false positives like "proxy.com" matching "x.com".
+ *
+ * Returns the platform name if blocked, or null if allowed.
+ */
+function getBlockedPlatform(value) {
+  if (!value) return null;
+
+  let normalized = value.toLowerCase().trim();
+
+  // Strip protocol if present
+  normalized = normalized.replace(/^https?:\/\//, '');
+
+  // Strip trailing path/query/hash for domain extraction
+  const domainPart = normalized.split('/')[0].split('?')[0].split('#')[0];
+
+  // Check if explicitly allowed first (e.g., pinterest.com)
+  for (const allowed of ALLOWED_DOMAINS) {
+    if (domainPart === allowed || domainPart.endsWith('.' + allowed)) {
+      return null;
+    }
+  }
+
+  // Check against blocked domains with proper boundary matching
+  for (const blocked of BLOCKED_SOCIAL_DOMAINS) {
+    // Exact domain match (e.g., "facebook.com")
+    if (domainPart === blocked) {
+      return DOMAIN_PLATFORM_NAMES[blocked] || blocked;
+    }
+    // Subdomain match (e.g., "www.facebook.com", "m.facebook.com")
+    if (domainPart.endsWith('.' + blocked)) {
+      return DOMAIN_PLATFORM_NAMES[blocked] || blocked;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Validates that a value looks like a phone number (digits, +, spaces, dashes, parentheses).
+ * Returns true if valid phone number format, false if it contains URL-like patterns.
+ */
+function isValidPhoneNumber(value) {
+  if (!value) return true;
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+
+  // Reject if it looks like a URL (contains :// or www. or common TLDs)
+  if (/(:\/\/|www\.|\.com|\.net|\.org|\.io)/i.test(trimmed)) {
+    return false;
+  }
+
+  // Allow only digits, +, -, spaces, parentheses, and dots (common phone formats)
+  return /^[\d\s+\-().]+$/.test(trimmed);
 }
 
 export const updateProfileSchema = z.object({
@@ -46,13 +119,47 @@ export const updateProfileSchema = z.object({
     showMatureContent: z.boolean().optional()
     
   }).strict()
-    .refine((data) => {
-      if (data.website && containsBlockedSocialDomain(data.website)) return false;
-      if (data.whatsapp && containsBlockedSocialDomain(data.whatsapp)) return false;
-      return true;
-    }, {
-      message: 'Social media links are currently not supported.',
-      path: ['website'],
+    .superRefine((data, ctx) => {
+      // Validate website field - check for blocked social domains
+      if (data.website) {
+        const blockedPlatform = getBlockedPlatform(data.website);
+        if (blockedPlatform) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${blockedPlatform} profile links are not supported.`,
+            path: ['website'],
+          });
+        }
+      }
+
+      // Validate whatsapp field - must be phone number only, no social links
+      if (data.whatsapp) {
+        const blockedPlatform = getBlockedPlatform(data.whatsapp);
+        if (blockedPlatform) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${blockedPlatform} profile links are not supported.`,
+            path: ['whatsapp'],
+          });
+        } else if (!isValidPhoneNumber(data.whatsapp)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Please enter a valid WhatsApp number.',
+            path: ['whatsapp'],
+          });
+        }
+      }
+
+      // Validate contactPhone field - must be phone number only
+      if (data.contactPhone) {
+        if (!isValidPhoneNumber(data.contactPhone)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Please enter a valid phone number.',
+            path: ['contactPhone'],
+          });
+        }
+      }
     })
 });
 

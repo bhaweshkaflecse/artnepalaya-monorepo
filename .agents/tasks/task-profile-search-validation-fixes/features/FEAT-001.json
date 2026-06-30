@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix profile update validation: proper domain matching, per-field error messages, phone-only validation for WhatsApp/Phone, add missing blocked domains (snapchat.com, snap.com), update mobile error handling to surface backend errors, update placeholders and helper text",
+  "status": "in_progress",
+  "steps": [
+    "1. Fix backend/src/modules/users/user.validation.js - Replace naive `lower.includes(domain)` with proper domain boundary matching. The function must extract the domain from the URL/value and check if it matches a blocked domain (considering www. prefixes, subdomains, paths). Use a regex or URL parsing approach that checks for domain boundaries (e.g., protocol://, leading dot, or start of string). Also add 'snapchat.com', 'snap.com' to BLOCKED_SOCIAL_DOMAINS.",
+    "2. Fix backend/src/modules/users/user.validation.js - Replace single .refine() with separate per-field refinements using .superRefine() so each field gets its own specific error message: 'Facebook profile links are not supported', 'Instagram profile links are not supported', 'X/Twitter profile links are not supported', etc. For website, the error should name the specific platform detected. Pinterest should be ALLOWED (remove from blocked if present, or explicitly allow it).",
+    "3. Fix backend/src/modules/users/user.validation.js - Add phone-number-only validation for whatsapp and contactPhone fields. WhatsApp should accept numbers only (digits, +, spaces, dashes). contactPhone should accept valid phone numbers only. URLs should be rejected for both fields.",
+    "4. Fix mobile/src/screens/profile/EditProfileScreen.tsx - Update the catch block in handleSave to extract the actual error message from the backend response (error.response?.data?.error?.message) and display it instead of the generic 'Failed to update profile. Please try again.' message.",
+    "5. Fix mobile/src/screens/profile/EditProfileScreen.tsx - Update the frontend BLOCKED_SOCIAL_DOMAINS list to match the backend, and fix the containsBlockedSocialDomain function to use the same proper domain matching logic as the backend.",
+    "6. Fix mobile/src/screens/profile/EditProfileScreen.tsx - Update placeholders: website to 'www.myportfoliowebsite.com', whatsapp to '+97798XXXXXXXX or 9801234567', keep contactPhone as 'Contact phone number'. Update helper text from 'Only Website, WhatsApp and Phone are currently accepted.' to 'Only Website, WhatsApp Number and Phone Number are currently supported. Social media profile links are not accepted at this time.'",
+    "7. Fix mobile/src/screens/profile/EditProfileScreen.tsx - Update frontend validateContactFields() to also validate that whatsapp contains only phone number characters (digits, +, spaces, dashes, parentheses) and not URLs, with specific error messages for each field."
+  ],
+  "acceptance_criteria": [
+    "Backend validation no longer false-positives on domains like proxy.com, foxcomp.com, myprox.company.com when checking for x.com",
+    "Pinterest URLs are allowed in the website field",
+    "www.mywebsite.com, bhawesh.com, portfolio.example.com are all accepted",
+    "facebook.com/username, instagram.com/username, x.com/username, tiktok.com/username, snapchat.com/username are all rejected with specific per-platform error messages",
+    "WhatsApp field only accepts phone numbers, rejects URLs",
+    "contactPhone field only accepts phone numbers",
+    "Mobile displays actual backend validation error messages instead of generic 'Failed to update profile'",
+    "Placeholders match user specification exactly",
+    "Helper text matches user specification exactly"
+  ],
+  "verification": [
+    "Run `node --check backend/src/modules/users/user.validation.js` to verify no syntax errors",
+    "Verify EditProfileScreen.tsx has no TypeScript syntax issues by checking the file structure"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
