@@ -31,6 +31,8 @@ const CMS_PAGES = [
   { title: 'Community Guidelines', slug: 'community-guidelines' },
   { title: 'Creator & Listing Policy', slug: 'creator-listing-policy' },
   { title: 'Copyright Policy', slug: 'copyright-policy' },
+  { title: 'Data Policy', slug: 'data-policy' },
+  { title: 'Information Policy', slug: 'information-policy' },
 ];
 
 export const SettingsScreen = () => {

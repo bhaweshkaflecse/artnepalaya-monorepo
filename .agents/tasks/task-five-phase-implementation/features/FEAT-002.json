@@ -1,0 +1,23 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Phase 2: CMS Extension - Add 'data-policy' and 'information-policy' slugs to the CMS page model enum so admins can create and mobile can display these new policy pages",
+  "status": "in_progress",
+  "steps": [
+    "1. In backend/src/modules/admin/cmsPage.model.js, add 'data-policy' and 'information-policy' to the slug enum array. Current enum: ['privacy-policy', 'about-us', 'terms-conditions', 'community-guidelines', 'creator-listing-policy', 'copyright-policy']. New enum should include both new values at the end.",
+    "2. In mobile/src/screens/profile/SettingsScreen.tsx, add the two new CMS pages to the CMS_PAGES array so they appear in the Settings list. Add: { title: 'Data Policy', slug: 'data-policy' } and { title: 'Information Policy', slug: 'information-policy' }."
+  ],
+  "acceptance_criteria": [
+    "cmsPage.model.js slug enum includes 'data-policy' and 'information-policy' (8 total slugs)",
+    "SettingsScreen.tsx CMS_PAGES array includes both new entries with correct slugs and titles",
+    "Existing CMS pages still work (no enum values removed)",
+    "The admin CMS editor already works generically with any slug - no admin changes needed",
+    "The mobile CmsPageScreen already renders any slug generically - no mobile renderer changes needed"
+  ],
+  "verification": [
+    "Read cmsPage.model.js and confirm enum array has 8 entries including data-policy and information-policy",
+    "Read SettingsScreen.tsx and confirm CMS_PAGES has 8 entries"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
