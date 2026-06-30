@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 import { HomeScreen } from '../screens/home/HomeScreen';
 import { ExploreScreen } from '../screens/explore/ExploreScreen';
-import { CreateScreen } from '../screens/create/CreateScreen';
+import { CreateSelectorScreen } from '../screens/create/CreateSelectorScreen';
 import { CommunityScreen } from '../screens/community/CommunityScreen';
 import { ProfileScreen } from '../screens/profile/ProfileScreen';
 
@@ -51,7 +51,7 @@ export const MainTabs = () => {
       />
       <Tab.Screen
         name="Create"
-        component={CreateScreen}
+        component={CreateSelectorScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Feather name="plus-circle" size={size} color={color} />

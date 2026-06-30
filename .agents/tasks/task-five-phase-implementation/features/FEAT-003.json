@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Phase 3: Upload Entry Selector - Create a new CreateSelectorScreen as the Create tab entry point. It shows three cards (Artwork Post, Community Post, Marketplace Post). Only Artwork Post navigates to the existing CreateScreen. The other two show 'Coming Soon' badges and are disabled. Rename 'Upload Artwork' header to 'Artwork Post' in CreateScreen.",
+  "status": "in_progress",
+  "steps": [
+    "1. Create mobile/src/screens/create/CreateSelectorScreen.tsx - a new screen with three cards laid out vertically: (a) 'Artwork Post' - enabled, navigates to CreateScreen; (b) 'Community Post' - disabled, with 'Coming Soon' badge; (c) 'Marketplace Post' - disabled, with 'Coming Soon' badge. Use the same premium styling approach as other screens (lightColors, Feather icons, SafeAreaView). Each card should have an icon, title, brief description, and the Coming Soon cards should be visually dimmed/disabled.",
+    "2. In mobile/src/navigation/AppStack.tsx, add CreateSelectorScreen and CreateScreen as named screens in the AppStack. Add 'CreateSelector' and 'CreatePost' to AppStackParamList.",
+    "3. In mobile/src/navigation/MainTabs.tsx, change the Create tab to point to CreateSelectorScreen instead of CreateScreen. The tab name remains 'Create'.",
+    "4. In mobile/src/screens/create/CreateScreen.tsx, change the headerTitle text from 'Upload Artwork' to 'Artwork Post' in the header section.",
+    "5. In mobile/src/navigation/MainTabs.tsx, update the import to use CreateSelectorScreen instead of CreateScreen for the Create tab component.",
+    "6. Update navigation so CreateSelectorScreen's 'Artwork Post' card navigates to 'CreatePost' screen in AppStack (using navigation.navigate or navigation.getParent())."
+  ],
+  "acceptance_criteria": [
+    "Create tab opens CreateSelectorScreen (not directly CreateScreen)",
+    "CreateSelectorScreen shows 3 cards: Artwork Post, Community Post, Marketplace Post",
+    "Artwork Post card navigates to existing CreateScreen (all existing upload functionality preserved)",
+    "Community Post and Marketplace Post cards are visually disabled with 'Coming Soon' badge",
+    "CreateScreen header shows 'Artwork Post' instead of 'Upload Artwork'",
+    "All existing upload/publish functionality in CreateScreen is unchanged",
+    "Back navigation from CreateScreen returns to CreateSelectorScreen"
+  ],
+  "verification": [
+    "Verify CreateSelectorScreen.tsx exists with 3 card components",
+    "Verify MainTabs.tsx Create tab uses CreateSelectorScreen",
+    "Verify CreateScreen.tsx headerTitle is 'Artwork Post'",
+    "Verify AppStack.tsx has CreatePost screen registered"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

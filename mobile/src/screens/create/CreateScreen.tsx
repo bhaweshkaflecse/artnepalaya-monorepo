@@ -389,7 +389,7 @@ export const CreateScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Feather name="arrow-left" size={22} color={lightColors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Upload Artwork</Text>
+        <Text style={styles.headerTitle}>Artwork Post</Text>
         <Animated.View style={{ transform: [{ scale: publishScaleAnim }] }}>
           <TouchableOpacity
             onPress={handlePublishPress}
