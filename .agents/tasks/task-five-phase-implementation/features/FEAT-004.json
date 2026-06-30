@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Phase 4: User Preferences & Onboarding - Add a 4th optional preference selection slide to the onboarding flow. Uses existing User.interests field (String array) and existing GET /config/artwork-types endpoint. Completely optional (Skip/Complete Later). Add preferences editing to the EditProfile screen or Settings. Users without preferences get the existing feed unchanged.",
+  "status": "in_progress",
+  "steps": [
+    "1. In mobile/src/screens/onboarding/OnboardingScreen.tsx, add a 4th slide after the existing 3 intro slides. This slide should: (a) fetch artwork types from GET /config/artwork-types (same endpoint CreateScreen uses); (b) display them as selectable chips/tags; (c) allow multi-selection; (d) have a 'Complete' button that saves selected types to the user's interests via PUT /users/me with { interests: [...selectedTypes] }; (e) have a 'Skip' or 'Complete Later' button that proceeds without saving. The slide must be fully optional - both Skip and the existing handleGetStarted should work without selections.",
+    "2. Import the api service in OnboardingScreen to make the artwork-types fetch and the profile update API call. Import from '../../services/api' or '../../services/user.service'.",
+    "3. In mobile/src/screens/profile/EditProfileScreen.tsx, add an 'Art Interests' section below the existing form fields. This should: (a) fetch artwork types from GET /config/artwork-types; (b) display them as selectable chips (similar pattern to Artwork Role selector already in the file); (c) pre-populate with the user's existing interests from profile data; (d) include interests in the handleSave payload sent to PUT /users/me.",
+    "4. Ensure the onboarding preference slide only calls the profile update API if the user is authenticated (not a guest). Guests who reach onboarding should be able to skip the preference slide gracefully."
+  ],
+  "acceptance_criteria": [
+    "Onboarding has 4 slides (3 existing intro + 1 new preference selection)",
+    "Preference slide fetches artwork types from /config/artwork-types API",
+    "Selected preferences are saved to User.interests via PUT /users/me",
+    "Skip/Complete Later buttons work and proceed without saving preferences",
+    "Existing onboarding functionality (Skip button at top, Get Started button) still works",
+    "EditProfileScreen includes an Art Interests section with selectable chips",
+    "EditProfileScreen pre-populates interests from current profile data",
+    "EditProfileScreen saves interests as part of the profile update",
+    "Users without any interests set experience no change in behavior",
+    "No new schema fields added to User model (uses existing interests: [String])"
+  ],
+  "verification": [
+    "Read OnboardingScreen.tsx and confirm 4 slides exist with preference selection on the 4th",
+    "Read EditProfileScreen.tsx and confirm interests section with chips and save logic",
+    "Verify API calls use existing endpoints only (/config/artwork-types, PUT /users/me)"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

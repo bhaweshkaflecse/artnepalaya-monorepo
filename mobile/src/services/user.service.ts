@@ -22,6 +22,7 @@ export interface User {
   isAdult?: boolean;
   nsfwBlurEnabled?: boolean;
   showMatureContent?: boolean;
+  interests?: string[];
   status?: string;
   isVerified?: boolean;
   verifiedType?: string | null;

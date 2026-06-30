@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest } from '../../store/slices/authSlice';
 import { userService } from '../../services/user.service';
 import { setProfile } from '../../store/slices/userSlice';
+import { api } from '../../services/api';
 
 const ROLE_OPTIONS = [
   { label: 'Artist', emoji: '🎨', value: 'Artist' },
@@ -41,7 +42,28 @@ export const EditProfileScreen = () => {
   const [location, setLocation] = useState((profile as any)?.location || '');
   const [website, setWebsite] = useState((profile as any)?.website || '');
   const [selectedRole, setSelectedRole] = useState(displayUser?.role || 'Art Lover');
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(
+    (profile as any)?.interests || []
+  );
+  const [artworkTypes, setArtworkTypes] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchArtworkTypes = async () => {
+      try {
+        const response = await api.get('/config/artwork-types');
+        if (response.data?.success && Array.isArray(response.data.data)) {
+          const activeTypes = response.data.data
+            .filter((t: any) => t.isActive !== false)
+            .map((t: any) => t.name);
+          setArtworkTypes(activeTypes);
+        }
+      } catch (_e) {
+        // Silently fail - interests section just won't show types
+      }
+    };
+    fetchArtworkTypes();
+  }, []);
 
   const handleSave = async () => {
     if (isGuest) {
@@ -73,6 +95,7 @@ export const EditProfileScreen = () => {
         bio: bio.trim(),
         location: location.trim() || null,
         website: website.trim() || null,
+        interests: selectedInterests,
       };
       // Only include role if it's a valid non-admin role (Admin role cannot be changed via this form)
       const validRoles = ['Artist', 'Art Lover', 'Business', 'Gallery'];
@@ -222,6 +245,51 @@ export const EditProfileScreen = () => {
             ))}
           </View>
         </View>
+
+        {/* Art Interests */}
+        {artworkTypes.length > 0 && (
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Art Interests</Text>
+            <View style={styles.rolesContainer}>
+              {artworkTypes.map((type) => {
+                const isSelected = selectedInterests.includes(type);
+                return (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.roleChip,
+                      isSelected && styles.roleChipSelected,
+                    ]}
+                    onPress={() => {
+                      setSelectedInterests((prev) =>
+                        prev.includes(type)
+                          ? prev.filter((t) => t !== type)
+                          : [...prev, type]
+                      );
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.roleLabel,
+                        isSelected && styles.roleLabelSelected,
+                      ]}
+                    >
+                      {type}
+                    </Text>
+                    {isSelected && (
+                      <Feather
+                        name="check"
+                        size={14}
+                        color={lightColors.accent}
+                        style={{ marginLeft: 4 }}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
