@@ -156,12 +156,15 @@ export const LoginScreen = () => {
   );
 
   /**
-   * Google OAuth in Expo Go (SDK 50)
+   * Google OAuth - SDK 50 standalone Android
+   * Using useAuthRequest with explicit redirectUri matching app.json scheme
    */
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: GOOGLE_WEB_CLIENT_ID,
+  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'artnepalaya' });
+  const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || undefined,
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || undefined,
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    redirectUri,
   });
 
   useEffect(() => {
@@ -194,9 +197,15 @@ export const LoginScreen = () => {
       console.log('[GoogleAuth] Full response:', JSON.stringify(response, null, 2));
     }
     if (response?.type === 'success') {
-      const idToken = response.params.id_token;
+      const idToken = response.params?.id_token || (response as any).authentication?.idToken;
       if (idToken) {
         handleAuthSuccess(idToken);
+      } else {
+        console.warn('[GoogleAuth] Success but no id_token found in response params or authentication object');
+        console.log('[GoogleAuth] Available params:', Object.keys(response.params || {}));
+        console.log('[GoogleAuth] Authentication object:', JSON.stringify((response as any).authentication, null, 2));
+        Alert.alert('Sign-In Issue', 'Authentication succeeded but token was not received. Please try again.');
+        setIsLoading(false);
       }
     } else if (response?.type === 'error') {
       console.warn('[GoogleAuth] Error:', response.error);
