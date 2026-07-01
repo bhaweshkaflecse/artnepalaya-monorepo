@@ -165,16 +165,32 @@ export const LoginScreen = () => {
 
   useEffect(() => {
     if (request) {
-      console.log('[GoogleAuth] Request configured:', {
-        clientId: request.clientId,
-        redirectUri: request.redirectUri,
-        responseType: request.responseType,
-        usePKCE: request.usePKCE,
-      });
+      console.log('[GoogleAuth] ====== FULL OAUTH DIAGNOSTICS ======');
+      console.log('[GoogleAuth] redirectUri:', request.redirectUri);
+      console.log('[GoogleAuth] clientId:', request.clientId);
+      console.log('[GoogleAuth] scopes:', request.scopes);
+      console.log('[GoogleAuth] responseType:', request.responseType);
+      console.log('[GoogleAuth] usePKCE:', request.usePKCE);
+      console.log('[GoogleAuth] codeChallenge:', (request as any).codeChallenge);
+      console.log('[GoogleAuth] state:', request.state);
+      console.log('[GoogleAuth] extraParams:', (request as any).extraParams);
+      console.log('[GoogleAuth] url:', request.url);
+      console.log('[GoogleAuth] ====================================');
+      console.log('[GoogleAuth] ENVIRONMENT DETECTION:');
+      console.log('[GoogleAuth] __DEV__:', __DEV__);
+      console.log('[GoogleAuth] Platform.OS:', Platform.OS);
+      console.log('[GoogleAuth] GOOGLE_WEB_CLIENT_ID:', GOOGLE_WEB_CLIENT_ID ? GOOGLE_WEB_CLIENT_ID.substring(0, 20) + '...' : 'EMPTY');
+      console.log('[GoogleAuth] ANDROID_CLIENT_ID:', process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ? 'SET' : 'NOT SET');
+      console.log('[GoogleAuth] IOS_CLIENT_ID:', process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ? 'SET' : 'NOT SET');
+      console.log('[GoogleAuth] ====================================');
     }
   }, [request]);
 
   useEffect(() => {
+    console.log('[GoogleAuth] Response received:', response?.type);
+    if (response) {
+      console.log('[GoogleAuth] Full response:', JSON.stringify(response, null, 2));
+    }
     if (response?.type === 'success') {
       const idToken = response.params.id_token;
       if (idToken) {
@@ -235,7 +251,17 @@ export const LoginScreen = () => {
       return;
     }
     setIsLoading(true);
-    await promptAsync();
+    console.log('[GoogleAuth] promptAsync() called - opening browser...');
+    try {
+      const result = await promptAsync();
+      console.log('[GoogleAuth] promptAsync() result type:', result?.type);
+      console.log('[GoogleAuth] promptAsync() result params:', result?.type === 'success' ? result.params : 'N/A');
+      console.log('[GoogleAuth] promptAsync() full result:', JSON.stringify(result, null, 2));
+    } catch (promptError: any) {
+      console.error('[GoogleAuth] promptAsync() EXCEPTION:', promptError?.message);
+      console.error('[GoogleAuth] promptAsync() error details:', JSON.stringify(promptError, null, 2));
+      setIsLoading(false);
+    }
   };
 
   const handleSkip = async () => {
@@ -282,6 +308,14 @@ export const LoginScreen = () => {
         error?.message ||
         'Backend unreachable. Is the server running?';
       setDevError(message);
+      console.error('[DevLogin] Full error:', {
+        status: error?.response?.status,
+        data: error?.response?.data,
+        message: error?.message,
+        code: error?.code,
+        configUrl: error?.config?.url,
+        configBaseURL: error?.config?.baseURL,
+      });
     } finally {
       setDevLoading(false);
     }

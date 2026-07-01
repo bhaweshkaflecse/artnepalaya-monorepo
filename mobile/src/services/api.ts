@@ -65,6 +65,11 @@ const processQueue = (error: AxiosError | null, config: InternalAxiosRequestConf
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    // Defensive: prevent crash when error.config is undefined (e.g., request never sent)
+    if (!error || !error.config) {
+      console.warn('[API] Error without config object:', error?.message);
+      return Promise.reject(error);
+    }
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     const hadAuthHeader = originalRequest.headers?.Authorization || originalRequest.headers?.authorization;
