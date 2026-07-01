@@ -19,6 +19,7 @@ import { Feather, AntDesign } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
 import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { setCredentials, setGuest } from '../../store/slices/authSlice';
@@ -183,6 +184,7 @@ export const LoginScreen = () => {
       console.log('[GoogleAuth] ANDROID_CLIENT_ID:', process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ? 'SET' : 'NOT SET');
       console.log('[GoogleAuth] IOS_CLIENT_ID:', process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ? 'SET' : 'NOT SET');
       console.log('[GoogleAuth] ====================================');
+      console.log('[GoogleAuth] Native redirect URI (from makeRedirectUri):', AuthSession.makeRedirectUri({ scheme: 'artnepalaya' }));
     }
   }, [request]);
 
