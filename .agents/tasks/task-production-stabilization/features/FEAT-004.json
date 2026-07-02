@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-004",
+  "type": "fix",
+  "description": "CreateScreen UI composition pass - portrait preview, thumbnail strip polish, keywords placeholder, content declaration typography reduction",
+  "status": "completed",
+  "steps": [
+    "Step 1 - Fix hero preview to visible portrait ratio: Change heroTouchable from full-width to a centered portrait container. Set width to SCREEN_WIDTH * 0.72 (so it does not span edge-to-edge), height to (SCREEN_WIDTH * 0.72) * (4/3). Add alignSelf: 'center'. This creates a clearly portrait aspect ratio with breathing room on sides like viewing artwork on a gallery wall.",
+    "Step 2 - Thumbnail strip polish: Increase thumbnail size from 52x52 to 60x60. Add gap/marginRight of 10 between items. For the active thumbnail, add a 2.5px border in lightColors.accent instead of the current style. Position the remove button at top-right corner with a slight negative offset (-4, -4) for better visual balance. Add borderRadius 12 to thumbnails for rounded look.",
+    "Step 3 - Keywords placeholder: The placeholder is already '# Add keywords separated by commas' as specified. Verify this is correct. No change needed.",
+    "Step 4 - Content Declaration typography reduction: Reduce complianceTitleText fontSize from its current value to 14, fontWeight to '600'. Reduce complianceLabel fontSize to 13. Reduce complianceHelper fontSize to 11. This makes the section feel informative rather than visually heavy.",
+    "Step 5 - General polish: Reduce heroPlaceholderSubtitle fontSize to 12. Reduce statusBannerText fontSize to 11. Ensure consistent spacing between sections (10-12px margins)."
+  ],
+  "acceptance_criteria": [
+    "Hero preview is visually portrait (3:4) and does not span full width - has breathing room on sides",
+    "Thumbnail strip items are 60x60 with 12px border radius and proper spacing",
+    "Active thumbnail has accent-colored border",
+    "Remove button is positioned at top-right with slight negative offset",
+    "Content Declaration text is noticeably smaller and lighter",
+    "Keywords placeholder remains '# Add keywords separated by commas'",
+    "All existing upload functionality preserved"
+  ],
+  "verification": [
+    "Review CreateScreen.tsx stylesheet for updated dimensions",
+    "Confirm all form submission logic unchanged",
+    "Confirm media picker logic unchanged"
+  ],
+  "blocked_reason": null,
+  "findings": "Only 3 numerical style changes were needed as most FEAT-004 items were already done in prior passes. Changed statusBannerText fontSize 12->11, heroPlaceholderSubtitle fontSize 13->12, thumbnailRemoveBtn top/right -5->-4. TypeScript compiler not available in sandbox environment but changes are purely style value tweaks with no structural impact."
+}

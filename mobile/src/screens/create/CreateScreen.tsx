@@ -818,7 +818,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statusBannerText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   statusBadge: {
@@ -881,7 +881,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   heroPlaceholderSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: lightColors.textSecondary,
     textAlign: 'center',
   },
@@ -1017,8 +1017,8 @@ const styles = StyleSheet.create({
   },
   thumbnailRemoveBtn: {
     position: 'absolute',
-    top: -5,
-    right: -5,
+    top: -4,
+    right: -4,
     backgroundColor: '#FF3B30',
     borderRadius: 9,
     width: 18,
