@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "fix",
   "description": "Fix UserProfileScreen thumbnail labels (Task 5), fix profile ownership routing (Task 4), and fix the CreateScreen media preview ratio (from Task 9 - UI composition pass)",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1 - Fix UserProfileScreen.tsx thumbnail labels: The renderPostThumbnail function at line 181 currently renders a plain Image without any overlay badges. ProfileScreen.tsx (line 125-155) correctly renders video indicators, AI labels, and 18+ NSFW badges. Copy the same badge rendering logic from ProfileScreen into UserProfileScreen's renderPostThumbnail. Specifically: (a) Import getVideoThumbnailUrl from utils/media, (b) detect isVideo from item.media?.[0]?.type === 'video', (c) use getVideoThumbnailUrl for video thumbnails, (d) add video indicator overlay, (e) add AI label when item.isHumanMade === false, (f) add 18+ badge when item.isNsfw === true. Add the required styles: badgeOverlay, subtleLabelOverlay, nsfwBadgeSmall, badgeTextSmall, videoIndicator - matching the ones in ProfileScreen.",
     "Step 2 - Profile ownership routing audit (Task 4): The PostCard.tsx navigateToProfile function at line 177 correctly compares currentUser.id with post.authorId._id and routes to MainTabs/Profile for own posts and UserProfile for others. This is correct. The potential issue is that when a user taps their own avatar on a post that was loaded before login (guest mode), currentUser might be null. Verify this edge case. Also check if UserProfileScreen has a redirect-to-own-profile guard: if userId === currentUser?.id, it should navigate to MainTabs/Profile instead. Add this guard at the top of UserProfileScreen's useEffect.",
@@ -20,5 +20,5 @@
     "Review CreateScreen.tsx heroTouchable dimensions create portrait aspect ratio"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All three parts implemented successfully. UserProfileScreen now has video indicators, AI labels, and 18+ badges matching ProfileScreen. Ownership redirect guard added. CreateScreen hero preview uses SCREEN_WIDTH * 0.72 width with 4:3 ratio for visible portrait format."
 }
