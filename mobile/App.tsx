@@ -4,36 +4,49 @@ import { Provider } from 'react-redux';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from './src/store';
+import { useAppDispatch } from './src/store';
 import { injectStore } from './src/services/api';
-import { loadAppState, fetchAuthConfig } from './src/store/slices/appSlice';
+import { loadAppState, fetchAuthConfig, setAppReady } from './src/store/slices/appSlice';
 import { setCredentials } from './src/store/slices/authSlice';
 import { RootNavigator } from './src/navigation/RootNavigator';
 
 // Inject the store into the API module at runtime to avoid circular dependency
 injectStore(store);
 
-// Dispatch app initialization thunks immediately
-store.dispatch(loadAppState()).then((action: any) => {
-  // Restore authentication state from persisted SecureStore data
-  if (action.type === 'app/loadAppState/fulfilled') {
-    const { accessToken, refreshToken, userData } = action.payload;
-    if (accessToken && refreshToken && userData) {
-      store.dispatch(setCredentials({
-        user: userData,
-        accessToken,
-        refreshToken,
-      }));
-    }
-  }
-});
-store.dispatch(fetchAuthConfig());
+/**
+ * AppInitializer renders inside <Provider> so it can use hooks.
+ * It ensures auth state is fully restored BEFORE setting isAppReady,
+ * preventing the brief flash of AuthStack that occurred with the old
+ * module-level .then() pattern.
+ */
+function AppInitializer() {
+  const dispatch = useAppDispatch();
+
+  React.useEffect(() => {
+    const init = async () => {
+      const action = await dispatch(loadAppState());
+      if (action.type === 'app/loadAppState/fulfilled') {
+        const { accessToken, refreshToken, userData } = action.payload as any;
+        if (accessToken && refreshToken && userData) {
+          dispatch(setCredentials({ user: userData, accessToken, refreshToken }));
+        }
+      }
+      // Only now is the app truly ready - auth state is guaranteed settled
+      dispatch(setAppReady());
+    };
+    init();
+    dispatch(fetchAuthConfig());
+  }, [dispatch]);
+
+  return <RootNavigator />;
+}
 
 export default function App() {
   return (
     <Provider store={store}>
       <SafeAreaProvider>
         <NavigationContainer>
-          <RootNavigator />
+          <AppInitializer />
         </NavigationContainer>
       </SafeAreaProvider>
     </Provider>

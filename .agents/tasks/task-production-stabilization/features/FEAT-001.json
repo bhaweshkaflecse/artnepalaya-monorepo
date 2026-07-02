@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Replace Google Authentication with native @react-native-google-signin/google-signin, fix App.tsx initialization race condition causing guest/dev login failures, and fix guest login reliability",
+  "status": "in_progress",
+  "steps": [
+    "Step 1 - Replace Google Auth in LoginScreen.tsx: Remove all expo-auth-session/providers/google imports and usage. Remove WebBrowser.maybeCompleteAuthSession(). Remove the Google.useAuthRequest() hook and all related diagnostics logging. Replace with @react-native-google-signin/google-signin native implementation. The new flow: import GoogleSignin and configure it with webClientId on mount, then on button press call GoogleSignin.signIn() which returns idToken directly. Send that idToken to the backend exactly as before via handleAuthSuccess(). Keep all existing state (isLoading, error handling, alerts). Keep handleSkip (guest) and handleDevLogin exactly as they are.",
+    "Step 2 - Update package.json: Add @react-native-google-signin/google-signin to dependencies. This is a native module requiring EAS rebuild.",
+    "Step 3 - Update app.json plugins: Add @react-native-google-signin/google-signin plugin configuration with the Android and iOS client IDs from environment variables.",
+    "Step 4 - Fix App.tsx initialization race condition: The current code dispatches loadAppState() with .then() but does NOT await it before rendering the app. Additionally, fetchAuthConfig() is dispatched as fire-and-forget. The race condition is: RootNavigator renders, sees isAppReady=false (shows spinner), then loadAppState fulfills and sets isAppReady=true, but the .then() callback that dispatches setCredentials may run AFTER the RootNavigator has already re-rendered with isAppReady=true but isAuthenticated=false (showing AuthStack briefly). Fix: Move the auth restoration logic INTO the loadAppState thunk's fulfilled reducer directly, or await the dispatch and setCredentials before allowing the app to render.",
+    "Step 5 - Fix guest login in LoginScreen.tsx handleSkip: The current handleSkip is async and calls SecureStore.deleteItemAsync twice, then getItemAsync, then potentially setItemAsync twice, then dispatches setGuest. These are 4-5 sequential async operations. If the user navigates away or the component unmounts during this, the dispatch never fires. Fix: dispatch setGuest immediately (optimistically) and do the SecureStore operations in a fire-and-forget manner. The navigation will happen instantly via Redux state change.",
+    "Step 6 - Document EAS rebuild requirement: Add a comment at the top of LoginScreen.tsx documenting that @react-native-google-signin/google-signin requires a native rebuild (npx expo prebuild then EAS build)."
+  ],
+  "acceptance_criteria": [
+    "LoginScreen no longer imports from expo-auth-session/providers/google",
+    "LoginScreen no longer calls WebBrowser.maybeCompleteAuthSession()",
+    "LoginScreen imports and uses GoogleSignin from @react-native-google-signin/google-signin",
+    "GoogleSignin.configure() is called with webClientId on component mount",
+    "Google sign-in button calls GoogleSignin.signIn() and sends the idToken to handleAuthSuccess",
+    "package.json includes @react-native-google-signin/google-signin dependency",
+    "app.json plugins array includes the google-signin plugin",
+    "App.tsx initialization ensures setCredentials dispatches BEFORE isAppReady triggers navigation",
+    "Guest login dispatches setGuest synchronously/immediately without waiting for SecureStore operations",
+    "Dev login and all existing auth flows remain functional",
+    "No existing UI changes - buttons, labels, and layout remain the same"
+  ],
+  "verification": [
+    "Review LoginScreen.tsx for correct GoogleSignin usage pattern",
+    "Review App.tsx for fixed initialization order",
+    "Verify package.json and app.json changes are correct",
+    "Confirm no TypeScript syntax errors by visual review"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

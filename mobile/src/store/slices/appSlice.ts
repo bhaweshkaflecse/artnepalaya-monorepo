@@ -77,14 +77,16 @@ const appSlice = createSlice({
     setUnreadCount(state, action: PayloadAction<number>) {
       state.unreadNotificationCount = action.payload;
     },
+    setAppReady(state) {
+      state.isAppReady = true;
+    },
   },
   extraReducers: (builder) => {
     builder
       .addCase(loadAppState.fulfilled, (state, action) => {
         state.hasCompletedOnboarding = action.payload.hasCompletedOnboarding;
-        state.isAppReady = true;
-        // Auth state restoration is handled via the returned payload
-        // The App component will dispatch setCredentials if tokens are found
+        // isAppReady is NOT set here - App.tsx will dispatch setAppReady after
+        // restoring auth state to prevent the flash of unauthenticated state
       })
       .addCase(loadAppState.rejected, (state) => {
         state.isAppReady = true;
@@ -102,5 +104,5 @@ const appSlice = createSlice({
   },
 });
 
-export const { setOnboardingComplete, setUnreadCount } = appSlice.actions;
+export const { setOnboardingComplete, setUnreadCount, setAppReady } = appSlice.actions;
 export default appSlice.reducer;

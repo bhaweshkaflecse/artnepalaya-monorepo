@@ -1,4 +1,6 @@
 // src/screens/auth/LoginScreen.tsx
+// NOTE: @react-native-google-signin/google-signin requires a native rebuild
+// (npx expo prebuild then EAS build) after initial installation.
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
@@ -18,9 +20,7 @@ import {
 import { Feather, AntDesign } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
-import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { setCredentials, setGuest } from '../../store/slices/authSlice';
 import { fetchAuthConfig } from '../../store/slices/appSlice';
@@ -28,9 +28,6 @@ import { api } from '../../services/api';
 import { authService } from '../../services/auth.service';
 import { lightColors } from '../../theme/colors';
 import { registerForPushNotifications } from '../../services/pushNotification.service';
-
-// Complete any pending auth sessions (required for web-based auth)
-WebBrowser.maybeCompleteAuthSession();
 
 // Google OAuth configuration
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
@@ -76,6 +73,14 @@ export const LoginScreen = () => {
   useEffect(() => {
     dispatch(fetchAuthConfig());
   }, [dispatch]);
+
+  // Configure Google Sign-In on mount
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: GOOGLE_WEB_CLIENT_ID,
+      offlineAccess: true,
+    });
+  }, []);
 
   // Mount fade-in animation
   useEffect(() => {
@@ -155,71 +160,6 @@ export const LoginScreen = () => {
     }, [itemCount])
   );
 
-  /**
-   * Google OAuth - SDK 50 standalone Android
-   * Using useAuthRequest with explicit redirectUri matching app.json scheme
-   */
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: 'artnepalaya' });
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || undefined,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || undefined,
-    webClientId: GOOGLE_WEB_CLIENT_ID,
-    redirectUri,
-  });
-
-  useEffect(() => {
-    if (request) {
-      console.log('[GoogleAuth] ====== FULL OAUTH DIAGNOSTICS ======');
-      console.log('[GoogleAuth] redirectUri:', request.redirectUri);
-      console.log('[GoogleAuth] clientId:', request.clientId);
-      console.log('[GoogleAuth] scopes:', request.scopes);
-      console.log('[GoogleAuth] responseType:', request.responseType);
-      console.log('[GoogleAuth] usePKCE:', request.usePKCE);
-      console.log('[GoogleAuth] codeChallenge:', (request as any).codeChallenge);
-      console.log('[GoogleAuth] state:', request.state);
-      console.log('[GoogleAuth] extraParams:', (request as any).extraParams);
-      console.log('[GoogleAuth] url:', request.url);
-      console.log('[GoogleAuth] ====================================');
-      console.log('[GoogleAuth] ENVIRONMENT DETECTION:');
-      console.log('[GoogleAuth] __DEV__:', __DEV__);
-      console.log('[GoogleAuth] Platform.OS:', Platform.OS);
-      console.log('[GoogleAuth] GOOGLE_WEB_CLIENT_ID:', GOOGLE_WEB_CLIENT_ID ? GOOGLE_WEB_CLIENT_ID.substring(0, 20) + '...' : 'EMPTY');
-      console.log('[GoogleAuth] ANDROID_CLIENT_ID:', process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ? 'SET' : 'NOT SET');
-      console.log('[GoogleAuth] IOS_CLIENT_ID:', process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ? 'SET' : 'NOT SET');
-      console.log('[GoogleAuth] ====================================');
-      console.log('[GoogleAuth] Native redirect URI (from makeRedirectUri):', AuthSession.makeRedirectUri({ scheme: 'artnepalaya' }));
-    }
-  }, [request]);
-
-  useEffect(() => {
-    console.log('[GoogleAuth] Response received:', response?.type);
-    if (response) {
-      console.log('[GoogleAuth] Full response:', JSON.stringify(response, null, 2));
-    }
-    if (response?.type === 'success') {
-      const idToken = response.params?.id_token || (response as any).authentication?.idToken;
-      if (idToken) {
-        handleAuthSuccess(idToken);
-      } else {
-        console.warn('[GoogleAuth] Success but no id_token found in response params or authentication object');
-        console.log('[GoogleAuth] Available params:', Object.keys(response.params || {}));
-        console.log('[GoogleAuth] Authentication object:', JSON.stringify((response as any).authentication, null, 2));
-        Alert.alert('Sign-In Issue', 'Authentication succeeded but token was not received. Please try again.');
-        setIsLoading(false);
-      }
-    } else if (response?.type === 'error') {
-      console.warn('[GoogleAuth] Error:', response.error);
-      Alert.alert(
-        'Sign-In Failed',
-        'Google authentication encountered an error. Please try again.',
-        [{ text: 'OK' }]
-      );
-      setIsLoading(false);
-    } else if (response?.type === 'dismiss') {
-      setIsLoading(false);
-    }
-  }, [response]);
-
   const handleAuthSuccess = async (idToken: string) => {
     try {
       let deviceId = await SecureStore.getItemAsync('deviceId');
@@ -252,46 +192,58 @@ export const LoginScreen = () => {
   };
 
   const handleGoogleLogin = async () => {
-    if (!request) {
-      Alert.alert(
-        'Google Sign-In Unavailable',
-        'Google authentication is not configured in this environment. ' +
-          'Please ensure Google OAuth credentials are set.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
     setIsLoading(true);
-    console.log('[GoogleAuth] promptAsync() called - opening browser...');
     try {
-      const result = await promptAsync();
-      console.log('[GoogleAuth] promptAsync() result type:', result?.type);
-      console.log('[GoogleAuth] promptAsync() result params:', result?.type === 'success' ? result.params : 'N/A');
-      console.log('[GoogleAuth] promptAsync() full result:', JSON.stringify(result, null, 2));
-    } catch (promptError: any) {
-      console.error('[GoogleAuth] promptAsync() EXCEPTION:', promptError?.message);
-      console.error('[GoogleAuth] promptAsync() error details:', JSON.stringify(promptError, null, 2));
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      const idToken = userInfo.idToken;
+      if (idToken) {
+        await handleAuthSuccess(idToken);
+      } else {
+        Alert.alert('Sign-In Issue', 'Authentication succeeded but token was not received. Please try again.');
+        setIsLoading(false);
+      }
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // User cancelled
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        // Sign in already in progress
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Error', 'Google Play Services are not available on this device.');
+      } else {
+        Alert.alert('Sign-In Failed', 'Google authentication encountered an error. Please try again.');
+        console.error('[GoogleAuth] Error:', error);
+      }
       setIsLoading(false);
     }
   };
 
   const handleSkip = async () => {
-    await SecureStore.deleteItemAsync('accessToken');
-    await SecureStore.deleteItemAsync('refreshToken');
-
-    let guestUsername = await SecureStore.getItemAsync('guestUsername');
-    if (!guestUsername) {
-      const chars = '0123456789ABCDEF';
-      let random5 = '';
-      for (let i = 0; i < 5; i++) {
-        random5 += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      guestUsername = `Guest_${random5}`;
-      await SecureStore.setItemAsync('guestUsername', guestUsername);
+    // Generate guest username synchronously
+    const chars = '0123456789ABCDEF';
+    let random5 = '';
+    for (let i = 0; i < 5; i++) {
+      random5 += chars.charAt(Math.floor(Math.random() * chars.length));
     }
+    const guestUsername = `Guest_${random5}`;
 
-    await SecureStore.setItemAsync('guestDisplayName', 'Guest Explorer');
+    // Dispatch immediately - navigation happens via Redux state change
     dispatch(setGuest({ guestUsername }));
+
+    // Background: persist to SecureStore (non-blocking)
+    (async () => {
+      try {
+        await SecureStore.deleteItemAsync('accessToken');
+        await SecureStore.deleteItemAsync('refreshToken');
+        const existingUsername = await SecureStore.getItemAsync('guestUsername');
+        if (!existingUsername) {
+          await SecureStore.setItemAsync('guestUsername', guestUsername);
+        }
+        await SecureStore.setItemAsync('guestDisplayName', 'Guest Explorer');
+      } catch (e) {
+        console.warn('[LoginScreen] Guest SecureStore cleanup failed:', e);
+      }
+    })();
   };
 
   const handleDevLogin = async () => {
