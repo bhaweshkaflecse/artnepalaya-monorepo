@@ -36,11 +36,11 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Cover Flow geometry - uses plain View + absolute positioning (NOT ScrollView)
 // This guarantees neighbor items are always visible without clipping
-const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.60;
+const CAROUSEL_ITEM_WIDTH = SCREEN_WIDTH * 0.62;
 const CAROUSEL_ITEM_HEIGHT = CAROUSEL_ITEM_WIDTH * (4 / 3);
-const CAROUSEL_HEIGHT = SCREEN_HEIGHT * 0.42;
+const CAROUSEL_HEIGHT = SCREEN_HEIGHT * 0.40;
 // Side items peek ~30% from behind center card
-const SIDE_TRANSLATE_X = CAROUSEL_ITEM_WIDTH * 0.40;
+const SIDE_TRANSLATE_X = CAROUSEL_ITEM_WIDTH * 0.38;
 
 /**
  * Generates a unique device identifier for token binding.
@@ -345,7 +345,7 @@ export const LoginScreen = () => {
             styles.coverFlowItem,
             {
               transform: [
-                { perspective: 1000 },
+                { perspective: 1200 },
                 { translateX: translateX },
                 { scale: scale },
                 { rotateY: rotateY },
@@ -393,6 +393,8 @@ export const LoginScreen = () => {
       />
       {/* Very subtle overlay for text readability */}
       <View style={styles.backgroundOverlay} />
+      {/* Subtle warm-to-cream gradient simulation */}
+      <View style={styles.gradientBottom} />
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
@@ -568,6 +570,15 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(255, 252, 248, 0.10)',
   },
+  gradientBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '60%',
+    backgroundColor: '#FFF8F0',
+    opacity: 0.5,
+  },
   safeArea: {
     flex: 1,
   },
@@ -594,18 +605,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: CAROUSEL_ITEM_WIDTH,
     height: CAROUSEL_ITEM_HEIGHT,
-    borderRadius: 20,
-    borderWidth: 2,
+    borderRadius: 24,
+    borderWidth: 2.5,
     borderColor: 'rgba(255,255,255,0.85)',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 14 },
-        shadowOpacity: 0.28,
-        shadowRadius: 22,
+        shadowOffset: { width: 0, height: 16 },
+        shadowOpacity: 0.30,
+        shadowRadius: 24,
       },
       android: {
-        elevation: 16,
+        elevation: 18,
       },
     }),
   },
@@ -658,7 +669,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   brandName: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800',
     color: lightColors.textPrimary,
     letterSpacing: 0.3,
@@ -668,7 +679,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: lightColors.textSecondary,
-    letterSpacing: 1.5,
+    letterSpacing: 2.0,
     marginBottom: 4,
   },
   brandDescription: {
@@ -677,7 +688,7 @@ const styles = StyleSheet.create({
     color: lightColors.textSecondary,
     textAlign: 'center',
     lineHeight: 16,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     marginBottom: 10,
   },
   statsRow: {
@@ -688,21 +699,21 @@ const styles = StyleSheet.create({
   statCard: {
     backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: 14,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     alignItems: 'center',
-    minWidth: 84,
+    minWidth: 90,
     borderWidth: 1,
     borderColor: lightColors.border,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
       },
       android: {
-        elevation: 3,
+        elevation: 5,
       },
     }),
   },
@@ -731,7 +742,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     width: '100%',
-    marginBottom: 8,
+    marginBottom: 10,
     ...Platform.select({
       ios: {
         shadowColor: lightColors.accent,
@@ -777,7 +788,7 @@ const styles = StyleSheet.create({
   orDivider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginVertical: 10,
   },
   orDividerLine: {
     flex: 1,
@@ -792,7 +803,7 @@ const styles = StyleSheet.create({
   },
   guestButton: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   guestButtonText: {
     fontSize: 13,

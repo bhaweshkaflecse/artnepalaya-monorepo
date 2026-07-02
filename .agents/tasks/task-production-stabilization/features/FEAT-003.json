@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "LoginScreen UI composition final pass - viewport redesign with 40% hero, 30% brand, 30% auth sections, plus premium Cover Flow refinement",
+  "status": "in_progress",
+  "steps": [
+    "Step 1 - Adjust carousel height to 40% viewport: Change CAROUSEL_HEIGHT from SCREEN_HEIGHT * 0.42 to SCREEN_HEIGHT * 0.40. This is already close but ensure it is exactly 0.40.",
+    "Step 2 - Warm white to cream gradient background: The background is currently '#FFFBF5' with a background image. Since expo-linear-gradient is not available, simulate the gradient using a layered approach: keep the root background as '#FFFBF5' (warm white), add a second View positioned absolutely at the bottom 60% with backgroundColor '#FFF8F0' (cream) and opacity 0.5. This creates a subtle warm-to-cream transition.",
+    "Step 3 - Cover Flow refinement: Increase CAROUSEL_ITEM_WIDTH to SCREEN_WIDTH * 0.62, keep 4:3 ratio. Increase border radius to 24. Increase border width to 2.5. Adjust SIDE_TRANSLATE_X to CAROUSEL_ITEM_WIDTH * 0.38 for better overlap. Increase shadow depth: shadowOffset height to 16, shadowOpacity to 0.30, shadowRadius to 24, elevation to 18. Increase perspective to 1200. The goal is premium floating depth with Apple Cover Flow feel.",
+    "Step 4 - Brand section typography hierarchy: Increase brandName fontSize to 28. Change tagline letterSpacing to 2.0 for more premium feel. Keep brandDescription but reduce paddingHorizontal to 16.",
+    "Step 5 - Statistics cards refinement: Increase statCard paddingVertical to 10, paddingHorizontal to 16, minWidth to 90. Increase shadow: shadowOffset height to 5, shadowOpacity to 0.12, shadowRadius to 12, elevation to 5. This makes the cards more prominent and premium.",
+    "Step 6 - Auth section spacing: Reduce marginBottom between buttons from 8 to 10 for the primary button. Ensure the orDivider has marginVertical of 10 (not just marginBottom). Ensure guestButton has paddingVertical of 10.",
+    "Step 7 - Terms of Service links: Already implemented with red accent color and CmsPage navigation. Verify they use lightColors.accent (#FF3B30) for the link text. Already done in current code.",
+    "Step 8 - Dev login positioning: The devLoginContainer has marginTop: 60 which pushes it below the fold on scroll. This is correct. Keep as-is."
+  ],
+  "acceptance_criteria": [
+    "Carousel occupies approximately 40% of viewport height",
+    "Background has a subtle warm-to-cream gradient effect",
+    "Cover Flow items have larger radius (24), deeper shadows, and premium floating feel",
+    "Brand section has clear typography hierarchy",
+    "Statistics cards have enhanced shadows and spacing",
+    "Auth buttons are well-spaced with clear visual separation",
+    "Overall viewport composition follows 40/30/30 split"
+  ],
+  "verification": [
+    "Review LoginScreen.tsx stylesheet values match the specified dimensions",
+    "Confirm no functional changes to auth logic"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
