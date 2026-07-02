@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Replace Google Authentication with native @react-native-google-signin/google-signin, fix App.tsx initialization race condition causing guest/dev login failures, and fix guest login reliability",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1 - Replace Google Auth in LoginScreen.tsx: Remove all expo-auth-session/providers/google imports and usage. Remove WebBrowser.maybeCompleteAuthSession(). Remove the Google.useAuthRequest() hook and all related diagnostics logging. Replace with @react-native-google-signin/google-signin native implementation. The new flow: import GoogleSignin and configure it with webClientId on mount, then on button press call GoogleSignin.signIn() which returns idToken directly. Send that idToken to the backend exactly as before via handleAuthSuccess(). Keep all existing state (isLoading, error handling, alerts). Keep handleSkip (guest) and handleDevLogin exactly as they are.",
     "Step 2 - Update package.json: Add @react-native-google-signin/google-signin to dependencies. This is a native module requiring EAS rebuild.",
@@ -31,5 +31,5 @@
     "Confirm no TypeScript syntax errors by visual review"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Implemented all 4 parts cleanly. The old expo-auth-session code (~90 lines of hooks and diagnostics logging) was replaced with a compact GoogleSignin.configure/signIn pattern (~30 lines). App.tsx race condition resolved by moving initialization into AppInitializer component that dispatches setCredentials before setAppReady. Guest login now dispatches synchronously."
 }
