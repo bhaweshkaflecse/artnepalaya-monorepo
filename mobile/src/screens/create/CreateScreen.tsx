@@ -836,8 +836,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   heroTouchable: {
-    width: '100%',
-    height: Math.min((SCREEN_WIDTH - 24) * (4/3), SCREEN_HEIGHT * 0.48),
+    width: SCREEN_WIDTH * 0.72,
+    height: (SCREEN_WIDTH * 0.72) * (4 / 3),
+    maxHeight: SCREEN_HEIGHT * 0.48,
+    alignSelf: 'center',
     borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: lightColors.surface,

@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Fix UserProfileScreen thumbnail labels (Task 5), fix profile ownership routing (Task 4), and fix the CreateScreen media preview ratio (from Task 9 - UI composition pass)",
+  "status": "in_progress",
+  "steps": [
+    "Step 1 - Fix UserProfileScreen.tsx thumbnail labels: The renderPostThumbnail function at line 181 currently renders a plain Image without any overlay badges. ProfileScreen.tsx (line 125-155) correctly renders video indicators, AI labels, and 18+ NSFW badges. Copy the same badge rendering logic from ProfileScreen into UserProfileScreen's renderPostThumbnail. Specifically: (a) Import getVideoThumbnailUrl from utils/media, (b) detect isVideo from item.media?.[0]?.type === 'video', (c) use getVideoThumbnailUrl for video thumbnails, (d) add video indicator overlay, (e) add AI label when item.isHumanMade === false, (f) add 18+ badge when item.isNsfw === true. Add the required styles: badgeOverlay, subtleLabelOverlay, nsfwBadgeSmall, badgeTextSmall, videoIndicator - matching the ones in ProfileScreen.",
+    "Step 2 - Profile ownership routing audit (Task 4): The PostCard.tsx navigateToProfile function at line 177 correctly compares currentUser.id with post.authorId._id and routes to MainTabs/Profile for own posts and UserProfile for others. This is correct. The potential issue is that when a user taps their own avatar on a post that was loaded before login (guest mode), currentUser might be null. Verify this edge case. Also check if UserProfileScreen has a redirect-to-own-profile guard: if userId === currentUser?.id, it should navigate to MainTabs/Profile instead. Add this guard at the top of UserProfileScreen's useEffect.",
+    "Step 3 - Fix CreateScreen.tsx hero preview ratio: The current heroTouchable height is Math.min((SCREEN_WIDTH - 24) * (4/3), SCREEN_HEIGHT * 0.48). The width is 100% of the container (SCREEN_WIDTH - 24 padding). This means the aspect ratio is approximately (SCREEN_WIDTH - 24) : ((SCREEN_WIDTH - 24) * 4/3), which IS 3:4. The issue reported is that it appears square. This happens because the width is the full screen width minus padding. The fix: constrain the WIDTH to be smaller (about 80% of screen width) and center it, creating a visible portrait rectangle. Change heroTouchable to have explicit width of SCREEN_WIDTH * 0.75 and height of (SCREEN_WIDTH * 0.75) * (4/3), aligned center. This creates a clear portrait format with breathing room on the sides."
+  ],
+  "acceptance_criteria": [
+    "UserProfileScreen thumbnails show video indicator, AI label, and 18+ badge identically to ProfileScreen",
+    "UserProfileScreen redirects to own profile tab when userId matches currentUser.id",
+    "CreateScreen hero preview is visibly portrait (3:4 ratio) with breathing room on sides",
+    "All existing functionality preserved"
+  ],
+  "verification": [
+    "Review UserProfileScreen.tsx renderPostThumbnail matches ProfileScreen pattern",
+    "Review UserProfileScreen.tsx has ownership redirect guard",
+    "Review CreateScreen.tsx heroTouchable dimensions create portrait aspect ratio"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

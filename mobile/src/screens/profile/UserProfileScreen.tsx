@@ -20,7 +20,7 @@ import { AppStackParamList } from '../../navigation/AppStack';
 import { lightColors } from '../../theme/colors';
 import { userService, User } from '../../services/user.service';
 import { Post } from '../../services/post.service';
-import { getPrimaryImageUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice';
 
@@ -51,6 +51,13 @@ export const UserProfileScreen = () => {
     loadProfile();
     loadPosts();
   }, [userId]);
+
+  // If viewing own profile, redirect to the Profile tab instead
+  useEffect(() => {
+    if (currentUser && userId === currentUser.id) {
+      navigation.replace('MainTabs' as any, { screen: 'Profile' } as any);
+    }
+  }, [currentUser, userId, navigation]);
 
   const loadProfile = async () => {
     try {
@@ -179,7 +186,10 @@ export const UserProfileScreen = () => {
   };
 
   const renderPostThumbnail = ({ item }: { item: Post }) => {
-    const imageUrl = getPrimaryImageUrl(item.media || []);
+    const isVideo = item.media?.[0]?.type === 'video';
+    const imageUrl = isVideo && item.media[0]?.url
+      ? getVideoThumbnailUrl(item.media[0].url)
+      : getPrimaryImageUrl(item.media || []);
     return (
       <TouchableOpacity
         style={styles.thumbnailContainer}
@@ -187,7 +197,26 @@ export const UserProfileScreen = () => {
         activeOpacity={0.8}
       >
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.gridImage} />
+          <View style={{ flex: 1, position: 'relative' }}>
+            <Image source={{ uri: imageUrl }} style={styles.gridImage} />
+            {isVideo && (
+              <View style={styles.videoIndicator}>
+                <Feather name="play" size={12} color="#FFFFFF" />
+              </View>
+            )}
+            {(item.isHumanMade === false || item.isNsfw === true) && (
+              <View style={styles.badgeOverlay}>
+                {item.isHumanMade === false && (
+                  <Text style={styles.subtleLabelOverlay}>AI</Text>
+                )}
+                {item.isNsfw === true && (
+                  <View style={styles.nsfwBadgeSmall}>
+                    <Text style={styles.badgeTextSmall}>18+</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
         ) : (
           <View style={styles.imagePlaceholder}>
             <Feather name="image" size={20} color={lightColors.textSecondary} />
@@ -654,5 +683,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: lightColors.textPrimary,
+  },
+  videoIndicator: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeOverlay: {
+    position: 'absolute',
+    bottom: 6,
+    left: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  subtleLabelOverlay: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    backgroundColor: 'rgba(139, 92, 246, 0.85)',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  nsfwBadgeSmall: {
+    backgroundColor: '#DC2626',
+    borderRadius: 7,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  badgeTextSmall: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
