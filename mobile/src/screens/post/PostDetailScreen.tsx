@@ -54,6 +54,10 @@ export const PostDetailScreen = () => {
 
   const isOwnPost = post && currentUser && post.authorId._id === currentUser.id;
 
+  // Navigation guard to prevent double-goBack race condition
+  const hasNavigatedBack = useRef<boolean>(false);
+  const goBackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Video player state
   const [isBuffering, setIsBuffering] = useState(false);
   const [playbackProgress, setPlaybackProgress] = useState(0);
@@ -99,7 +103,7 @@ export const PostDetailScreen = () => {
   const lastTap = useRef<number>(0);
   const tapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Clear tap timeout on unmount
+  // Clear timeouts on unmount
   useEffect(() => {
     return () => {
       if (tapTimeout.current) {
@@ -107,6 +111,9 @@ export const PostDetailScreen = () => {
       }
       if (pauseFadeTimeout.current) {
         clearTimeout(pauseFadeTimeout.current);
+      }
+      if (goBackTimeout.current) {
+        clearTimeout(goBackTimeout.current);
       }
     };
   }, []);
@@ -172,10 +179,20 @@ export const PostDetailScreen = () => {
             dispatch(removeFeedPost(postId));
             dispatch(removeUserPost(postId));
             Alert.alert('Unavailable', 'This post is no longer available.');
-            setTimeout(() => navigation.goBack(), 1500);
+            goBackTimeout.current = setTimeout(() => {
+              if (!hasNavigatedBack.current) {
+                hasNavigatedBack.current = true;
+                navigation.goBack();
+              }
+            }, 1500);
           } else if (error?.response?.status === 403) {
             Alert.alert('Restricted', 'This content is marked as mature and is not available with your current settings.');
-            setTimeout(() => navigation.goBack(), 1500);
+            goBackTimeout.current = setTimeout(() => {
+              if (!hasNavigatedBack.current) {
+                hasNavigatedBack.current = true;
+                navigation.goBack();
+              }
+            }, 1500);
           } else {
             Alert.alert('Error', 'Failed to load post.');
           }
@@ -277,7 +294,16 @@ export const PostDetailScreen = () => {
           </Text>
           <TouchableOpacity
             style={{ marginTop: 24, backgroundColor: '#FF3B30', paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8 }}
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              if (!hasNavigatedBack.current) {
+                hasNavigatedBack.current = true;
+                if (goBackTimeout.current) {
+                  clearTimeout(goBackTimeout.current);
+                  goBackTimeout.current = null;
+                }
+                navigation.goBack();
+              }
+            }}
           >
             <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>Go Back</Text>
           </TouchableOpacity>
