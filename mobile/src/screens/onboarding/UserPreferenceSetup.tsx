@@ -197,6 +197,11 @@ export const UserPreferenceSetup = () => {
     }
   };
 
+  const handleSkip = async () => {
+    await SecureStore.deleteItemAsync('needsUserOnboarding');
+    dispatch(clearNeedsUserOnboarding());
+  };
+
   const renderRoleIcon = (role: typeof ROLES[number]) => {
     if (role.iconFamily === 'MaterialCommunityIcons') {
       return <MaterialCommunityIcons name={role.icon as any} size={28} color={selectedRole === role.id ? '#FFFFFF' : lightColors.accent} />;
@@ -380,6 +385,15 @@ export const UserPreferenceSetup = () => {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Skip for now link */}
+      <TouchableOpacity
+        style={styles.skipLink}
+        onPress={handleSkip}
+        activeOpacity={0.6}
+      >
+        <Text style={styles.skipLinkText}>Skip for now</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -591,5 +605,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  skipLink: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingBottom: 20,
+  },
+  skipLinkText: {
+    fontSize: 14,
+    color: lightColors.textSecondary,
+    textDecorationLine: 'underline',
   },
 });

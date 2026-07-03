@@ -41,8 +41,8 @@ export const updateUserProfile = async (userId, updateData) => {
 
   // Username change validation: uniqueness check + 7-day cooldown
   if (updateData.username && updateData.username !== user.username) {
-    // Check 7-day cooldown
-    if (user.usernameChangedAt) {
+    // Check 7-day cooldown - only enforce if user already has a username set
+    if (user.username && user.usernameChangedAt) {
       const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
       const timeSinceLastChange = Date.now() - new Date(user.usernameChangedAt).getTime();
       if (timeSinceLastChange < sevenDaysMs) {
@@ -82,7 +82,21 @@ export const updateUserProfile = async (userId, updateData) => {
   }
 
   // This save triggers the DOB to age calculation in user.model.js!
-  await user.save();
+  try {
+    await user.save();
+  } catch (err) {
+    // Handle MongoDB duplicate key error (TOCTOU race on username)
+    if (err.code === 11000) {
+      const keyPattern = err.keyPattern || {};
+      if (keyPattern.username) {
+        throw Object.assign(
+          new Error('This username is already taken. Please choose a different one.'),
+          { status: 409 }
+        );
+      }
+    }
+    throw err;
+  }
   
   return user.toObject(); // Convert to plain object for the API response
 };
