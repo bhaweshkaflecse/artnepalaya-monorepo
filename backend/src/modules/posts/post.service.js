@@ -63,18 +63,21 @@ export const createPost = async (userId, postData) => {
 
   const post = await Post.create({ authorId: userId, ...postData });
 
+  // Populate author data before returning
+  const populatedPost = await post.populate('authorId', 'username avatarUrl role isVerified verifiedType fullName status');
+
   // Invalidate all feed caches after successful post creation
   invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));
 
   // Emit realtime event
-  emitToFeed(EVENTS.POST_CREATED, { postId: post._id.toString(), authorId: userId });
+  emitToFeed(EVENTS.POST_CREATED, { postId: populatedPost._id.toString(), authorId: userId });
 
   // Trigger Tags (Fire and forget)
-  if (post.tags && post.tags.length > 0) {
-    tagService.incrementTags(post.tags).catch(err => console.error('Tag increment failed:', err));
+  if (populatedPost.tags && populatedPost.tags.length > 0) {
+    tagService.incrementTags(populatedPost.tags).catch(err => console.error('Tag increment failed:', err));
   }
   
-  return post;
+  return populatedPost;
 };
 
 export const getSinglePost = async (postId, userId, showMatureContent = false) => {

@@ -321,7 +321,9 @@ export const CreateScreen = () => {
         },
       });
 
-      Alert.alert('Success', 'Artwork published successfully!');
+      Alert.alert('Success', 'Artwork published successfully!', [
+        { text: 'OK', onPress: () => (navigation as any).navigate('HomeFeed') }
+      ]);
       resetForm();
       const newPost = response.data.data;
       if (newPost) {

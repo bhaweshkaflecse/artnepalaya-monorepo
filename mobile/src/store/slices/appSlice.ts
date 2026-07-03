@@ -74,6 +74,9 @@ const appSlice = createSlice({
     setOnboardingComplete(state) {
       state.hasCompletedOnboarding = true;
     },
+    resetOnboarding(state) {
+      state.hasCompletedOnboarding = false;
+    },
     setUnreadCount(state, action: PayloadAction<number>) {
       state.unreadNotificationCount = action.payload;
     },
@@ -104,5 +107,5 @@ const appSlice = createSlice({
   },
 });
 
-export const { setOnboardingComplete, setUnreadCount, setAppReady } = appSlice.actions;
+export const { setOnboardingComplete, resetOnboarding, setUnreadCount, setAppReady } = appSlice.actions;
 export default appSlice.reducer;

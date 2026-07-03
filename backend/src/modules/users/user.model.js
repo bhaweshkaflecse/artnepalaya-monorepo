@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
       sparse: true,
       trim: true,
     },
+    usernameChangedAt: {
+      type: Date,
+      default: null,
+    },
     fullName: {
       type: String,
       trim: true,

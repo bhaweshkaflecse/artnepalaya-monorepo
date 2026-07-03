@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Premium Startup Experience Redesign (Task 2): Replace the current OnboardingScreen with a 3-screen premium startup experience. Screen 1: Logo + 'Made for Art Lovers & Creators' + description + artwork background. Screen 2: 'Made in Nepal. Built for the World.' + large artwork. Screen 3: 'Grow Your Creative Business' + roles list + Get Started CTA + Continue as Guest + Google Login + Developer Login. Use official logo from assets. Dark premium background. Beautiful typography. Fade animations.",
+  "status": "pending",
+  "steps": [
+    "STEP 1: Rewrite mobile/src/screens/onboarding/OnboardingScreen.tsx with 3 premium screens instead of the current 4 basic slides.",
+    "STEP 2: Screen 1 - Dark premium background (#0D0D0D or similar), display the official logo from '../../../assets/icon.png', title 'Made for Art Lovers & Creators', subtitle describing the platform, and a decorative artwork-style background element.",
+    "STEP 3: Screen 2 - 'Made in Nepal. Built for the World.' headline with a large artwork image placeholder (using the existing auth background media or a placeholder), emphasizing the Nepal origin story.",
+    "STEP 4: Screen 3 - 'Grow Your Creative Business' title, list of roles/features (Artist, Art Lover, Gallery, Business), a prominent 'Get Started' CTA button that completes onboarding, 'Continue as Guest' option that calls handleSkip (dispatch setGuest), Google Sign-In button that calls GoogleSignin.signIn(), and Developer Login button at the bottom.",
+    "STEP 5: Add fade-in/slide animations using React Native Animated API. Each screen should fade in content elegantly.",
+    "STEP 6: Preserve the existing interest selection functionality but move it to AFTER onboarding (or remove it since the new flow does not include it - the user spec does not mention interest selection in the new 3 screens).",
+    "STEP 7: Ensure the onboarding completion logic still works: dispatching setOnboardingComplete() and storing 'hasCompletedOnboarding' in SecureStore."
+  ],
+  "acceptance_criteria": [
+    "OnboardingScreen has exactly 3 screens matching the described content",
+    "Screen 1 has logo, 'Made for Art Lovers & Creators', description, dark background",
+    "Screen 2 has 'Made in Nepal. Built for the World.' with large artwork display",
+    "Screen 3 has 'Grow Your Creative Business', roles list, Get Started button, Guest option, Google login, Dev login",
+    "Fade animations are present on screen transitions",
+    "Get Started button completes onboarding (sets SecureStore + dispatches action)",
+    "Google login on Screen 3 triggers GoogleSignin flow",
+    "Continue as Guest dispatches setGuest"
+  ],
+  "verification": [
+    "Read back the file and confirm it has valid TypeScript/JSX syntax"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

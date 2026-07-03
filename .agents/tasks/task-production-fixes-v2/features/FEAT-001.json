@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix onboarding flow + Google account picker + username generation + admin credentials + push notifications + post-publish redirect + populated author data. This is a comprehensive backend + mobile fix batch.",
+  "status": "in_progress",
+  "steps": [
+    "STEP 1 - Google Account Picker (Task 3/5): In mobile/src/screens/auth/LoginScreen.tsx, add `await GoogleSignin.signOut()` before `await GoogleSignin.signIn()` in the handleGoogleLogin function. This forces the account chooser to appear every time.",
+    "STEP 2 - Username Generation (Task 6): In backend/src/modules/auth/auth.service.js, in the authenticateWithGoogle function, replace `username: payload.name` with a generated URL-safe lowercase username. Generate it as: take payload.name, lowercase it, remove all non-alphanumeric chars, then check uniqueness by querying User.findOne({username}). If taken, append incrementing suffix (01, 02, etc) until unique. Also add `usernameChangedAt` field to user.model.js for the 7-day cooldown.",
+    "STEP 3 - Admin Credentials (Task 9): In backend/src/scripts/seed.js, change the admin password from 'admin123' to 'SuperAdmin##5656#$$@'. In mobile/src/screens/auth/LoginScreen.tsx, change the dev login password in handleDevLogin from 'admin123' to 'SuperAdmin##5656#$$@'.",
+    "STEP 4 - Push Token Registration Fix (Task 4): The push notification pipeline looks correct (registerForPushNotifications calls notificationService.registerPushToken which POSTs to /users/me/push-token). The issue is likely that registerForPushNotifications is called without awaiting or the user is not yet authenticated when it runs. In LoginScreen.tsx handleAuthSuccess, ensure registerForPushNotifications is called AFTER setCredentials dispatches (it already is). But the api interceptor needs an access token - verify the token is stored BEFORE the push registration call. Move registerForPushNotifications to AFTER SecureStore.setItemAsync('accessToken', accessToken) completes. Also make it await instead of fire-and-forget, or at minimum ensure it runs after the token is set.",
+    "STEP 5 - Post-Publish Redirect (Task 7): In mobile/src/screens/create/CreateScreen.tsx, after the Alert.alert('Success', 'Artwork published successfully!') call, add navigation to reset to the Home tab. Use navigation.getParent()?.navigate('Home') or navigation.navigate('HomeFeed' as never) depending on the nav structure. The Alert should have a button that triggers navigation.",
+    "STEP 6 - Populated Author Data (Task 8): In backend/src/modules/posts/post.service.js, in the createPost function, after Post.create(), populate the authorId field before returning. Change: `const post = await Post.create(...)` then add `const populatedPost = await post.populate('authorId', 'username avatarUrl role isVerified verifiedType fullName status');` and return populatedPost instead of post.",
+    "STEP 7 - Onboarding Flow (Task 1): The onboarding flow issue is that for existing device installs, SecureStore already has 'hasCompletedOnboarding' = 'true'. The fix: in authenticateWithGoogle (auth.service.js), return an `isNewUser` flag. In LoginScreen.tsx handleAuthSuccess, if authResponse.data.isNewUser is true, clear the SecureStore onboarding key with `await SecureStore.deleteItemAsync('hasCompletedOnboarding')` and dispatch an action to reset hasCompletedOnboarding to false in appSlice. This will trigger the onboarding screen.",
+    "STEP 8 - Add usernameChangedAt field to User model: In backend/src/modules/users/user.model.js, add a `usernameChangedAt` field of type Date with default null after the username field."
+  ],
+  "acceptance_criteria": [
+    "GoogleSignin.signOut() is called before signIn() in handleGoogleLogin",
+    "authenticateWithGoogle generates a URL-safe lowercase username without spaces",
+    "authenticateWithGoogle returns isNewUser boolean flag",
+    "Seed script uses new admin password 'SuperAdmin##5656#$$@'",
+    "LoginScreen dev login uses new admin password 'SuperAdmin##5656#$$@'",
+    "registerForPushNotifications is called after access token is stored in SecureStore",
+    "createPost in post.service.js returns a populated post with author data",
+    "CreateScreen navigates to Home after successful publish alert",
+    "User model has usernameChangedAt field",
+    "LoginScreen clears onboarding key when isNewUser is true"
+  ],
+  "verification": [
+    "Check that all modified files have valid syntax by reading them back"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

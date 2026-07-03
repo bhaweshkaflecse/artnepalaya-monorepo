@@ -35,20 +35,32 @@ export const authenticateWithGoogle = async (idToken, deviceId) => {
   const payload = ticket.getPayload();
   
   let user = await User.findOne({ email: payload.email });
+  let isNewUser = false;
+
   if (!user) {
+    // Generate URL-safe lowercase username from display name
+    const baseUsername = (payload.name || 'user').toLowerCase().replace(/[^a-z0-9]/g, '');
+    let username = baseUsername;
+    let suffix = 0;
+    while (await User.findOne({ username })) {
+      suffix++;
+      username = `${baseUsername}${String(suffix).padStart(2, '0')}`;
+    }
+
     user = await User.create({
       email: payload.email,
-      username: payload.name,
+      username,
       avatarUrl: payload.picture,
       status: 'active',
       role: 'Art Lover' 
     });
+    isNewUser = true;
   }
 
   const tokens = await generateTokens(user._id, user.role, deviceId);
   const userData = user.toObject();
   userData.id = userData._id.toString();
-  return { user: userData, ...tokens };
+  return { user: userData, ...tokens, isNewUser };
 };
 
 export const sendOtp = async (phoneNumber) => {

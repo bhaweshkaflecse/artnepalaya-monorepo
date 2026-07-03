@@ -1,0 +1,7 @@
+{
+  "task_id": "task-production-fixes-v2",
+  "task_description": "Comprehensive production stabilization: fix onboarding flow, add Google account picker, fix push notifications, username generation, post-publish redirect, populated author data, admin credentials update, and premium startup experience redesign.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

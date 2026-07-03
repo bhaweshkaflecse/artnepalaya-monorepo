@@ -44,7 +44,7 @@ async function seed() {
           fullName: 'System Administrator',
           role: 'Admin',
           status: 'active',
-          passwordHash: bcryptjs.hashSync('admin123', 10)
+          passwordHash: bcryptjs.hashSync('SuperAdmin##5656#$$@', 10)
         }
       },
       { upsert: true, new: true, runValidators: true }

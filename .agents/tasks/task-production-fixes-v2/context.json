@@ -1,0 +1,33 @@
+{
+  "project_type": "Full-stack React Native (Expo) + Node.js Express + MongoDB",
+  "language": "TypeScript (mobile), JavaScript (backend)",
+  "build_system": "expo (mobile), node (backend), no monorepo tooling",
+  "test_framework": "none configured",
+  "build_command": "N/A - INTEGRATIONS_ONLY network, cannot install dependencies",
+  "test_command": "N/A - no test framework configured",
+  "verification_instructions": "AST validation via TypeScript compiler checks on individual files",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "N/A - cannot install, work directly on source files",
+  "environment_constraints": "INTEGRATIONS_ONLY network - cannot npm install, cannot add packages, cannot run builds. Only file modifications and git operations.",
+  "contribution_requirements": "Commit directly to fix/final-stabilization branch. One commit per logical fix.",
+  "key_patterns": "Redux Toolkit slices in mobile/src/store/slices/. Services in mobile/src/services/. Backend uses ES modules with .js extension. Backend auth uses JWT with Redis for refresh tokens. Cloudinary for media storage. SecureStore for mobile persistence.",
+  "relevant_files": [
+    "mobile/src/screens/auth/LoginScreen.tsx",
+    "mobile/src/screens/create/CreateScreen.tsx",
+    "mobile/src/screens/onboarding/OnboardingScreen.tsx",
+    "mobile/src/navigation/RootNavigator.tsx",
+    "mobile/src/store/slices/appSlice.ts",
+    "mobile/src/store/slices/authSlice.ts",
+    "mobile/src/services/pushNotification.service.ts",
+    "mobile/src/services/notification.service.ts",
+    "backend/src/modules/auth/auth.service.js",
+    "backend/src/modules/posts/post.service.js",
+    "backend/src/modules/posts/post.controller.js",
+    "backend/src/modules/users/user.model.js",
+    "backend/src/modules/users/user.service.js",
+    "backend/src/scripts/seed.js",
+    "backend/src/middlewares/upload.js",
+    "mobile/App.tsx"
+  ],
+  "directory_structure": "monorepo with /mobile (Expo RN app), /backend (Express API), /admin (Vite React admin panel)"
+}

@@ -23,7 +23,7 @@ import * as SecureStore from 'expo-secure-store';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { setCredentials, setGuest } from '../../store/slices/authSlice';
-import { fetchAuthConfig } from '../../store/slices/appSlice';
+import { fetchAuthConfig, resetOnboarding } from '../../store/slices/appSlice';
 import { api } from '../../services/api';
 import { authService } from '../../services/auth.service';
 import { lightColors } from '../../theme/colors';
@@ -169,7 +169,7 @@ export const LoginScreen = () => {
       }
 
       const authResponse = await authService.googleLogin(idToken, deviceId);
-      const { user, accessToken, refreshToken } = authResponse.data;
+      const { user, accessToken, refreshToken, isNewUser } = authResponse.data;
 
       await SecureStore.setItemAsync('accessToken', accessToken);
       await SecureStore.setItemAsync('refreshToken', refreshToken);
@@ -177,6 +177,13 @@ export const LoginScreen = () => {
 
       dispatch(setCredentials({ user, accessToken, refreshToken }));
 
+      // If this is a new user, reset onboarding so they see the onboarding flow
+      if (isNewUser) {
+        await SecureStore.deleteItemAsync('hasCompletedOnboarding');
+        dispatch(resetOnboarding());
+      }
+
+      // Register push notifications after credentials are fully stored
       registerForPushNotifications().catch((err) =>
         console.warn('[LoginScreen] Push notification registration failed:', err)
       );
@@ -195,6 +202,7 @@ export const LoginScreen = () => {
     setIsLoading(true);
     try {
       await GoogleSignin.hasPlayServices();
+      await GoogleSignin.signOut();
       const userInfo = await GoogleSignin.signIn();
       const idToken = userInfo.idToken;
       if (idToken) {
@@ -252,7 +260,7 @@ export const LoginScreen = () => {
     try {
       const res = await api.post('/auth/admin-login', {
         email: 'admin@artnepalaya.com',
-        password: 'admin123',
+        password: 'SuperAdmin##5656#$$@',
       });
       const { user, accessToken, refreshToken } = res.data.data;
 
