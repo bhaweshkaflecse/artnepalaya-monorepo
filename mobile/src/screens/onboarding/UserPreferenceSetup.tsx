@@ -151,10 +151,18 @@ export const UserPreferenceSetup = () => {
   const handleComplete = async () => {
     if (!selectedRole) return;
 
+    // Map lowercase role IDs to the User model's exact enum values
+    const roleMap: Record<string, string> = {
+      'artist': 'Artist',
+      'art_lover': 'Art Lover',
+      'business': 'Business',
+      'gallery': 'Gallery',
+    };
+
     setIsSubmitting(true);
     try {
       await api.put('/users/me', {
-        role: selectedRole,
+        role: roleMap[selectedRole] || selectedRole,
         subRoles: selectedSubRoles,
         interests: selectedInterests,
       });

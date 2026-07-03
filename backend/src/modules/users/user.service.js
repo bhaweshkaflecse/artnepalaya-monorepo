@@ -39,14 +39,47 @@ export const updateUserProfile = async (userId, updateData) => {
     throw Object.assign(new Error('User not found'), { status: 404 });
   }
 
+  // Username change validation: uniqueness check + 7-day cooldown
+  if (updateData.username && updateData.username !== user.username) {
+    // Check 7-day cooldown
+    if (user.usernameChangedAt) {
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      const timeSinceLastChange = Date.now() - new Date(user.usernameChangedAt).getTime();
+      if (timeSinceLastChange < sevenDaysMs) {
+        const daysRemaining = Math.ceil((sevenDaysMs - timeSinceLastChange) / (24 * 60 * 60 * 1000));
+        throw Object.assign(
+          new Error(`You can only change your username once every 7 days. Please wait ${daysRemaining} more day${daysRemaining === 1 ? '' : 's'}.`),
+          { status: 400 }
+        );
+      }
+    }
+
+    // Check uniqueness before attempting save
+    const existingUser = await User.findOne({ username: updateData.username, _id: { $ne: userId } }).lean();
+    if (existingUser) {
+      throw Object.assign(
+        new Error('This username is already taken. Please choose a different one.'),
+        { status: 409 }
+      );
+    }
+  }
+
   // Define exactly what the user is allowed to change (mapped to our Zod schema)
   const allowedUpdates = ['username', 'fullName', 'avatarUrl', 'dob', 'role', 'subRoles', 'interests', 'bio', 'location', 'website', 'whatsapp', 'contactPhone', 'nsfwBlurEnabled', 'showMatureContent'];
   
+  // Track if username is actually changing
+  const isUsernameChanging = updateData.username && updateData.username !== user.username;
+
   allowedUpdates.forEach((field) => {
     if (updateData[field] !== undefined) {
       user[field] = updateData[field];
     }
   });
+
+  // Set usernameChangedAt timestamp if username was changed
+  if (isUsernameChanging) {
+    user.usernameChangedAt = new Date();
+  }
 
   // This save triggers the DOB to age calculation in user.model.js!
   await user.save();
