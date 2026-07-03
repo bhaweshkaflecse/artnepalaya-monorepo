@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Premium Startup Experience Redesign (Task 2): Replace the current OnboardingScreen with a 3-screen premium startup experience. Screen 1: Logo + 'Made for Art Lovers & Creators' + description + artwork background. Screen 2: 'Made in Nepal. Built for the World.' + large artwork. Screen 3: 'Grow Your Creative Business' + roles list + Get Started CTA + Continue as Guest + Google Login + Developer Login. Use official logo from assets. Dark premium background. Beautiful typography. Fade animations.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "STEP 1: Rewrite mobile/src/screens/onboarding/OnboardingScreen.tsx with 3 premium screens instead of the current 4 basic slides.",
     "STEP 2: Screen 1 - Dark premium background (#0D0D0D or similar), display the official logo from '../../../assets/icon.png', title 'Made for Art Lovers & Creators', subtitle describing the platform, and a decorative artwork-style background element.",
