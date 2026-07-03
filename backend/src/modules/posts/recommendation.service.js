@@ -98,13 +98,9 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
   // Step 6: Use a single unified query with $or to fetch all candidate posts,
   // then split into preference/discovery pools in JavaScript.
   // This eliminates cursor drift because one query = one cursor boundary.
-  // Also filter out legacy posts without artworkType for correct categorization.
   const totalFetchLimit = limit * 2;
 
-  const candidatePosts = await Post.find({
-    ...baseQuery,
-    artworkType: { $exists: true, $ne: [] },
-  })
+  const candidatePosts = await Post.find(baseQuery)
     .sort({ _id: -1 })
     .limit(totalFetchLimit)
     .populate('authorId', 'username avatarUrl role isVerified verifiedType')
