@@ -1,0 +1,22 @@
+{
+  "id": "FEAT-003",
+  "type": "docs",
+  "description": "Push Notifications pipeline audit documentation and post publishing pipeline audit",
+  "status": "in_progress",
+  "steps": [
+    "Create a comprehensive audit document at .agents/tasks/task-production-qa-pass-2/PUSH_NOTIFICATIONS_AUDIT.md explaining the complete push notification pipeline: (1) Token Generation: mobile/src/services/pushNotification.service.ts calls expo-notifications getExpoPushTokenAsync(), (2) Token Storage: calls notificationService.registerPushToken(token) which POSTs to /users/me/push-token - backend stores in user.pushTokens array, (3) Token Registration Timing: called from LoginScreen after successful auth (handleAuthSuccess and handleDevLogin), (4) Delivery: backend/src/shared/utils/pushNotifications.js uses expo-server-sdk to send to all valid tokens, (5) Triggering: notification.service.js calls sendPushNotifications when notifications are created. Note: timing issue is that registerForPushNotifications is called AFTER credentials are stored but the token POST requires auth - this should work because SecureStore has the token by then.",
+    "Create .agents/tasks/task-production-qa-pass-2/POST_PIPELINE_AUDIT.md documenting the 7-stage media pipeline: (1) PICKER: expo-image-picker with allowsMultipleSelection=true, selectionLimit=6-current, mediaTypes=All, quality=0.8. Max 5 images + 1 video. (2) FORMDATA: All media appended as 'media' field, filename derived from URI, mime type from extension. (3) MULTER: Check backend upload middleware configuration. (4) CLOUDINARY: Check how media array is stored. (5) MONGODB: Post model media field. (6) GET API: How media is returned. (7) RENDERING: How PostDetailScreen, Feed, Profile, Explore render media arrays. Identify where media loss could occur.",
+    "In the POST_PIPELINE_AUDIT.md, include specific findings about the media picker limit (selectionLimit = Math.max(1, 6 - mediaItems.length) which correctly allows up to 6 total), FormData construction (appends ALL items to 'media' key), and verify backend multer config accepts multiple files."
+  ],
+  "acceptance_criteria": [
+    "PUSH_NOTIFICATIONS_AUDIT.md exists with complete pipeline explanation",
+    "POST_PIPELINE_AUDIT.md exists with 7-stage analysis identifying potential loss points",
+    "No code changes in this feature - documentation only"
+  ],
+  "verification": [
+    "Verify PUSH_NOTIFICATIONS_AUDIT.md file exists and covers all 5 stages",
+    "Verify POST_PIPELINE_AUDIT.md file exists and covers all 7 stages"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
