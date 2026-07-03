@@ -13,6 +13,7 @@ import {
   Animated,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import Svg, { Path, Circle, Polygon } from 'react-native-svg';
 import * as SecureStore from 'expo-secure-store';
 import { useAppDispatch } from '../../store';
 import { setOnboardingComplete } from '../../store/slices/appSlice';
@@ -29,6 +30,69 @@ const slides: SlideData[] = [
   { id: '2', key: 'origin' },
   { id: '3', key: 'getStarted' },
 ];
+
+/**
+ * Nepal Flag SVG Component
+ * The only non-rectangular national flag in the world.
+ * Two stacked triangular pennants in crimson red (#DC143C) with blue border (#003893)
+ * and white (#FFFFFF) sun and crescent moon symbols.
+ */
+const NepalFlag = () => (
+  <Svg width={200} height={240} viewBox="0 0 200 240">
+    {/* Blue border - outer shape of the flag */}
+    <Path
+      d="M 10 230 L 10 10 L 160 95 L 10 95 L 10 95 L 160 95 Z"
+      fill="none"
+    />
+    {/* Lower pennant - blue border */}
+    <Polygon
+      points="15,225 15,85 165,225"
+      fill="#003893"
+    />
+    {/* Lower pennant - crimson fill (inset) */}
+    <Polygon
+      points="25,215 25,100 148,215"
+      fill="#DC143C"
+    />
+    {/* Upper pennant - blue border */}
+    <Polygon
+      points="15,105 15,10 145,105"
+      fill="#003893"
+    />
+    {/* Upper pennant - crimson fill (inset) */}
+    <Polygon
+      points="25,98 25,25 128,98"
+      fill="#DC143C"
+    />
+    {/* Crescent moon in upper triangle - white */}
+    {/* Moon outer circle */}
+    <Circle cx={60} cy={60} r={18} fill="#FFFFFF" />
+    {/* Moon inner circle (creates crescent) */}
+    <Circle cx={60} cy={52} r={16} fill="#DC143C" />
+    {/* Moon base arc - small white semi circle at bottom */}
+    <Path
+      d="M 45 65 Q 60 78 75 65"
+      fill="#FFFFFF"
+      stroke="#FFFFFF"
+      strokeWidth={2}
+    />
+    {/* 12-pointed sun in lower triangle - white */}
+    <Circle cx={70} cy={165} r={14} fill="#FFFFFF" />
+    {/* Sun rays - 12 triangular points */}
+    <Polygon points="70,145 67,151 73,151" fill="#FFFFFF" />
+    <Polygon points="80,148 76,153 80,155" fill="#FFFFFF" />
+    <Polygon points="87,155 82,157 84,162" fill="#FFFFFF" />
+    <Polygon points="90,165 84,163 84,167" fill="#FFFFFF" />
+    <Polygon points="87,175 84,169 82,173" fill="#FFFFFF" />
+    <Polygon points="80,182 80,176 76,178" fill="#FFFFFF" />
+    <Polygon points="70,185 73,179 67,179" fill="#FFFFFF" />
+    <Polygon points="60,182 64,178 60,176" fill="#FFFFFF" />
+    <Polygon points="53,175 56,173 58,169" fill="#FFFFFF" />
+    <Polygon points="50,165 56,167 56,163" fill="#FFFFFF" />
+    <Polygon points="53,155 56,162 58,157" fill="#FFFFFF" />
+    <Polygon points="60,148 60,155 64,153" fill="#FFFFFF" />
+  </Svg>
+);
 
 export const OnboardingScreen = () => {
   const dispatch = useAppDispatch();
@@ -157,13 +221,10 @@ export const OnboardingScreen = () => {
               Made in Nepal.{'\n'}Built for the World.
             </Text>
 
-            {/* Large artwork placeholder */}
+            {/* Nepal Flag SVG */}
             <View style={styles.artworkPlaceholder}>
               <View style={styles.artworkInner}>
-                <MaterialCommunityIcons name="palette" size={64} color="rgba(255,255,255,0.3)" />
-                <Text style={styles.artworkPlaceholderText}>
-                  Connecting Nepali artists{'\n'}with the global community
-                </Text>
+                <NepalFlag />
               </View>
             </View>
 
