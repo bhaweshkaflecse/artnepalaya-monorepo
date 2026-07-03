@@ -5,6 +5,7 @@ import { api } from '../services/api';
 interface Report {
   _id: string;
   targetType: string;
+  targetId?: string;
   reason: string;
   reporterId: { username: string } | string;
   details?: string;
@@ -156,6 +157,7 @@ export const Moderation = () => {
             <tr className="bg-gray-50/80 border-b border-gray-100">
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Report ID</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Target Type</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Post ID</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Reason</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Reporter</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Details</th>
@@ -170,16 +172,18 @@ export const Moderation = () => {
                 <tr key={i} className="border-b border-gray-50">
                   <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
                   <td className="px-5 py-3.5"><div className="h-4 w-12 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
                   <td className="px-5 py-3.5"><div className="h-4 w-28 animate-pulse bg-gray-100 rounded" /></td>
                   <td className="px-5 py-3.5"><div className="h-4 w-20 animate-pulse bg-gray-100 rounded" /></td>
                   <td className="px-5 py-3.5"><div className="h-4 w-32 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
                   <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
                   <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
                 </tr>
               ))
             ) : reports.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-5 py-16 text-center">
+                <td colSpan={9} className="px-5 py-16 text-center">
                   <ShieldAlert size={40} className="mx-auto text-gray-200 mb-3" />
                   <p className="text-gray-400">No reports found.</p>
                 </td>
@@ -199,6 +203,18 @@ export const Moderation = () => {
                     </div>
                   </td>
                   <td className="px-5 py-3.5 text-sm">{report.targetType}</td>
+                  <td className="px-5 py-3.5">
+                    {report.targetId ? (
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-xs font-mono text-gray-500 truncate max-w-[140px]" title={report.targetId}>{report.targetId}</span>
+                        <button onClick={() => copyToClipboard(report.targetId!)} className="text-gray-400 hover:text-gray-600 p-0.5 rounded transition-colors" title="Copy Post ID">
+                          {copiedId === report.targetId ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
+                  </td>
                   <td className="px-5 py-3.5 text-sm text-accent font-medium">{report.reason}</td>
                   <td className="px-5 py-3.5 text-sm">{getReporterName(report.reporterId)}</td>
                   <td className="px-5 py-3.5 text-sm text-gray-500 max-w-[200px] truncate">
@@ -237,7 +253,7 @@ export const Moderation = () => {
                 </tr>
                 {expandedNotes === report._id && (
                   <tr className="bg-gray-50/50">
-                    <td colSpan={8} className="px-5 py-3">
+                    <td colSpan={9} className="px-5 py-3">
                       <div className="flex items-start space-x-3">
                         <textarea
                           value={notesText}
