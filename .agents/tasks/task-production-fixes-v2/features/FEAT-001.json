@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Fix onboarding flow + Google account picker + username generation + admin credentials + push notifications + post-publish redirect + populated author data. This is a comprehensive backend + mobile fix batch.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "STEP 1 - Google Account Picker (Task 3/5): In mobile/src/screens/auth/LoginScreen.tsx, add `await GoogleSignin.signOut()` before `await GoogleSignin.signIn()` in the handleGoogleLogin function. This forces the account chooser to appear every time.",
     "STEP 2 - Username Generation (Task 6): In backend/src/modules/auth/auth.service.js, in the authenticateWithGoogle function, replace `username: payload.name` with a generated URL-safe lowercase username. Generate it as: take payload.name, lowercase it, remove all non-alphanumeric chars, then check uniqueness by querying User.findOne({username}). If taken, append incrementing suffix (01, 02, etc) until unique. Also add `usernameChangedAt` field to user.model.js for the 7-day cooldown.",
@@ -29,5 +29,5 @@
     "Check that all modified files have valid syntax by reading them back"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 8 steps implemented successfully. GoogleSignin.signOut() added before signIn(). Username generation uses lowercase alphanumeric with suffix deduplication. Admin password updated in both seed.js and LoginScreen. Push notification registration confirmed to run after SecureStore writes and setCredentials dispatch. Post-publish navigates to HomeFeed on alert dismiss. createPost populates authorId before returning. resetOnboarding reducer added to appSlice. usernameChangedAt field added to user model. isNewUser flag returned from authenticateWithGoogle and consumed in handleAuthSuccess to reset onboarding state."
 }
