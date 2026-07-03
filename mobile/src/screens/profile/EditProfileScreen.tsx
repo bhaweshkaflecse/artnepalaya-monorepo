@@ -27,6 +27,19 @@ const ROLE_OPTIONS = [
   { label: 'Art Lover', emoji: '❤️', value: 'Art Lover' },
 ];
 
+const SUB_ROLE_OPTIONS = [
+  'Painter',
+  'Sculptor',
+  'Photographer',
+  'Digital Artist',
+  'Illustrator',
+  'Calligrapher',
+  'Printmaker',
+  'Ceramicist',
+  'Textile Artist',
+  'Mixed Media Artist',
+];
+
 const BLOCKED_SOCIAL_DOMAINS = [
   'facebook.com',
   'fb.com',
@@ -140,6 +153,9 @@ export const EditProfileScreen = () => {
   const [selectedInterests, setSelectedInterests] = useState<string[]>(
     (profile as any)?.interests || []
   );
+  const [selectedSubRoles, setSelectedSubRoles] = useState<string[]>(
+    (profile as any)?.subRoles || []
+  );
   const [artworkTypes, setArtworkTypes] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [contactError, setContactError] = useState('');
@@ -236,6 +252,7 @@ export const EditProfileScreen = () => {
         whatsapp: whatsapp.trim() || null,
         contactPhone: contactPhone.trim() || null,
         interests: selectedInterests,
+        subRoles: selectedSubRoles,
       };
       // Only include role if it's a valid non-admin role (Admin role cannot be changed via this form)
       const validRoles = ['Artist', 'Art Lover', 'Business', 'Gallery'];
@@ -429,6 +446,49 @@ export const EditProfileScreen = () => {
                 </Text>
               </TouchableOpacity>
             ))}
+          </View>
+        </View>
+
+        {/* Sub Roles */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Sub Roles</Text>
+          <View style={styles.rolesContainer}>
+            {SUB_ROLE_OPTIONS.map((subRole) => {
+              const isSelected = selectedSubRoles.includes(subRole);
+              return (
+                <TouchableOpacity
+                  key={subRole}
+                  style={[
+                    styles.roleChip,
+                    isSelected && styles.roleChipSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectedSubRoles((prev) =>
+                      prev.includes(subRole)
+                        ? prev.filter((r) => r !== subRole)
+                        : [...prev, subRole]
+                    );
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.roleLabel,
+                      isSelected && styles.roleLabelSelected,
+                    ]}
+                  >
+                    {subRole}
+                  </Text>
+                  {isSelected && (
+                    <Feather
+                      name="check"
+                      size={14}
+                      color={lightColors.accent}
+                      style={{ marginLeft: 4 }}
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
