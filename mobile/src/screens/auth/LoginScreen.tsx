@@ -24,7 +24,6 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 import { useAppDispatch, useAppSelector } from '../../store';
 import { setCredentials, setGuest } from '../../store/slices/authSlice';
 import { fetchAuthConfig, setNeedsUserOnboarding } from '../../store/slices/appSlice';
-import { api } from '../../services/api';
 import { authService } from '../../services/auth.service';
 import { lightColors } from '../../theme/colors';
 import { registerForPushNotifications } from '../../services/pushNotification.service';
@@ -55,8 +54,6 @@ export const LoginScreen = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
-  const [devLoading, setDevLoading] = useState(false);
-  const [devError, setDevError] = useState<string | null>(null);
 
   // Carousel state - PanResponder approach (no ScrollView clipping)
   const authBackgroundMedia = useAppSelector((state) => state.app.authBackgroundMedia);
@@ -252,44 +249,6 @@ export const LoginScreen = () => {
         console.warn('[LoginScreen] Guest SecureStore cleanup failed:', e);
       }
     })();
-  };
-
-  const handleDevLogin = async () => {
-    setDevLoading(true);
-    setDevError(null);
-    try {
-      const res = await api.post('/auth/admin-login', {
-        email: 'admin@artnepalaya.com',
-        password: 'SuperAdmin##5656#$$@',
-      });
-      const { user, accessToken, refreshToken } = res.data.data;
-
-      await SecureStore.setItemAsync('accessToken', accessToken);
-      await SecureStore.setItemAsync('refreshToken', refreshToken);
-      await SecureStore.setItemAsync('userData', JSON.stringify(user));
-
-      dispatch(setCredentials({ user, accessToken, refreshToken }));
-
-      registerForPushNotifications().catch((err) =>
-        console.warn('[LoginScreen] Push notification registration failed:', err)
-      );
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.error?.message ||
-        error?.message ||
-        'Backend unreachable. Is the server running?';
-      setDevError(message);
-      console.error('[DevLogin] Full error:', {
-        status: error?.response?.status,
-        data: error?.response?.data,
-        message: error?.message,
-        code: error?.code,
-        configUrl: error?.config?.url,
-        configBaseURL: error?.config?.baseURL,
-      });
-    } finally {
-      setDevLoading(false);
-    }
   };
 
   // Button press animation helpers
@@ -533,31 +492,6 @@ export const LoginScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Developer Login (QA Only) - below the fold */}
-          <View style={styles.devLoginContainer}>
-            <View style={styles.devDivider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.devDividerText}>QA Only</Text>
-              <View style={styles.dividerLine} />
-            </View>
-            {devError && (
-              <Text style={styles.devErrorText}>{devError}</Text>
-            )}
-            <TouchableOpacity
-              style={[styles.devLoginButton, devLoading && styles.devLoginButtonDisabled]}
-              onPress={handleDevLogin}
-              disabled={devLoading}
-            >
-              {devLoading ? (
-                <ActivityIndicator size="small" color={lightColors.textSecondary} />
-              ) : (
-                <>
-                  <Feather name="terminal" size={14} color={lightColors.textSecondary} style={styles.devButtonIcon} />
-                  <Text style={styles.devLoginText}>Developer Login (QA Only)</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -841,59 +775,4 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
 
-  // Dev Login - below fold
-  devLoginContainer: {
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    marginTop: 60,
-    marginBottom: 8,
-  },
-  devDivider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 6,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: lightColors.border,
-  },
-  devDividerText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: lightColors.textSecondary,
-    marginHorizontal: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  devLoginButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: lightColors.border,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    width: '100%',
-    backgroundColor: lightColors.surface,
-  },
-  devLoginButtonDisabled: {
-    opacity: 0.6,
-  },
-  devButtonIcon: {
-    marginRight: 8,
-  },
-  devLoginText: {
-    fontSize: 12,
-    color: lightColors.textSecondary,
-    fontWeight: '500',
-  },
-  devErrorText: {
-    fontSize: 12,
-    color: '#DC3545',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
 });
