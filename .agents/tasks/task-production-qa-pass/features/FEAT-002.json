@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-002",
+  "type": "docs",
+  "description": "Production QA verification report for Tasks 2-8: Username generation verification, username editing (uniqueness + cooldown), developer login analysis, push notifications pipeline verification, admin panel user management audit, and existing feature preservation confirmation.",
+  "status": "completed",
+  "steps": [
+    "1. Create a QA verification report file at mobile/QA_VERIFICATION_REPORT.md documenting findings for each task.",
+    "2. Task 2 (Username Generation): Document that backend/src/modules/auth/auth.service.js line 42-48 generates usernames correctly: baseUsername = (payload.name || 'user').toLowerCase().replace(/[^a-z0-9]/g, ''), with incrementing zero-padded suffix. This removes ALL spaces and special characters. Code is CORRECT.",
+    "3. Task 3 (Username Editing): Document that usernameChangedAt field EXISTS in user.model.js but NO validation or enforcement exists in user.validation.js or user.service.js. The updateProfileSchema allows any username change without checking uniqueness (handled by MongoDB unique index throwing error) or checking the 7-day cooldown. ADD: username uniqueness pre-check and 7-day cooldown logic to user.service.js updateUserProfile function.",
+    "4. Task 4 (Developer Login): Document that authenticateAdmin in auth.service.js requires a user with email 'admin@artnepalaya.com', role 'Admin', and a matching passwordHash. The password in code is 'SuperAdmin##5656#$$@'. If the DB does not have a user with a bcrypt hash of this password, it will return 'Invalid credentials'. The seed script (seed.js) creates the admin user but does NOT set passwordHash. The DB NEEDS RE-SEEDING with the correct passwordHash.",
+    "5. Task 5 (Push Notifications): Document the full pipeline: Mobile registers via expo-notifications -> POST /users/me/push-token stores token in User.pushTokens array -> Backend broadcastNotification or notification creation looks up pushTokens -> expo-server-sdk sends via Expo Push API. Pipeline is CORRECTLY IMPLEMENTED. Cannot test on physical device.",
+    "6. Task 6 (App Onboarding): This is the same as Task 1A - handled in FEAT-001. Document that after FEAT-001, OnboardingScreen will only have marketing + Get Started.",
+    "7. Task 7 (Admin Panel): Document current fields displayed: Avatar, Username (with verification badge), Interests (as tags), Email, Role, Sub-roles, 18+ status, Status badge, Actions (Activate/Suspend/Ban/Verify/Unverify). MISSING fields: fullName, phone/contactPhone, location, website, whatsapp, bio, createdAt/joinDate, lastActive, DOB/age, pushTokens count, post count, follower/following counts.",
+    "8. Task 8 (Preserve existing features): Verify that FEAT-001 changes do NOT modify: Google Sign-In flow in LoginScreen (handleGoogleLogin intact), account chooser (GoogleSignin.signOut before signIn forces chooser), publish redirect logic, profile update (PUT /users/me) logic."
+  ],
+  "acceptance_criteria": [
+    "QA_VERIFICATION_REPORT.md file exists with status for each task",
+    "Each task has a clear status: Implemented & Verified, Implemented Not Verified, or Not Implemented",
+    "Task 3 username cooldown fix is implemented in user.service.js",
+    "Report clearly states DB needs re-seeding for dev login"
+  ],
+  "verification": [
+    "Verify QA_VERIFICATION_REPORT.md exists in the repository root or mobile/ directory",
+    "Verify user.service.js has username uniqueness check and 7-day cooldown enforcement"
+  ],
+  "blocked_reason": null,
+  "findings": "All acceptance criteria met. Username uniqueness check added (409 error) + 7-day cooldown enforced (400 error) in user.service.js updateUserProfile. Role mapping fix applied in UserPreferenceSetup.tsx (lowercase IDs mapped to User model enum values). QA_VERIFICATION_REPORT.md created at repo root with comprehensive status for all 8 tasks. Two separate commits made as requested."
+}
