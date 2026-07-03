@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Separate App Onboarding from User Onboarding: Strip all auth from OnboardingScreen (keep only marketing + Get Started), create UserPreferenceSetup screen (3-step: role, about you, interests), wire into RootNavigator with needsUserOnboarding state, fix LoginScreen isNewUser handling to trigger user onboarding instead of resetting app onboarding.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. Modify mobile/src/screens/onboarding/OnboardingScreen.tsx: Remove ALL auth logic (Google, Guest, Dev login). Remove imports for GoogleSignin, authService, api, setCredentials, setGuest. Keep only the 3 marketing slides and 'Get Started' button that calls handleGetStarted (which dispatches setOnboardingComplete and stores in SecureStore). The 'Get Started' button should be the ONLY interactive element on screen 3. Remove the roles list from screen 3 since that belongs in UserPreferenceSetup.",
     "2. Add needsUserOnboarding state to mobile/src/store/slices/appSlice.ts: Add field 'needsUserOnboarding: boolean' (default false) to AppState. Add reducers 'setNeedsUserOnboarding(state)' that sets it true and 'clearNeedsUserOnboarding(state)' that sets it false. Also load this state from SecureStore key 'needsUserOnboarding' in the loadAppState thunk (if stored value is 'true'). Export the new actions.",
@@ -30,5 +30,5 @@
     "Verify LoginScreen.tsx does not import resetOnboarding"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All acceptance criteria met. OnboardingScreen stripped of all auth logic (Google, Guest, Dev). appSlice now has needsUserOnboarding state with persistence via SecureStore. LoginScreen dispatches setNeedsUserOnboarding for new users instead of resetOnboarding. UserPreferenceSetup provides 3-step wizard (Role, About You, Interests from API). RootNavigator routes authenticated users with needsUserOnboarding flag to UserPreferenceSetup before AppStack."
 }
