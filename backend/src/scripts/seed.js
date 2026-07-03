@@ -37,7 +37,7 @@ async function seed() {
     // ----------------------------------------------------------
     console.log('\n--- Creating Super Admin ---');
     const adminUser = await User.findOneAndUpdate(
-      { email: 'admin@artnepalaya.com' },
+      { email: 'artneptechnical@gmail.com' },
       {
         $set: {
           username: 'SuperAdmin',
