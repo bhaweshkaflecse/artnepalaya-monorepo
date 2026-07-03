@@ -1,3 +1,9 @@
+/**
+ * @deprecated This utility is superseded by backend/src/shared/services/pushService.js
+ * which provides token validation, receipt checking, and invalid token cleanup.
+ * Kept in place for reference during the transition period.
+ * Do not import this file in new code - use PushService.send() instead.
+ */
 import { Expo } from 'expo-server-sdk';
 
 const expo = new Expo();

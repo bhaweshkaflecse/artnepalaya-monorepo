@@ -193,3 +193,20 @@ export const searchUsers = async (req, res, next) => {
     next(err);
   }
 };
+
+// === Notification Preferences ===
+export const updateNotificationPreferences = async (req, res, next) => {
+  try {
+    const preferences = req.body;
+    if (!preferences || typeof preferences !== 'object') {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Preferences object is required' } });
+    }
+    const updated = await userService.updateNotificationPreferences(req.user.id, preferences);
+    res.status(200).json({ success: true, message: 'Notification preferences updated', data: updated });
+  } catch (err) {
+    if (err.status === 404) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: err.message } });
+    }
+    next(err);
+  }
+};

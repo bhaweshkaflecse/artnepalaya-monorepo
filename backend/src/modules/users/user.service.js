@@ -319,6 +319,39 @@ export const isFollowing = async (currentUserId, targetUserId) => {
   return !!exists;
 };
 
+// === Notification Preferences ===
+export const updateNotificationPreferences = async (userId, preferences) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw Object.assign(new Error('User not found'), { status: 404 });
+  }
+
+  // Validate and apply preferences
+  const validChannels = ['push', 'inApp'];
+  const validTypes = ['like', 'save', 'follow', 'comment', 'adminBroadcast'];
+
+  for (const channel of validChannels) {
+    if (preferences[channel] && typeof preferences[channel] === 'object') {
+      for (const type of validTypes) {
+        if (typeof preferences[channel][type] === 'boolean') {
+          if (!user.notificationPreferences) {
+            user.notificationPreferences = { push: {}, inApp: {} };
+          }
+          if (!user.notificationPreferences[channel]) {
+            user.notificationPreferences[channel] = {};
+          }
+          user.notificationPreferences[channel][type] = preferences[channel][type];
+        }
+      }
+    }
+  }
+
+  user.markModified('notificationPreferences');
+  await user.save();
+
+  return user.notificationPreferences;
+};
+
 // === User Search ===
 export const searchUsers = async (query, limit = 20) => {
   const safeQuery = escapeRegex(query);

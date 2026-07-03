@@ -1,9 +1,33 @@
 import { Notification } from './notification.model.js';
 import { User } from '../users/user.model.js';
-import { sendPushNotifications } from '../../shared/utils/pushNotifications.js';
+import { send as pushServiceSend } from '../../shared/services/pushService.js';
 import { emitToUser } from '../../realtime/emitter.js';
 import { EVENTS } from '../../realtime/events.js';
 import { BroadcastLog } from './broadcastLog.model.js';
+
+/**
+ * Maps notification type to the preference key used in notificationPreferences.push.*
+ */
+const typeToPreferenceKey = {
+  Like: 'like',
+  Save: 'save',
+  Follow: 'follow',
+  Comment: 'comment',
+  AdminBroadcast: 'adminBroadcast',
+  System: 'adminBroadcast',
+};
+
+/**
+ * Maps notification type to a human-readable push title
+ */
+const typeToTitle = {
+  Like: 'New Like',
+  Save: 'New Save',
+  Follow: 'New Follower',
+  Comment: 'New Comment',
+  AdminBroadcast: 'ArtNepalaya',
+  System: 'ArtNepalaya',
+};
 
 export const createNotification = async (payload) => {
   const { recipientId, senderId, postId, type, message } = payload;
@@ -20,6 +44,12 @@ export const createNotification = async (payload) => {
       // Emit unread count to recipient
       const unreadCount = await Notification.countDocuments({ recipientId, isRead: false });
       emitToUser(recipientId.toString(), EVENTS.NOTIFICATION_COUNT_CHANGED, { unreadCount });
+
+      // Still send push for deduplicated notifications
+      sendPushForNotification(recipientId, senderId, type, message).catch((err) =>
+        console.error('[PushService] Push delivery error:', err.message || err)
+      );
+
       return existing;
     }
   }
@@ -30,7 +60,66 @@ export const createNotification = async (payload) => {
   const unreadCount = await Notification.countDocuments({ recipientId, isRead: false });
   emitToUser(recipientId.toString(), EVENTS.NOTIFICATION_COUNT_CHANGED, { unreadCount });
 
+  // Send push notification (non-blocking)
+  sendPushForNotification(recipientId, senderId, type, message).catch((err) =>
+    console.error('[PushService] Push delivery error:', err.message || err)
+  );
+
   return notification;
+};
+
+/**
+ * Looks up the recipient's push tokens and preferences, then sends a push notification
+ * if the user has push enabled for that notification type.
+ */
+const sendPushForNotification = async (recipientId, senderId, type, message) => {
+  const preferenceKey = typeToPreferenceKey[type];
+  if (!preferenceKey) return;
+
+  // Look up recipient with pushTokens and notificationPreferences
+  const recipient = await User.findById(recipientId)
+    .select('pushTokens notificationPreferences username')
+    .lean();
+
+  if (!recipient || !recipient.pushTokens || recipient.pushTokens.length === 0) {
+    return;
+  }
+
+  // Check if push is enabled for this notification type
+  const pushPrefs = recipient.notificationPreferences?.push;
+  if (pushPrefs && pushPrefs[preferenceKey] === false) {
+    console.log(`[PushService] Push disabled for ${type} by user ${recipientId}`);
+    return;
+  }
+
+  // Build push title and body
+  const title = typeToTitle[type] || 'ArtNepalaya';
+  let body = message || `You have a new ${type.toLowerCase()} notification`;
+
+  // If we have a senderId, get sender username for a better message
+  if (senderId) {
+    const sender = await User.findById(senderId).select('username').lean();
+    if (sender && sender.username) {
+      if (type === 'Like') {
+        body = `${sender.username} liked your artwork`;
+      } else if (type === 'Save') {
+        body = `${sender.username} saved your artwork`;
+      } else if (type === 'Follow') {
+        body = `${sender.username} started following you`;
+      } else if (type === 'Comment') {
+        body = `${sender.username} commented on your artwork`;
+      } else {
+        body = message || `${sender.username} interacted with your content`;
+      }
+    }
+  }
+
+  await pushServiceSend({
+    tokens: recipient.pushTokens,
+    title,
+    body,
+    data: { type, senderId: senderId ? senderId.toString() : null },
+  });
 };
 
 export const getUserNotifications = async (userId, page, limit, filter = 'all') => {
@@ -100,13 +189,18 @@ export const broadcastNotification = async (title, message, sentBy = null) => {
     skip += BATCH_SIZE;
   } while (batch.length === BATCH_SIZE);
 
-  // Send actual push notifications to users with push tokens
+  // Send actual push notifications to users with push tokens who have adminBroadcast enabled
   const usersWithTokens = await User.find(
     { status: 'active', pushTokens: { $exists: true, $ne: [] } },
-    'pushTokens'
+    'pushTokens notificationPreferences'
   ).lean();
 
-  const allTokens = usersWithTokens.reduce((tokens, user) => {
+  // Filter out users who have push.adminBroadcast disabled
+  const eligibleTokens = usersWithTokens.reduce((tokens, user) => {
+    const pushPrefs = user.notificationPreferences?.push;
+    if (pushPrefs && pushPrefs.adminBroadcast === false) {
+      return tokens;
+    }
     return tokens.concat(user.pushTokens);
   }, []);
 
@@ -124,7 +218,7 @@ export const broadcastNotification = async (title, message, sentBy = null) => {
     console.error('BroadcastLog creation failed:', logErr);
   }
 
-  const pushResult = await sendPushNotifications(allTokens, title, message);
+  const pushResult = await pushServiceSend({ tokens: eligibleTokens, title, body: message });
 
   // Update the log with actual push results
   if (broadcastLog) {

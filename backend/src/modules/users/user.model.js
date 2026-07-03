@@ -117,6 +117,22 @@ const userSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    notificationPreferences: {
+      push: {
+        like: { type: Boolean, default: true },
+        save: { type: Boolean, default: true },
+        follow: { type: Boolean, default: true },
+        comment: { type: Boolean, default: true },
+        adminBroadcast: { type: Boolean, default: true },
+      },
+      inApp: {
+        like: { type: Boolean, default: true },
+        save: { type: Boolean, default: true },
+        follow: { type: Boolean, default: true },
+        comment: { type: Boolean, default: true },
+        adminBroadcast: { type: Boolean, default: true },
+      },
+    },
     isVerified: {
       type: Boolean,
       default: false,
