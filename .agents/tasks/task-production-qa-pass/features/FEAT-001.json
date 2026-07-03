@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Separate App Onboarding from User Onboarding: Strip all auth from OnboardingScreen (keep only marketing + Get Started), create UserPreferenceSetup screen (3-step: role, about you, interests), wire into RootNavigator with needsUserOnboarding state, fix LoginScreen isNewUser handling to trigger user onboarding instead of resetting app onboarding.",
+  "status": "in_progress",
+  "steps": [
+    "1. Modify mobile/src/screens/onboarding/OnboardingScreen.tsx: Remove ALL auth logic (Google, Guest, Dev login). Remove imports for GoogleSignin, authService, api, setCredentials, setGuest. Keep only the 3 marketing slides and 'Get Started' button that calls handleGetStarted (which dispatches setOnboardingComplete and stores in SecureStore). The 'Get Started' button should be the ONLY interactive element on screen 3. Remove the roles list from screen 3 since that belongs in UserPreferenceSetup.",
+    "2. Add needsUserOnboarding state to mobile/src/store/slices/appSlice.ts: Add field 'needsUserOnboarding: boolean' (default false) to AppState. Add reducers 'setNeedsUserOnboarding(state)' that sets it true and 'clearNeedsUserOnboarding(state)' that sets it false. Also load this state from SecureStore key 'needsUserOnboarding' in the loadAppState thunk (if stored value is 'true'). Export the new actions.",
+    "3. Modify mobile/src/screens/auth/LoginScreen.tsx: In handleAuthSuccess, remove the 'if (isNewUser) { resetOnboarding }' block. Instead, if isNewUser is true, dispatch setNeedsUserOnboarding() and store 'true' in SecureStore key 'needsUserOnboarding'. Import setNeedsUserOnboarding from appSlice. Remove the import of resetOnboarding.",
+    "4. Create mobile/src/screens/onboarding/UserPreferenceSetup.tsx: A 3-step wizard. Step 1: Primary Role selection (Artist, Art Lover, Business, Gallery) with icons. Step 2: About You - multi-select subcategories based on role (e.g., Artist: Painter, Sculptor, Digital Artist, Photographer, Mixed Media; Art Lover: Collector, Enthusiast, Student, Critic; Business: Gallery Owner, Art Dealer, Frame Maker, Art Supply; Gallery: Contemporary, Traditional, Modern, Mixed). Step 3: Interests - dynamically load from GET /config/artwork-types API, allow max 5 selections. On completion, call PUT /users/me with {role, subRoles, interests}, then dispatch clearNeedsUserOnboarding(), delete SecureStore key 'needsUserOnboarding'.",
+    "5. Modify mobile/src/navigation/RootNavigator.tsx: Add new conditional after hasCompletedOnboarding check and before AppStack render. If (isAuthenticated && needsUserOnboarding), render UserPreferenceSetup. Import needsUserOnboarding from appSlice state. Import UserPreferenceSetup from screens/onboarding/UserPreferenceSetup.",
+    "6. Also update OnboardingScreen screen 3: Since roles list is removed, replace content with a compelling summary of what users can do (showcase art, discover pieces, connect with galleries, grow business) followed by the 'Get Started' CTA button. Keep the dark theme and animation."
+  ],
+  "acceptance_criteria": [
+    "OnboardingScreen has NO Google auth, guest login, or dev login buttons",
+    "OnboardingScreen 'Get Started' is the only CTA on screen 3",
+    "After Get Started, RootNavigator shows AuthStack (LoginScreen)",
+    "LoginScreen Google auth for new users sets needsUserOnboarding flag",
+    "After successful new user auth, RootNavigator shows UserPreferenceSetup",
+    "UserPreferenceSetup has 3 steps: Role, About You (subcategories), Interests (from API, max 5)",
+    "Completing UserPreferenceSetup calls PUT /users/me and transitions to AppStack",
+    "Existing users bypass UserPreferenceSetup entirely",
+    "All imports resolve correctly (no undefined references)"
+  ],
+  "verification": [
+    "Verify OnboardingScreen.tsx has no GoogleSignin, authService, or setCredentials imports",
+    "Verify appSlice.ts exports setNeedsUserOnboarding and clearNeedsUserOnboarding",
+    "Verify RootNavigator.tsx checks needsUserOnboarding before showing AppStack",
+    "Verify UserPreferenceSetup.tsx exists and calls PUT /users/me on completion",
+    "Verify LoginScreen.tsx does not import resetOnboarding"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

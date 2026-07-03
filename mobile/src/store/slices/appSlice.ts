@@ -5,6 +5,7 @@ import { configService, AuthMediaItem } from '../../services/config.service';
 
 interface AppState {
   hasCompletedOnboarding: boolean;
+  needsUserOnboarding: boolean;
   isAppReady: boolean;
   authBackgroundMedia: AuthMediaItem[];
   isLoadingConfig: boolean;
@@ -13,6 +14,7 @@ interface AppState {
 
 const initialState: AppState = {
   hasCompletedOnboarding: false,
+  needsUserOnboarding: false,
   isAppReady: false,
   authBackgroundMedia: [],
   isLoadingConfig: false,
@@ -22,6 +24,7 @@ const initialState: AppState = {
 export const loadAppState = createAsyncThunk('app/loadAppState', async (_, { rejectWithValue }) => {
   try {
     const value = await SecureStore.getItemAsync('hasCompletedOnboarding');
+    const needsUserOnboardingValue = await SecureStore.getItemAsync('needsUserOnboarding');
     const accessToken = await SecureStore.getItemAsync('accessToken');
     const refreshToken = await SecureStore.getItemAsync('refreshToken');
 
@@ -30,6 +33,7 @@ export const loadAppState = createAsyncThunk('app/loadAppState', async (_, { rej
       await SecureStore.deleteItemAsync('accessToken');
       return {
         hasCompletedOnboarding: value === 'true',
+        needsUserOnboarding: needsUserOnboardingValue === 'true',
         accessToken: null,
         refreshToken: null,
         userData: null,
@@ -49,6 +53,7 @@ export const loadAppState = createAsyncThunk('app/loadAppState', async (_, { rej
 
     return {
       hasCompletedOnboarding: value === 'true',
+      needsUserOnboarding: needsUserOnboardingValue === 'true',
       accessToken: accessToken || null,
       refreshToken: refreshToken || null,
       userData,
@@ -77,6 +82,12 @@ const appSlice = createSlice({
     resetOnboarding(state) {
       state.hasCompletedOnboarding = false;
     },
+    setNeedsUserOnboarding(state) {
+      state.needsUserOnboarding = true;
+    },
+    clearNeedsUserOnboarding(state) {
+      state.needsUserOnboarding = false;
+    },
     setUnreadCount(state, action: PayloadAction<number>) {
       state.unreadNotificationCount = action.payload;
     },
@@ -88,6 +99,7 @@ const appSlice = createSlice({
     builder
       .addCase(loadAppState.fulfilled, (state, action) => {
         state.hasCompletedOnboarding = action.payload.hasCompletedOnboarding;
+        state.needsUserOnboarding = action.payload.needsUserOnboarding;
         // isAppReady is NOT set here - App.tsx will dispatch setAppReady after
         // restoring auth state to prevent the flash of unauthenticated state
       })
@@ -107,5 +119,5 @@ const appSlice = createSlice({
   },
 });
 
-export const { setOnboardingComplete, resetOnboarding, setUnreadCount, setAppReady } = appSlice.actions;
+export const { setOnboardingComplete, resetOnboarding, setNeedsUserOnboarding, clearNeedsUserOnboarding, setUnreadCount, setAppReady } = appSlice.actions;
 export default appSlice.reducer;

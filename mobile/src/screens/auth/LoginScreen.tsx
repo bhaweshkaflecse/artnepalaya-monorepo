@@ -23,7 +23,7 @@ import * as SecureStore from 'expo-secure-store';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { setCredentials, setGuest } from '../../store/slices/authSlice';
-import { fetchAuthConfig, resetOnboarding } from '../../store/slices/appSlice';
+import { fetchAuthConfig, setNeedsUserOnboarding } from '../../store/slices/appSlice';
 import { api } from '../../services/api';
 import { authService } from '../../services/auth.service';
 import { lightColors } from '../../theme/colors';
@@ -177,10 +177,10 @@ export const LoginScreen = () => {
 
       dispatch(setCredentials({ user, accessToken, refreshToken }));
 
-      // If this is a new user, reset onboarding so they see the onboarding flow
+      // If this is a new user, set needsUserOnboarding so they see preference setup
       if (isNewUser) {
-        await SecureStore.deleteItemAsync('hasCompletedOnboarding');
-        dispatch(resetOnboarding());
+        await SecureStore.setItemAsync('needsUserOnboarding', 'true');
+        dispatch(setNeedsUserOnboarding());
       }
 
       // Register push notifications after credentials are fully stored

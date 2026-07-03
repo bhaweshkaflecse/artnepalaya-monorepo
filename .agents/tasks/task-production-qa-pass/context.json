@@ -1,0 +1,41 @@
+{
+  "project_type": "Full-stack monorepo: Expo React Native mobile + Express.js backend + Vite React admin",
+  "language": "TypeScript (mobile, admin), JavaScript ES modules (backend)",
+  "build_system": "Expo for mobile, Node.js for backend, Vite for admin. No Makefile.",
+  "test_framework": "No test framework configured in any package",
+  "build_command": "N/A - INTEGRATIONS_ONLY network, cannot npm install",
+  "test_command": "N/A - no test infrastructure",
+  "verification_instructions": "AST-level validation only: TypeScript must parse without errors. Use `npx tsc --noEmit` if available, otherwise validate imports/exports consistency manually.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "Cannot install dependencies due to INTEGRATIONS_ONLY network mode.",
+  "environment_constraints": "INTEGRATIONS_ONLY network - cannot npm install, cannot pull Docker images, cannot access external registries. Must work with existing node_modules only. Validation is code-level/AST only.",
+  "contribution_requirements": "Commit directly to fix/final-stabilization branch. Separate commits per logical change.",
+  "key_patterns": {
+    "navigation": "RootNavigator conditionally shows OnboardingScreen -> AuthStack -> AppStack based on Redux state (hasCompletedOnboarding, isAuthenticated, isGuest)",
+    "state_management": "Redux Toolkit slices in mobile/src/store/slices/. appSlice manages onboarding state, authSlice manages auth state.",
+    "auth_flow": "Google OAuth via @react-native-google-signin, backend authenticateWithGoogle returns {user, accessToken, refreshToken, isNewUser}",
+    "backend_api": "Express routes in modules/ structure. PUT /users/me accepts role, subRoles, interests. GET /config/artwork-types returns active types.",
+    "username_generation": "auth.service.js: baseUsername = name.toLowerCase().replace(/[^a-z0-9]/g, ''), then append zero-padded suffix if duplicate exists",
+    "push_notifications": "Mobile: expo-notifications -> registerForPushNotifications -> POST /users/me/push-token. Backend: expo-server-sdk -> sendPushNotifications batched to valid tokens.",
+    "admin_panel": "Vite React app in admin/src/pages/. Users.tsx shows Avatar, Username, Email, Role, Sub-roles, 18+, Status, Actions.",
+    "cms_pages": "CmsPageScreen accepts {slug, title}. Available slugs: terms-conditions, privacy-policy, creator-policy, copyright-policy."
+  },
+  "relevant_files": [
+    "mobile/src/screens/onboarding/OnboardingScreen.tsx",
+    "mobile/src/navigation/RootNavigator.tsx",
+    "mobile/src/screens/auth/LoginScreen.tsx",
+    "mobile/src/store/slices/appSlice.ts",
+    "mobile/src/store/slices/authSlice.ts",
+    "mobile/src/services/pushNotification.service.ts",
+    "mobile/src/services/notification.service.ts",
+    "backend/src/modules/auth/auth.service.js",
+    "backend/src/modules/users/user.service.js",
+    "backend/src/modules/users/user.model.js",
+    "backend/src/modules/users/user.validation.js",
+    "backend/src/modules/users/user.routes.js",
+    "backend/src/modules/admin/config.routes.js",
+    "backend/src/shared/utils/pushNotifications.js",
+    "admin/src/pages/Users.tsx"
+  ],
+  "directory_structure": "monorepo with /backend (Express + MongoDB), /mobile (Expo React Native + Redux), /admin (Vite React + Tailwind)"
+}

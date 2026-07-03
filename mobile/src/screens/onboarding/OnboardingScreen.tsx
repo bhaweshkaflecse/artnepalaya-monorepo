@@ -11,24 +11,13 @@ import {
   SafeAreaView,
   Image,
   Animated,
-  Alert,
-  ActivityIndicator,
-  Platform,
 } from 'react-native';
-import { Feather, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { useAppDispatch } from '../../store';
 import { setOnboardingComplete } from '../../store/slices/appSlice';
-import { setCredentials, setGuest } from '../../store/slices/authSlice';
-import { api } from '../../services/api';
-import { authService } from '../../services/auth.service';
-import { registerForPushNotifications } from '../../services/pushNotification.service';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-// Google OAuth configuration
-const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
 
 interface SlideData {
   id: string;
@@ -41,48 +30,9 @@ const slides: SlideData[] = [
   { id: '3', key: 'getStarted' },
 ];
 
-/**
- * Generates a unique device identifier for token binding.
- */
-function getDeviceId(): string {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 10);
-  return `${Platform.OS}-${timestamp}-${random}`;
-}
-
-// Role data for Screen 3
-const roles = [
-  {
-    icon: 'brush' as const,
-    iconFamily: 'MaterialCommunityIcons' as const,
-    title: 'Artist',
-    subtitle: 'Showcase and sell your artwork',
-  },
-  {
-    icon: 'heart' as const,
-    iconFamily: 'Feather' as const,
-    title: 'Art Lover',
-    subtitle: 'Discover and collect amazing pieces',
-  },
-  {
-    icon: 'image' as const,
-    iconFamily: 'Feather' as const,
-    title: 'Gallery',
-    subtitle: 'Manage your gallery online',
-  },
-  {
-    icon: 'briefcase' as const,
-    iconFamily: 'Feather' as const,
-    title: 'Business',
-    subtitle: 'Connect with creative talent',
-  },
-];
-
 export const OnboardingScreen = () => {
   const dispatch = useAppDispatch();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [devLoading, setDevLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   // Fade animations for each screen
@@ -95,14 +45,6 @@ export const OnboardingScreen = () => {
 
   const fadeAnims = [fadeAnim1, fadeAnim2, fadeAnim3];
   const slideAnims = [slideAnim1, slideAnim2, slideAnim3];
-
-  // Configure Google Sign-In on mount
-  useEffect(() => {
-    GoogleSignin.configure({
-      webClientId: GOOGLE_WEB_CLIENT_ID,
-      offlineAccess: true,
-    });
-  }, []);
 
   // Animate first screen on mount
   useEffect(() => {
@@ -143,166 +85,9 @@ export const OnboardingScreen = () => {
 
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-  // ---- Action Handlers ----
-
   const handleGetStarted = async () => {
     dispatch(setOnboardingComplete());
     await SecureStore.setItemAsync('hasCompletedOnboarding', 'true');
-  };
-
-  const handleGuestLogin = async () => {
-    const chars = '0123456789ABCDEF';
-    let random5 = '';
-    for (let i = 0; i < 5; i++) {
-      random5 += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    const guestUsername = `Guest_${random5}`;
-
-    dispatch(setGuest({ guestUsername }));
-
-    // Complete onboarding for guests too
-    dispatch(setOnboardingComplete());
-    await SecureStore.setItemAsync('hasCompletedOnboarding', 'true');
-
-    // Background: persist to SecureStore (non-blocking)
-    (async () => {
-      try {
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('refreshToken');
-        const existingUsername = await SecureStore.getItemAsync('guestUsername');
-        if (!existingUsername) {
-          await SecureStore.setItemAsync('guestUsername', guestUsername);
-        }
-        await SecureStore.setItemAsync('guestDisplayName', 'Guest Explorer');
-      } catch (e) {
-        console.warn('[Onboarding] Guest SecureStore cleanup failed:', e);
-      }
-    })();
-  };
-
-  const handleAuthSuccess = async (idToken: string) => {
-    try {
-      let deviceId = await SecureStore.getItemAsync('deviceId');
-      if (!deviceId) {
-        deviceId = getDeviceId();
-        await SecureStore.setItemAsync('deviceId', deviceId);
-      }
-
-      const authResponse = await authService.googleLogin(idToken, deviceId);
-      const { user, accessToken, refreshToken } = authResponse.data;
-
-      await SecureStore.setItemAsync('accessToken', accessToken);
-      await SecureStore.setItemAsync('refreshToken', refreshToken);
-      await SecureStore.setItemAsync('userData', JSON.stringify(user));
-
-      dispatch(setCredentials({ user, accessToken, refreshToken }));
-
-      // Complete onboarding after successful auth
-      dispatch(setOnboardingComplete());
-      await SecureStore.setItemAsync('hasCompletedOnboarding', 'true');
-
-      registerForPushNotifications().catch((err) =>
-        console.warn('[Onboarding] Push notification registration failed:', err)
-      );
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.error?.message ||
-        error?.message ||
-        'An unexpected error occurred during sign-in.';
-      Alert.alert('Sign-In Failed', message, [{ text: 'OK' }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    try {
-      await GoogleSignin.hasPlayServices();
-      await GoogleSignin.signOut();
-      const userInfo = await GoogleSignin.signIn();
-      const idToken = userInfo.idToken;
-      if (idToken) {
-        await handleAuthSuccess(idToken);
-      } else {
-        Alert.alert(
-          'Sign-In Issue',
-          'Authentication succeeded but token was not received. Please try again.'
-        );
-        setIsLoading(false);
-      }
-    } catch (error: any) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        // User cancelled
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        // Sign in already in progress
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Alert.alert('Error', 'Google Play Services are not available on this device.');
-      } else {
-        Alert.alert(
-          'Sign-In Failed',
-          'Google authentication encountered an error. Please try again.'
-        );
-        console.error('[GoogleAuth] Error:', error);
-      }
-      setIsLoading(false);
-    }
-  };
-
-  const handleDevLogin = async () => {
-    setDevLoading(true);
-    try {
-      const res = await api.post('/auth/admin-login', {
-        email: 'admin@artnepalaya.com',
-        password: 'SuperAdmin##5656#$$@',
-      });
-      const { user, accessToken, refreshToken } = res.data.data;
-
-      await SecureStore.setItemAsync('accessToken', accessToken);
-      await SecureStore.setItemAsync('refreshToken', refreshToken);
-      await SecureStore.setItemAsync('userData', JSON.stringify(user));
-
-      dispatch(setCredentials({ user, accessToken, refreshToken }));
-
-      // Complete onboarding after successful dev login
-      dispatch(setOnboardingComplete());
-      await SecureStore.setItemAsync('hasCompletedOnboarding', 'true');
-
-      registerForPushNotifications().catch((err) =>
-        console.warn('[Onboarding] Push notification registration failed:', err)
-      );
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.error?.message ||
-        error?.message ||
-        'Backend unreachable. Is the server running?';
-      Alert.alert('Developer Login Failed', message, [{ text: 'OK' }]);
-      console.error('[DevLogin] Error:', error);
-    } finally {
-      setDevLoading(false);
-    }
-  };
-
-  // ---- Render Role Item ----
-  const renderRoleItem = (role: typeof roles[number], index: number) => {
-    const renderIcon = () => {
-      if (role.iconFamily === 'MaterialCommunityIcons') {
-        return <MaterialCommunityIcons name={role.icon as any} size={22} color="#FF3B30" />;
-      }
-      return <Feather name={role.icon as any} size={22} color="#FF3B30" />;
-    };
-
-    return (
-      <View key={index} style={styles.roleItem}>
-        <View style={styles.roleIconContainer}>
-          {renderIcon()}
-        </View>
-        <View style={styles.roleTextContainer}>
-          <Text style={styles.roleTitle}>{role.title}</Text>
-          <Text style={styles.roleSubtitle}>{role.subtitle}</Text>
-        </View>
-      </View>
-    );
   };
 
   // ---- Render Slides ----
@@ -391,7 +176,7 @@ export const OnboardingScreen = () => {
       );
     }
 
-    // Screen 3: Get Started
+    // Screen 3: Get Started - platform benefits summary + CTA
     return (
       <View style={[styles.slide, styles.darkBackground]}>
         <SafeAreaView style={styles.screen3SafeArea}>
@@ -406,61 +191,59 @@ export const OnboardingScreen = () => {
           >
             {/* Title */}
             <Text style={styles.screen3Title}>
-              Grow Your{'\n'}Creative Business
+              Your Creative{'\n'}Journey Starts Here
             </Text>
 
-            {/* Roles list */}
-            <View style={styles.rolesContainer}>
-              {roles.map((role, idx) => renderRoleItem(role, idx))}
+            {/* Platform benefits summary */}
+            <View style={styles.benefitsContainer}>
+              <View style={styles.benefitItem}>
+                <View style={styles.benefitIconContainer}>
+                  <MaterialCommunityIcons name="brush" size={22} color="#FF3B30" />
+                </View>
+                <View style={styles.benefitTextContainer}>
+                  <Text style={styles.benefitTitle}>Showcase Your Art</Text>
+                  <Text style={styles.benefitSubtitle}>Share your creations with a global audience</Text>
+                </View>
+              </View>
+
+              <View style={styles.benefitItem}>
+                <View style={styles.benefitIconContainer}>
+                  <Feather name="search" size={22} color="#FF3B30" />
+                </View>
+                <View style={styles.benefitTextContainer}>
+                  <Text style={styles.benefitTitle}>Discover Pieces</Text>
+                  <Text style={styles.benefitSubtitle}>Find unique artworks from talented creators</Text>
+                </View>
+              </View>
+
+              <View style={styles.benefitItem}>
+                <View style={styles.benefitIconContainer}>
+                  <Feather name="home" size={22} color="#FF3B30" />
+                </View>
+                <View style={styles.benefitTextContainer}>
+                  <Text style={styles.benefitTitle}>Connect with Galleries</Text>
+                  <Text style={styles.benefitSubtitle}>Explore exhibitions and collections</Text>
+                </View>
+              </View>
+
+              <View style={styles.benefitItem}>
+                <View style={styles.benefitIconContainer}>
+                  <Feather name="trending-up" size={22} color="#FF3B30" />
+                </View>
+                <View style={styles.benefitTextContainer}>
+                  <Text style={styles.benefitTitle}>Grow Your Business</Text>
+                  <Text style={styles.benefitSubtitle}>Reach collectors and art enthusiasts</Text>
+                </View>
+              </View>
             </View>
 
-            {/* Get Started CTA */}
+            {/* Get Started CTA - the ONLY interactive element */}
             <TouchableOpacity
               style={styles.ctaButton}
               onPress={handleGetStarted}
               activeOpacity={0.85}
             >
               <Text style={styles.ctaButtonText}>Get Started</Text>
-            </TouchableOpacity>
-
-            {/* Continue as Guest */}
-            <TouchableOpacity
-              style={styles.guestButton}
-              onPress={handleGuestLogin}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.guestButtonText}>Continue as Guest</Text>
-            </TouchableOpacity>
-
-            {/* Sign in with Google */}
-            <TouchableOpacity
-              style={styles.googleButton}
-              onPress={handleGoogleLogin}
-              activeOpacity={0.8}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <AntDesign name="google" size={18} color="#FFFFFF" style={styles.googleIcon} />
-                  <Text style={styles.googleButtonText}>Sign in with Google</Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* Developer Login */}
-            <TouchableOpacity
-              style={styles.devButton}
-              onPress={handleDevLogin}
-              activeOpacity={0.6}
-              disabled={devLoading}
-            >
-              {devLoading ? (
-                <ActivityIndicator size="small" color="rgba(255,255,255,0.4)" />
-              ) : (
-                <Text style={styles.devButtonText}>Developer Login (QA)</Text>
-              )}
             </TouchableOpacity>
           </Animated.View>
         </SafeAreaView>
@@ -644,21 +427,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: -0.5,
     lineHeight: 38,
-    marginBottom: 24,
+    marginBottom: 32,
   },
 
-  // ---- Roles ----
-  rolesContainer: {
-    marginBottom: 28,
+  // ---- Benefits ----
+  benefitsContainer: {
+    marginBottom: 36,
   },
-  roleItem: {
+  benefitItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(255,255,255,0.08)',
   },
-  roleIconContainer: {
+  benefitIconContainer: {
     width: 44,
     height: 44,
     borderRadius: 12,
@@ -667,16 +450,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 14,
   },
-  roleTextContainer: {
+  benefitTextContainer: {
     flex: 1,
   },
-  roleTitle: {
+  benefitTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 2,
   },
-  roleSubtitle: {
+  benefitSubtitle: {
     fontSize: 13,
     color: 'rgba(255,255,255,0.55)',
     lineHeight: 18,
@@ -700,54 +483,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.3,
-  },
-
-  // ---- Guest Button ----
-  guestButton: {
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-  guestButtonText: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-
-  // ---- Google Button ----
-  googleButton: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  googleIcon: {
-    marginRight: 10,
-  },
-  googleButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-
-  // ---- Dev Button ----
-  devButton: {
-    paddingVertical: 10,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  devButtonText: {
-    color: 'rgba(255,255,255,0.35)',
-    fontSize: 12,
-    fontWeight: '500',
   },
 
   // ---- Dots ----

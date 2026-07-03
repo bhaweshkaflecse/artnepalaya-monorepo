@@ -1,0 +1,7 @@
+{
+  "task_id": "task-production-qa-pass",
+  "task_description": "Production QA Pass: Separate app onboarding from user onboarding, create UserPreferenceSetup flow for new users, verify username generation/editing, verify dev login and push notifications, audit admin panel, and produce a comprehensive QA verification report.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

@@ -6,12 +6,13 @@ import { selectIsAuthenticated, selectIsGuest } from '../store/slices/authSlice'
 import { AuthStack } from './AuthStack';
 import { AppStack } from './AppStack';
 import { OnboardingScreen } from '../screens/onboarding/OnboardingScreen';
+import { UserPreferenceSetup } from '../screens/onboarding/UserPreferenceSetup';
 import { GlobalPopupModal } from '../components/common/GlobalPopupModal';
 
 export const RootNavigator = () => {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const isGuest = useAppSelector(selectIsGuest);
-  const { hasCompletedOnboarding, isAppReady } = useAppSelector((state) => state.app);
+  const { hasCompletedOnboarding, needsUserOnboarding, isAppReady } = useAppSelector((state) => state.app);
 
   if (!isAppReady) {
     return (
@@ -23,6 +24,11 @@ export const RootNavigator = () => {
 
   if (!hasCompletedOnboarding) {
     return <OnboardingScreen />;
+  }
+
+  // Show user preference setup for new authenticated users
+  if (isAuthenticated && needsUserOnboarding) {
+    return <UserPreferenceSetup />;
   }
 
   if (isAuthenticated || isGuest) {
