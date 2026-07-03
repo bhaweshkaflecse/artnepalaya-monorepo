@@ -121,7 +121,7 @@ export const addFeaturedPost = async (postId, adminId) => {
   if (!postExists) throw Object.assign(new Error('Post not found'), { status: 404 });
 
   const currentCount = await FeaturedPost.countDocuments();
-  if (currentCount >= 3) throw Object.assign(new Error('Maximum 3 featured posts allowed'), { status: 400 });
+  if (currentCount >= 10) throw Object.assign(new Error('Maximum 10 featured posts allowed'), { status: 400 });
 
   try {
     await FeaturedPost.create({ postId, featuredBy: adminId });
