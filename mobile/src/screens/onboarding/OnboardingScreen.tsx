@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
-import { Feather, Ionicons, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons, AntDesign } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { useAppDispatch } from '../../store';
