@@ -175,6 +175,7 @@ export const PostDetailScreen = () => {
             setTimeout(() => navigation.goBack(), 1500);
           } else if (error?.response?.status === 403) {
             Alert.alert('Restricted', 'This content is marked as mature and is not available with your current settings.');
+            setTimeout(() => navigation.goBack(), 1500);
           } else {
             Alert.alert('Error', 'Failed to load post.');
           }
@@ -261,8 +262,25 @@ export const PostDetailScreen = () => {
   if (!post) {
     return (
       <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Feather name="arrow-left" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Post</Text>
+          <View style={styles.backBtn} />
+        </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.errorText}>Post not found</Text>
+          <Feather name="alert-circle" size={48} color={darkColors.textSecondary} />
+          <Text style={[styles.errorText, { marginTop: 12, fontSize: 18, fontWeight: '600', color: '#FFFFFF' }]}>Content Unavailable</Text>
+          <Text style={[styles.errorText, { marginTop: 8, textAlign: 'center', paddingHorizontal: 32 }]}>
+            This post may have been removed or is restricted based on your content settings.
+          </Text>
+          <TouchableOpacity
+            style={{ marginTop: 24, backgroundColor: '#FF3B30', paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8 }}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>Go Back</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
