@@ -163,6 +163,27 @@ export const updateProfileSchema = z.object({
     })
 });
 
+/**
+ * Validation schema for PUT /me/notification-preferences
+ * Validates the structure: { push?: { ...booleans }, inApp?: { ...booleans } }
+ */
+const notificationTypeToggles = z.object({
+  like: z.boolean().optional(),
+  save: z.boolean().optional(),
+  follow: z.boolean().optional(),
+  comment: z.boolean().optional(),
+  adminBroadcast: z.boolean().optional(),
+}).strict().optional();
+
+export const notificationPreferencesSchema = z.object({
+  body: z.object({
+    push: notificationTypeToggles,
+    inApp: notificationTypeToggles,
+  }).strict(),
+  params: z.record(z.string()).optional(),
+  query: z.record(z.string()).optional(),
+});
+
 export const paginationSchema = z.object({
   query: z.object({
     page: z.string().regex(/^\d+$/).transform(Number).default("1"),

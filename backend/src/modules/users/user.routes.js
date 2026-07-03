@@ -17,7 +17,7 @@ router.post('/me/push-token', authGuard, controller.registerPushToken);
 router.delete('/me/push-token', authGuard, controller.removePushToken);
 
 // === Notification Preferences (require auth) ===
-router.put('/me/notification-preferences', authGuard, controller.updateNotificationPreferences);
+router.put('/me/notification-preferences', authGuard, validate(validation.notificationPreferencesSchema), controller.updateNotificationPreferences);
 
 // === User Search (before /:userId to avoid conflicts) ===
 router.get('/search', optionalAuth, controller.searchUsers);

@@ -34,6 +34,20 @@ export const createNotification = async (payload) => {
   
   if (senderId && recipientId.toString() === senderId.toString()) return null; 
 
+  // Look up recipient preferences once for both inApp and push checks
+  const preferenceKey = typeToPreferenceKey[type];
+  let recipientPrefs = null;
+  if (preferenceKey) {
+    recipientPrefs = await User.findById(recipientId)
+      .select('pushTokens notificationPreferences')
+      .lean();
+  }
+
+  // Check if inApp is enabled for this notification type
+  const inAppEnabled = !recipientPrefs
+    || !recipientPrefs.notificationPreferences?.inApp
+    || recipientPrefs.notificationPreferences.inApp[preferenceKey] !== false;
+
   if (type === 'Like' || type === 'Save') {
     const existing = await Notification.findOneAndUpdate(
       { recipientId, senderId, postId, type },
@@ -41,17 +55,24 @@ export const createNotification = async (payload) => {
       { new: true }
     );
     if (existing) {
-      // Emit unread count to recipient
-      const unreadCount = await Notification.countDocuments({ recipientId, isRead: false });
-      emitToUser(recipientId.toString(), EVENTS.NOTIFICATION_COUNT_CHANGED, { unreadCount });
+      // Emit unread count only if inApp is enabled
+      if (inAppEnabled) {
+        const unreadCount = await Notification.countDocuments({ recipientId, isRead: false });
+        emitToUser(recipientId.toString(), EVENTS.NOTIFICATION_COUNT_CHANGED, { unreadCount });
+      }
 
-      // Still send push for deduplicated notifications
-      sendPushForNotification(recipientId, senderId, type, message).catch((err) =>
-        console.error('[PushService] Push delivery error:', err.message || err)
-      );
-
+      // Do NOT send push for deduplicated notifications (re-like/re-save)
       return existing;
     }
+  }
+
+  // Only create in-app notification if inApp preference is enabled
+  if (!inAppEnabled) {
+    // Still send push if push is enabled (push is handled independently)
+    sendPushForNotificationWithPrefs(recipientPrefs, recipientId, senderId, type, message).catch((err) =>
+      console.error('[PushService] Push delivery error:', err.message || err)
+    );
+    return null;
   }
 
   const notification = await Notification.create({ recipientId, senderId, postId, type, message });
@@ -60,8 +81,8 @@ export const createNotification = async (payload) => {
   const unreadCount = await Notification.countDocuments({ recipientId, isRead: false });
   emitToUser(recipientId.toString(), EVENTS.NOTIFICATION_COUNT_CHANGED, { unreadCount });
 
-  // Send push notification (non-blocking)
-  sendPushForNotification(recipientId, senderId, type, message).catch((err) =>
+  // Send push notification (non-blocking), reusing the already-fetched recipient prefs
+  sendPushForNotificationWithPrefs(recipientPrefs, recipientId, senderId, type, message).catch((err) =>
     console.error('[PushService] Push delivery error:', err.message || err)
   );
 
@@ -69,16 +90,16 @@ export const createNotification = async (payload) => {
 };
 
 /**
- * Looks up the recipient's push tokens and preferences, then sends a push notification
- * if the user has push enabled for that notification type.
+ * Sends a push notification using pre-fetched recipient preferences.
+ * Avoids a second DB read for the recipient when preferences were already loaded.
  */
-const sendPushForNotification = async (recipientId, senderId, type, message) => {
+const sendPushForNotificationWithPrefs = async (recipientPrefs, recipientId, senderId, type, message) => {
   const preferenceKey = typeToPreferenceKey[type];
   if (!preferenceKey) return;
 
-  // Look up recipient with pushTokens and notificationPreferences
-  const recipient = await User.findById(recipientId)
-    .select('pushTokens notificationPreferences username')
+  // If recipient prefs were not pre-fetched (e.g., no preferenceKey matched earlier), fetch now
+  const recipient = recipientPrefs || await User.findById(recipientId)
+    .select('pushTokens notificationPreferences')
     .lean();
 
   if (!recipient || !recipient.pushTokens || recipient.pushTokens.length === 0) {
