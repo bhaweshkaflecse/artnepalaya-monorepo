@@ -5,4 +5,5 @@ export const EVENTS = {
   FOLLOW_CREATED: 'follow.created',
   FOLLOW_DELETED: 'follow.deleted',
   NOTIFICATION_COUNT_CHANGED: 'notification.count.changed',
+  NOTIFICATION_UPDATED: 'notification.updated',
 };
