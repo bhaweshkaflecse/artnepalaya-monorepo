@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { Video, ResizeMode } from 'expo-av';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
@@ -149,12 +150,35 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     index,
   }), []);
 
-  const renderMediaItem = useCallback(({ item }: { item: any }) => {
+  const renderMediaItem = useCallback(({ item, index }: { item: any; index: number }) => {
     const isVideo = item.type === 'video';
-    const imageUrl = isVideo && item.url
-      ? getVideoThumbnailUrl(item.url)
-      : item.url;
+    const isActive = index === currentMediaIndex;
 
+    if (isVideo && item.url) {
+      return (
+        <TouchableWithoutFeedback onPress={handleImageTap}>
+          <View style={[styles.imageWrapper, { width: SCREEN_WIDTH }]}>
+            <Video
+              source={{ uri: item.url }}
+              style={styles.image}
+              resizeMode={ResizeMode.COVER}
+              shouldPlay={isActive}
+              isLooping
+              isMuted={false}
+              posterSource={{ uri: getVideoThumbnailUrl(item.url) }}
+              usePoster
+            />
+            {!isActive && (
+              <View style={styles.videoOverlay}>
+                <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
+              </View>
+            )}
+          </View>
+        </TouchableWithoutFeedback>
+      );
+    }
+
+    const imageUrl = item.url;
     return (
       <TouchableWithoutFeedback onPress={handleImageTap}>
         <View style={[styles.imageWrapper, { width: SCREEN_WIDTH }]}>
@@ -169,15 +193,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               <Feather name="image" size={48} color={darkColors.textSecondary} />
             </View>
           )}
-          {isVideo && (
-            <View style={styles.videoOverlay}>
-              <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
-            </View>
-          )}
         </View>
       </TouchableWithoutFeedback>
     );
-  }, [handleImageTap]);
+  }, [currentMediaIndex, handleImageTap]);
 
   const handleOpenLikedBy = async () => {
     setShowLikedByModal(true);

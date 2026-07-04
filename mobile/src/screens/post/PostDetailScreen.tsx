@@ -178,6 +178,10 @@ export const PostDetailScreen = () => {
           setPost(data);
           setIsLiked(data.isLikedByMe || false);
           setIsSaved(data.isSavedByMe || false);
+          // Auto-play if initial slide is a video
+          if (data.media && data.media[initialMediaIndex]?.type === 'video') {
+            setShouldPlay(true);
+          }
         } catch (error: any) {
           if (error?.response?.status === 404) {
             dispatch(removeFeedPost(postId));
@@ -462,6 +466,15 @@ export const PostDetailScreen = () => {
             onMomentumScrollEnd={(e) => {
               const index = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
               setCurrentIndex(index);
+              // Auto-pause video when swiping away from a video slide
+              if (post.media[currentIndex]?.type === 'video' && index !== currentIndex) {
+                setShouldPlay(false);
+                videoRef.current?.pauseAsync().catch(() => {});
+              }
+              // Auto-play video when swiping to a video slide
+              if (post.media[index]?.type === 'video') {
+                setShouldPlay(true);
+              }
             }}
             renderItem={({ item }) => {
               if (item.type === 'video' && item.url) {
