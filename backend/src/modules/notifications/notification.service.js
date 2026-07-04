@@ -198,9 +198,11 @@ export const createNotification = async (payload) => {
 async function emitGroupSocketEvents(group, recipientId) {
   try {
     // Populate group data for the client
+    // Note: recipientId is intentionally NOT populated - the client already knows who it is.
+    // targetId IS populated so socket-delivered notifications include post media/title.
     const populatedGroup = await NotificationGroup.findById(group._id)
       .populate('recentActors', 'username avatarUrl')
-      .populate('recipientId', 'username avatarUrl')
+      .populate({ path: 'targetId', select: 'media title', model: 'Post' })
       .lean();
 
     emitToUser(

@@ -8,7 +8,8 @@ const DEFAULT_CONFIG = {
   groupingWindows: {
     Like: 86400000,       // 24 hours in ms
     Save: 86400000,       // 24 hours in ms
-    Follow: 86400000      // 24 hours in ms
+    Follow: 86400000,     // 24 hours in ms
+    Comment: 86400000     // 24 hours in ms
   },
   pushCooldowns: {
     Like: 300000,          // 5 minutes in ms

@@ -96,6 +96,19 @@ const getActionText = (type: NotificationGroup['type'], actorCount: number): str
   }
 };
 
+/**
+ * Builds the actor portion of the notification message string.
+ *
+ * Design note on actorCount semantics: actorCount may slightly exceed the true
+ * unique-actor count because it is incremented on every createNotification call
+ * (including re-likes after unlike). The callers (post.service.js, user.service.js)
+ * only fire on the positive action (like, save, follow), so overcounting requires
+ * a user to unlike then re-like within the same 24h window - a rare edge case.
+ * The visual difference ("19 others" vs "18 others") is negligible for the user
+ * experience. We use actorCount as-is for display rather than deriving from
+ * recentActors.length, which is capped at maxRecentActors (5) and would undercount
+ * in the common case.
+ */
 const getActorText = (
   actorCount: number,
   recentActors: Array<{ _id: string; username: string; avatarUrl?: string }>

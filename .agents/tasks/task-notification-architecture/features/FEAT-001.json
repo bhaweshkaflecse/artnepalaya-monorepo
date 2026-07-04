@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Redesign the notification model and create configuration module for grouped notifications with time-windowed aggregation, push cooldowns, and configurable parameters. This is the foundational backend work - new model schema, configuration constants, and the migration script.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Create backend/src/modules/notifications/notificationConfig.js - a configuration module that exports all tunable notification parameters. Store defaults locally and provide a function that loads overrides from AppConfig (key: 'notification_config'). Parameters to include: groupingWindows (Like: 24h, Save: 24h, Follow: 24h in milliseconds), pushCooldowns (Like: 5min, Save: 10min, Follow: 10min, AdminBroadcast: 0, Comment: 5min in milliseconds), maxRecentActors (default: 5 - how many recent actor IDs to store in the array), displayThresholds (showNames: 2, showNamesAndOthers: 20 - controls display format transitions).",
     "Step 2: Create backend/src/modules/notifications/notificationGroup.model.js - the new grouped notification model. Schema fields: recipientId (ObjectId ref User, required, indexed), type (String, enum expanded to include future types: Like, Save, Follow, Comment, AdminBroadcast, System, Mention, ArtworkApproved, ArtworkRejected, Reply), targetType (String, enum: Post, User, System, null - what the notification is about), targetId (ObjectId, default null - the post or user being acted upon), actorCount (Number, default 1), recentActors (Array of ObjectId refs to User, max 5 entries), latestActivityAt (Date, default Date.now), isRead (Boolean, default false), lastPushSentAt (Date, default null), groupCreatedAt (Date, default Date.now - when window started), title (String, default null - for AdminBroadcast/System), message (String, default null - for AdminBroadcast/System). Indexes: {recipientId: 1, latestActivityAt: -1} for paginated fetch, {recipientId: 1, isRead: 1} for unread count, {recipientId: 1, type: 1, targetId: 1, groupCreatedAt: -1} for group lookup (compound unique-ish for finding active groups), {latestActivityAt: 1} for TTL/cleanup queries.",
@@ -24,5 +24,5 @@
     "Run 'node --check backend/src/scripts/migrateNotifications.js' to verify syntax"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 4 files pass node --check syntax validation. NODE_OPTIONS must be cleared to run node --check in this sandbox (NODE_OPTIONS='' node --check). The environment has a proxy-bootstrap.js preload issue that is bypassed by unsetting NODE_OPTIONS."
 }
