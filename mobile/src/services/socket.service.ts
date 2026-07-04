@@ -3,6 +3,8 @@ import { store } from '../store';
 import { setNewPostsAvailable, updatePost as updateFeedPost, removePost as removeFeedPost } from '../store/slices/feedSlice';
 import { updatePost as updateUserPost, removePost as removeUserPost, incrementFollowers, decrementFollowers, incrementFollowing, decrementFollowing } from '../store/slices/userSlice';
 import { setUnreadCount } from '../store/slices/appSlice';
+import { upsertNotification } from '../store/slices/notificationSlice';
+import { NotificationGroup } from './notification.service';
 
 let socket: Socket | null = null;
 
@@ -84,6 +86,11 @@ export function connectSocket(token: string, serverUrl: string): void {
 
   socket.on('notification.count.changed', (data) => {
     store.dispatch(setUnreadCount(data.unreadCount));
+  });
+
+  socket.on('notification.updated', (data: NotificationGroup) => {
+    console.log('[Socket] notification.updated received:', data._id);
+    store.dispatch(upsertNotification(data));
   });
 }
 

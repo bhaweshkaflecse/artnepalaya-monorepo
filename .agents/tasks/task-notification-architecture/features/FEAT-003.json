@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Update the mobile client (NotificationsScreen, notification service, socket service, Redux state) to handle grouped notifications with proper display formatting, real-time updates that patch existing groups instead of creating duplicates, and correct unread badge behavior.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Step 1: Update mobile/src/services/notification.service.ts - Update the Notification interface to reflect the new grouped model: add actorCount (number), recentActors (array of {_id, username, avatarUrl}), latestActivityAt (string), targetType ('Post'|'User'|'System'|null), targetId (object or string or null), groupCreatedAt (string). Remove senderId (replaced by recentActors). Keep type enum but add future types. Update NotificationsResponse meta to use the new field names if needed.",
     "Step 2: Update mobile/src/services/socket.service.ts - Add listener for 'notification.updated' event. When received, dispatch a new Redux action (e.g., upsertNotification) that either updates an existing notification in the list or prepends it. This ensures real-time updates patch existing notifications rather than adding duplicates. Keep the existing 'notification.count.changed' listener.",

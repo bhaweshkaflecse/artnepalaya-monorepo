@@ -5,6 +5,7 @@ import authReducer from './slices/authSlice';
 import feedReducer from './slices/feedSlice';
 import userReducer from './slices/userSlice';
 import appReducer from './slices/appSlice';
+import notificationReducer from './slices/notificationSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     feed: feedReducer,
     user: userReducer,
     app: appReducer,
+    notifications: notificationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,11 +15,23 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
-import { notificationService, Notification } from '../../services/notification.service';
+import { notificationService, NotificationGroup } from '../../services/notification.service';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice';
+import {
+  setNotifications,
+  upsertNotification,
+  markNotificationRead,
+  markAllRead,
+  selectNotifications,
+  selectNotificationsLoaded,
+} from '../../store/slices/notificationSlice';
 
 type FilterType = 'all' | 'unread' | 'read';
+
+// Display thresholds for actor formatting
+const SHOW_NAMES_THRESHOLD = 2;
+const SHOW_NAMES_AND_OTHERS_THRESHOLD = 20;
 
 const getTimeAgo = (dateStr: string): string => {
   const now = new Date();
@@ -35,24 +47,80 @@ const getTimeAgo = (dateStr: string): string => {
   return date.toLocaleDateString();
 };
 
-const getNotificationMessage = (notification: Notification): string => {
-  const senderName = notification.senderId?.username || 'Someone';
-  switch (notification.type) {
-    case 'Like':
-      return `${senderName} liked your post`;
-    case 'Follow':
-      return `${senderName} started following you`;
-    case 'Save':
-      return `${senderName} saved your post`;
-    case 'Comment':
-      return `${senderName} commented on your post`;
-    case 'AdminBroadcast':
-      return notification.title ? `${notification.title}: ${notification.message}` : notification.message;
-    case 'System':
-      return notification.message;
-    default:
-      return notification.message;
+/**
+ * Formats grouped notification message based on actorCount and type.
+ *
+ * Display rules:
+ * - actorCount === 1: "Username liked your artwork"
+ * - actorCount === 2: "User1 and User2 liked your artwork"
+ * - actorCount 3-20: "User1, User2 and N others liked your artwork"
+ * - actorCount > 20: "N people liked your artwork"
+ */
+const formatGroupedMessage = (notification: NotificationGroup): string => {
+  const { type, actorCount, recentActors, title, message } = notification;
+
+  // AdminBroadcast and System do not use actors
+  if (type === 'AdminBroadcast') {
+    return title ? `${title}: ${message || ''}` : message || '';
   }
+  if (type === 'System') {
+    return message || '';
+  }
+
+  const actionText = getActionText(type, actorCount);
+  const actorText = getActorText(actorCount, recentActors);
+
+  return `${actorText} ${actionText}`;
+};
+
+const getActionText = (type: NotificationGroup['type'], actorCount: number): string => {
+  switch (type) {
+    case 'Like':
+      return 'liked your artwork';
+    case 'Save':
+      return 'saved your artwork';
+    case 'Follow':
+      return actorCount > 1 ? 'started following you' : 'started following you';
+    case 'Comment':
+      return 'commented on your artwork';
+    case 'Mention':
+      return 'mentioned you';
+    case 'Reply':
+      return 'replied to your comment';
+    case 'ArtworkApproved':
+      return 'Your artwork has been approved';
+    case 'ArtworkRejected':
+      return 'Your artwork was not approved';
+    default:
+      return '';
+  }
+};
+
+const getActorText = (
+  actorCount: number,
+  recentActors: Array<{ _id: string; username: string; avatarUrl?: string }>
+): string => {
+  if (actorCount === 0) return '';
+
+  const name1 = recentActors[0]?.username || 'Someone';
+
+  if (actorCount === 1) {
+    return name1;
+  }
+
+  if (actorCount === 2) {
+    const name2 = recentActors[1]?.username || 'someone';
+    return `${name1} and ${name2}`;
+  }
+
+  if (actorCount <= SHOW_NAMES_AND_OTHERS_THRESHOLD) {
+    const name2 = recentActors[1]?.username || 'someone';
+    const othersCount = actorCount - 2;
+    return `${name1}, ${name2} and ${othersCount} others`;
+  }
+
+  // actorCount > 20
+  return `${actorCount} people`;
 };
 
 export const NotificationsScreen = () => {
@@ -60,11 +128,19 @@ export const NotificationsScreen = () => {
   const dispatch = useAppDispatch();
   const isGuest = useAppSelector(selectIsGuest);
   const currentUser = useAppSelector(selectUser);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const storeNotifications = useAppSelector(selectNotifications);
+  const notificationsLoaded = useAppSelector(selectNotificationsLoaded);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  // Filter notifications based on active filter
+  const filteredNotifications = useMemo(() => {
+    if (activeFilter === 'all') return storeNotifications;
+    if (activeFilter === 'unread') return storeNotifications.filter((n) => !n.isRead);
+    return storeNotifications.filter((n) => n.isRead);
+  }, [storeNotifications, activeFilter]);
 
   // Guest mode - show static info screen
   if (isGuest) {
@@ -96,67 +172,81 @@ export const NotificationsScreen = () => {
     );
   }
 
-  const fetchNotifications = useCallback(async (filter: FilterType) => {
+  const fetchNotifications = useCallback(async () => {
     try {
-      const response = await notificationService.getNotifications(filter);
-      setNotifications(response.data);
+      // Always fetch 'all' from the API and filter client-side from Redux
+      const response = await notificationService.getNotifications('all');
+      dispatch(setNotifications(response.data));
     } catch (_e) {
       // Silently fail for MVP
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
-    setIsLoading(true);
-    fetchNotifications(activeFilter);
-  }, [activeFilter, fetchNotifications]);
+    if (!notificationsLoaded) {
+      setIsLoading(true);
+    }
+    fetchNotifications();
+  }, [fetchNotifications, notificationsLoaded]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchNotifications(activeFilter);
+    fetchNotifications();
   };
 
   const handleMarkAllRead = async () => {
     try {
       await notificationService.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      dispatch(markAllRead());
     } catch (_e) {
       // Silently fail
     }
   };
 
-  const handleNotificationPress = async (notification: Notification) => {
+  const handleNotificationPress = async (notification: NotificationGroup) => {
     // Mark as read
     if (!notification.isRead) {
       try {
         await notificationService.markOneAsRead(notification._id);
-        setNotifications((prev) =>
-          prev.map((n) => (n._id === notification._id ? { ...n, isRead: true } : n))
-        );
+        dispatch(markNotificationRead(notification._id));
       } catch (_e) {
         // Silently fail
       }
     }
 
-    // Navigate based on notification type and available data
-    const postId = notification.postId
-      ? (typeof notification.postId === 'string' ? notification.postId : notification.postId._id)
+    const { type, actorCount, recentActors, targetId } = notification;
+
+    // Extract postId from targetId
+    const postId = targetId
+      ? (typeof targetId === 'string' ? targetId : targetId._id)
       : null;
 
-    if (postId && (notification.type === 'Like' || notification.type === 'Save' || notification.type === 'Comment')) {
-      // Navigate to the post that was liked/saved/commented on
+    if (postId && (type === 'Like' || type === 'Save' || type === 'Comment' || type === 'Mention' || type === 'Reply')) {
+      // Navigate to the post
       navigation.navigate('PostDetail', { postId });
-    } else if (notification.senderId?._id && (notification.type === 'Follow' || notification.type === 'Like' || notification.type === 'Save')) {
-      // Navigate to the sender's profile for Follow, or if no postId for Like/Save
-      if (currentUser && notification.senderId._id === currentUser.id) {
-        navigation.navigate('MainTabs' as any, { screen: 'Profile' } as any);
+    } else if (type === 'Follow') {
+      if (actorCount === 1 && recentActors[0]) {
+        // Navigate to the single follower's profile
+        const actorId = recentActors[0]._id;
+        if (currentUser && actorId === currentUser.id) {
+          navigation.navigate('MainTabs' as any, { screen: 'Profile' } as any);
+        } else {
+          navigation.navigate('UserProfile', { userId: actorId });
+        }
       } else {
-        navigation.navigate('UserProfile', { userId: notification.senderId._id });
+        // Multiple followers - just mark as read (already done above)
+        // Could navigate to followers list in the future
+      }
+    } else if (type === 'ArtworkApproved' || type === 'ArtworkRejected') {
+      // Navigate to the post if targetId available
+      if (postId) {
+        navigation.navigate('PostDetail', { postId });
       }
     } else {
-      // Toggle expand/collapse text for other types (AdminBroadcast, System)
+      // Toggle expand/collapse for AdminBroadcast, System, etc.
       setExpandedIds((prev) => {
         const next = new Set(prev);
         if (next.has(notification._id)) {
@@ -169,7 +259,40 @@ export const NotificationsScreen = () => {
     }
   };
 
-  const renderNotification = ({ item }: { item: Notification }) => {
+  const renderAvatar = (notification: NotificationGroup) => {
+    const { type, actorCount, recentActors } = notification;
+
+    // AdminBroadcast: show bell icon
+    if (type === 'AdminBroadcast' || type === 'System') {
+      return (
+        <View style={styles.senderAvatar}>
+          <Feather name="bell" size={18} color={darkColors.textSecondary} />
+        </View>
+      );
+    }
+
+    const firstActor = recentActors[0];
+    const hasAvatar = firstActor?.avatarUrl;
+
+    return (
+      <View style={styles.avatarContainer}>
+        <View style={styles.senderAvatar}>
+          {hasAvatar ? (
+            <Image source={{ uri: firstActor.avatarUrl }} style={styles.avatarImage} />
+          ) : (
+            <Feather name="user" size={18} color={darkColors.textSecondary} />
+          )}
+        </View>
+        {actorCount > 1 && (
+          <View style={styles.actorBadge}>
+            <Text style={styles.actorBadgeText}>+{Math.min(actorCount - 1, 99)}</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderNotification = ({ item }: { item: NotificationGroup }) => {
     const isExpanded = expandedIds.has(item._id);
     return (
       <TouchableOpacity
@@ -177,25 +300,17 @@ export const NotificationsScreen = () => {
         onPress={() => handleNotificationPress(item)}
       >
         <View style={[styles.notificationItem, !item.isRead && styles.unreadItem]}>
-          <View style={styles.senderAvatar}>
-            {item.senderId?.avatarUrl ? (
-              <Image source={{ uri: item.senderId.avatarUrl }} style={styles.avatarImage} />
-            ) : (
-              <Feather
-                name={item.type === 'AdminBroadcast' ? 'bell' : 'user'}
-                size={18}
-                color={darkColors.textSecondary}
-              />
-            )}
-          </View>
+          {renderAvatar(item)}
           <View style={styles.notificationContent}>
             <Text
               style={styles.notificationText}
               numberOfLines={isExpanded ? undefined : 2}
             >
-              {getNotificationMessage(item)}
+              {formatGroupedMessage(item)}
             </Text>
-            <Text style={styles.notificationTime}>{getTimeAgo(item.createdAt)}</Text>
+            <Text style={styles.notificationTime}>
+              {getTimeAgo(item.latestActivityAt)}
+            </Text>
           </View>
           {!item.isRead && <View style={styles.unreadDot} />}
         </View>
@@ -237,13 +352,13 @@ export const NotificationsScreen = () => {
       </View>
 
       {/* Content */}
-      {isLoading ? (
+      {isLoading && !notificationsLoaded ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={darkColors.accent} />
         </View>
       ) : (
         <FlatList
-          data={notifications}
+          data={filteredNotifications}
           keyExtractor={(item) => item._id}
           renderItem={renderNotification}
           contentContainerStyle={styles.listContent}
@@ -337,6 +452,10 @@ const styles = StyleSheet.create({
   unreadItem: {
     backgroundColor: 'rgba(255, 59, 48, 0.05)',
   },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: 12,
+  },
   senderAvatar: {
     width: 40,
     height: 40,
@@ -344,13 +463,31 @@ const styles = StyleSheet.create({
     backgroundColor: darkColors.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
     overflow: 'hidden',
   },
   avatarImage: {
     width: 40,
     height: 40,
     borderRadius: 20,
+  },
+  actorBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -4,
+    backgroundColor: darkColors.accent,
+    borderRadius: 8,
+    minWidth: 18,
+    height: 16,
+    paddingHorizontal: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: darkColors.background,
+  },
+  actorBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   notificationContent: {
     flex: 1,

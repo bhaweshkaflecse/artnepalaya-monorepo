@@ -1,28 +1,26 @@
 import { api } from './api';
 
-export interface Notification {
+export interface NotificationGroup {
   _id: string;
   recipientId: string;
-  senderId?: {
-    _id: string;
-    username: string;
-    fullName: string;
-    avatarUrl?: string;
-  };
-  postId?: {
-    _id: string;
-    media?: Array<{ type: string; url: string }>;
-  } | string;
-  type: 'Like' | 'Save' | 'Follow' | 'Comment' | 'AdminBroadcast' | 'System';
-  title?: string;
-  message: string;
-  referenceId?: string;
+  type: 'Like' | 'Save' | 'Follow' | 'Comment' | 'AdminBroadcast' | 'System' | 'Mention' | 'ArtworkApproved' | 'ArtworkRejected' | 'Reply';
+  targetType: 'Post' | 'User' | 'System' | null;
+  targetId?: { _id: string; media?: Array<{ type: string; url: string }>; title?: string } | string | null;
+  actorCount: number;
+  recentActors: Array<{ _id: string; username: string; avatarUrl?: string }>;
+  latestActivityAt: string;
   isRead: boolean;
-  createdAt: string;
+  lastPushSentAt?: string | null;
+  groupCreatedAt: string;
+  title?: string | null;
+  message?: string | null;
 }
 
+/** Backward-compatible alias */
+export type Notification = NotificationGroup;
+
 export interface NotificationsResponse {
-  data: Notification[];
+  data: NotificationGroup[];
   meta: {
     page: number;
     limit: number;
