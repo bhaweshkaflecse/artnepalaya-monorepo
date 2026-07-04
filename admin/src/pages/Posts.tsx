@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Trash2, Star, StarOff, ChevronLeft, ChevronRight, Search, Film, Copy, Check, RotateCcw } from 'lucide-react';
+import { Trash2, Star, StarOff, ChevronLeft, ChevronRight, Search, Film, Copy, Check, RotateCcw, Heart, Bookmark, X } from 'lucide-react';
 import { api } from '../services/api';
 
 /**
@@ -28,6 +28,8 @@ interface Post {
   authorId: { _id: string; username: string; avatarUrl?: string };
   tags?: string[];
   isFeatured?: boolean;
+  likesCount?: number;
+  savesCount?: number;
 }
 
 interface FeaturedItem {
@@ -53,6 +55,8 @@ export const Posts = () => {
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'trash'>('active');
+  const [activeMediaIndex, setActiveMediaIndex] = useState<Record<string, number>>({});
+  const [previewModal, setPreviewModal] = useState<{ post: Post; index: number } | null>(null);
 
   const copyToClipboard = (id: string) => {
     navigator.clipboard.writeText(id);
@@ -251,6 +255,8 @@ export const Posts = () => {
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Caption</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Artist</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Tags</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Likes</th>
+              <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Saves</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Featured</th>
               <th className="px-5 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10">Actions</th>
             </tr>
@@ -265,21 +271,25 @@ export const Posts = () => {
                   <td className="px-5 py-3.5"><div className="h-4 w-32 animate-pulse bg-gray-100 rounded" /></td>
                   <td className="px-5 py-3.5"><div className="h-4 w-20 animate-pulse bg-gray-100 rounded" /></td>
                   <td className="px-5 py-3.5"><div className="h-4 w-24 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-12 animate-pulse bg-gray-100 rounded" /></td>
+                  <td className="px-5 py-3.5"><div className="h-4 w-12 animate-pulse bg-gray-100 rounded" /></td>
                   <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
                   <td className="px-5 py-3.5"><div className="h-4 w-16 animate-pulse bg-gray-100 rounded" /></td>
                 </tr>
               ))
             ) : posts.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-5 py-12 text-center text-gray-400">
+                <td colSpan={10} className="px-5 py-12 text-center text-gray-400">
                   No posts found.
                 </td>
               </tr>
             ) : (
               posts.map((post, idx) => {
                 const isFeatured = featuredIds.has(post._id);
-                const firstMedia = post.media?.[0];
-                const isVideo = firstMedia?.type === 'video';
+                const mediaCount = post.media?.length || 0;
+                const currentMediaIdx = activeMediaIndex[post._id] || 0;
+                const currentMedia = post.media?.[currentMediaIdx];
+                const isCurrentVideo = currentMedia?.type === 'video';
                 return (
                   <tr key={post._id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors duration-100">
                     <td className="px-5 py-3.5 text-sm text-gray-400">{showingStart + idx}</td>
@@ -292,28 +302,60 @@ export const Posts = () => {
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
-                      {firstMedia ? (
-                        isVideo ? (
-                          <div className="relative w-10 h-10">
+                      <div
+                        className="relative w-10 h-10 group cursor-pointer"
+                        onClick={() => mediaCount > 0 && setPreviewModal({ post, index: currentMediaIdx })}
+                      >
+                        {currentMedia ? (
+                          <>
                             <img
-                              src={getVideoThumbnail(firstMedia.url)}
+                              src={isCurrentVideo ? getVideoThumbnail(currentMedia.url) : currentMedia.url}
                               alt=""
                               className="w-10 h-10 rounded object-cover"
                             />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <Film size={14} className="text-white drop-shadow" />
-                            </div>
-                          </div>
+                            {isCurrentVideo && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Film size={14} className="text-white drop-shadow" />
+                              </div>
+                            )}
+                          </>
                         ) : (
-                          <img
-                            src={firstMedia.url}
-                            alt=""
-                            className="w-10 h-10 rounded object-cover"
-                          />
-                        )
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-gray-100" />
-                      )}
+                          <div className="w-10 h-10 rounded-lg bg-gray-100" />
+                        )}
+                        {mediaCount > 1 && (
+                          <span className="absolute -top-1 -right-1 bg-gray-900 text-white text-[9px] font-medium px-1 py-0.5 rounded-full leading-none">
+                            {currentMediaIdx + 1}/{mediaCount}
+                          </span>
+                        )}
+                        {mediaCount > 1 && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMediaIndex((prev) => ({
+                                  ...prev,
+                                  [post._id]: (currentMediaIdx - 1 + mediaCount) % mediaCount,
+                                }));
+                              }}
+                              className="absolute left-0 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-r p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ChevronLeft size={10} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMediaIndex((prev) => ({
+                                  ...prev,
+                                  [post._id]: (currentMediaIdx + 1) % mediaCount,
+                                }));
+                              }}
+                              className="absolute right-0 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-l p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <ChevronRight size={10} />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-3.5 text-sm max-w-[200px] truncate text-gray-700">
                       {post.caption || '(No caption)'}
@@ -321,6 +363,18 @@ export const Posts = () => {
                     <td className="px-5 py-3.5 text-sm text-gray-700">{post.authorId?.username || 'Unknown'}</td>
                     <td className="px-5 py-3.5 text-sm text-gray-400 max-w-[150px] truncate">
                       {post.tags?.join(', ') || '-'}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center space-x-1 text-sm text-gray-600">
+                        <Heart size={13} className="text-red-400" />
+                        <span>{post.likesCount ?? 0}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center space-x-1 text-sm text-gray-600">
+                        <Bookmark size={13} className="text-blue-400" />
+                        <span>{post.savesCount ?? 0}</span>
+                      </div>
                     </td>
                     <td className="px-5 py-3.5">
                       {activeTab === 'active' ? (
@@ -441,6 +495,92 @@ export const Posts = () => {
                 {activeTab === 'trash' ? 'Permanently Delete' : 'Move to Trash'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Media Preview Modal */}
+      {previewModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setPreviewModal(null)}>
+          <div className="bg-white rounded-xl p-4 max-w-lg w-full mx-4 shadow-xl relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setPreviewModal(null)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors z-10"
+            >
+              <X size={18} />
+            </button>
+            <div className="flex items-center justify-between mb-3 pr-8">
+              <span className="text-sm font-medium text-gray-700">
+                Media {previewModal.index + 1} of {previewModal.post.media.length}
+              </span>
+              {previewModal.post.media[previewModal.index]?.type === 'video' && (
+                <span className="flex items-center space-x-1 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                  <Film size={11} />
+                  <span>Video</span>
+                </span>
+              )}
+            </div>
+            <div className="relative flex items-center justify-center bg-gray-50 rounded-lg overflow-hidden" style={{ minHeight: '300px' }}>
+              {previewModal.post.media[previewModal.index]?.type === 'video' ? (
+                <img
+                  src={getVideoThumbnail(previewModal.post.media[previewModal.index].url)}
+                  alt=""
+                  className="max-w-full max-h-[400px] object-contain rounded"
+                />
+              ) : (
+                <img
+                  src={previewModal.post.media[previewModal.index]?.url}
+                  alt=""
+                  className="max-w-full max-h-[400px] object-contain rounded"
+                />
+              )}
+              {previewModal.post.media.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setPreviewModal((prev) => prev ? ({
+                      ...prev,
+                      index: (prev.index - 1 + prev.post.media.length) % prev.post.media.length,
+                    }) : null)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-700 p-1.5 rounded-full shadow transition-colors"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    onClick={() => setPreviewModal((prev) => prev ? ({
+                      ...prev,
+                      index: (prev.index + 1) % prev.post.media.length,
+                    }) : null)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-700 p-1.5 rounded-full shadow transition-colors"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </>
+              )}
+            </div>
+            {previewModal.post.media.length > 1 && (
+              <div className="flex items-center justify-center space-x-2 mt-3 overflow-x-auto py-1">
+                {previewModal.post.media.map((media, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPreviewModal((prev) => prev ? ({ ...prev, index: i }) : null)}
+                    className={`relative w-10 h-10 rounded overflow-hidden flex-shrink-0 border-2 transition-colors ${
+                      i === previewModal.index ? 'border-gray-900' : 'border-transparent hover:border-gray-300'
+                    }`}
+                  >
+                    <img
+                      src={media.type === 'video' ? getVideoThumbnail(media.url) : media.url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                    {media.type === 'video' && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <Film size={10} className="text-white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
