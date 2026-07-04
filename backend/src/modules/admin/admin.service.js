@@ -203,23 +203,23 @@ export const getAnalytics = async () => {
   return { postsPerDay, activeUsersThisWeek, newPostsToday };
 };
 
-export const getFeedAnalytics = async () => {
+export const getFeedAnalytics = async (limit = 10) => {
   const [mostLikedPosts, mostSavedPosts, mostFollowedArtists] = await Promise.all([
     Post.find({ deletedAt: null })
       .sort({ likesCount: -1 })
-      .limit(5)
+      .limit(limit)
       .populate('authorId', 'username avatarUrl isVerified verifiedType')
       .select('caption media likesCount authorId')
       .lean(),
     Post.find({ deletedAt: null })
       .sort({ savesCount: -1 })
-      .limit(5)
+      .limit(limit)
       .populate('authorId', 'username avatarUrl isVerified verifiedType')
       .select('caption media savesCount authorId')
       .lean(),
     User.find()
       .sort({ 'stats.followers': -1 })
-      .limit(5)
+      .limit(limit)
       .select('username avatarUrl stats.followers isVerified verifiedType')
       .lean()
   ]);

@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Dashboard Widgets - Add Top 10/50/100/500 filter dropdowns, Post IDs, User IDs, and Copy ID actions to the feed analytics widgets. Also update backend to accept a limit query parameter.",
+  "status": "in_progress",
+  "steps": [
+    "1. In backend/src/modules/admin/admin.controller.js: Update getFeedAnalytics to extract a 'limit' query parameter from req.query and pass it to adminService.getFeedAnalytics(limit)",
+    "2. In backend/src/modules/admin/admin.service.js: Update getFeedAnalytics to accept a limit parameter (default 10), and use .limit(limit) instead of hardcoded .limit(5) for all three queries",
+    "3. In admin/src/pages/Dashboard.tsx: Add a state variable for the feed limit filter (default 10, options: 10, 50, 100, 500)",
+    "4. Add a dropdown/select element above the feed analytics grid that allows switching between Top 10/50/100/500",
+    "5. Pass the selected limit as a query parameter when fetching /admin/feed-analytics?limit=N",
+    "6. For Most Liked Posts and Most Saved Posts widgets: show the Post ID (truncated with mono font) and a Copy button next to each post entry",
+    "7. For Most Followed Artists widget: show the User ID (truncated with mono font) and a Copy button next to each artist entry",
+    "8. Add copiedId state management similar to Posts.tsx pattern (using navigator.clipboard.writeText)"
+  ],
+  "acceptance_criteria": [
+    "Dashboard shows a filter dropdown with options: Top 10, Top 50, Top 100, Top 500",
+    "Changing the filter re-fetches feed analytics with the new limit",
+    "Each post in Most Liked/Most Saved shows its _id with a copy button",
+    "Each artist in Most Followed shows their _id with a copy button",
+    "Backend accepts limit query param and returns the requested number of results"
+  ],
+  "verification": ["Verify no syntax errors in modified files"],
+  "blocked_reason": null,
+  "findings": ""
+}

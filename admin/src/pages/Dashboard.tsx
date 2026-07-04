@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, Image, ShieldAlert, BarChart3, TrendingUp, Heart, Bookmark, UserCheck } from 'lucide-react';
+import { Users, Image, ShieldAlert, BarChart3, TrendingUp, Heart, Bookmark, UserCheck, Copy, Check } from 'lucide-react';
 import { api } from '../services/api';
 
 interface DashboardStats {
@@ -57,6 +57,14 @@ export const Dashboard = () => {
   const [feedLoading, setFeedLoading] = useState(true);
   const [error, setError] = useState('');
   const [analyticsError, setAnalyticsError] = useState('');
+  const [feedLimit, setFeedLimit] = useState(10);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyToClipboard = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -79,9 +87,15 @@ export const Dashboard = () => {
         setAnalyticsLoading(false);
       }
     };
+    fetchStats();
+    fetchAnalytics();
+  }, []);
+
+  useEffect(() => {
     const fetchFeedAnalytics = async () => {
+      setFeedLoading(true);
       try {
-        const res = await api.get('/admin/feed-analytics');
+        const res = await api.get('/admin/feed-analytics', { params: { limit: feedLimit } });
         setFeedAnalytics(res.data.data);
       } catch {
         // Silently fail - feed analytics is supplementary
@@ -89,10 +103,8 @@ export const Dashboard = () => {
         setFeedLoading(false);
       }
     };
-    fetchStats();
-    fetchAnalytics();
     fetchFeedAnalytics();
-  }, []);
+  }, [feedLimit]);
 
   if (error) {
     return (
@@ -270,6 +282,22 @@ export const Dashboard = () => {
       </div>
 
       {/* Feed Analytics Section */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <TrendingUp size={20} className="text-purple-600" />
+          Feed Analytics
+        </h3>
+        <select
+          value={feedLimit}
+          onChange={(e) => setFeedLimit(Number(e.target.value))}
+          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value={10}>Top 10</option>
+          <option value={50}>Top 50</option>
+          <option value={100}>Top 100</option>
+          <option value={500}>Top 500</option>
+        </select>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Most Liked Posts */}
         <div className="bg-white p-6 rounded-lg border border-gray-200">
@@ -286,18 +314,30 @@ export const Dashboard = () => {
           ) : feedAnalytics?.mostLikedPosts?.length ? (
             <div className="space-y-3">
               {feedAnalytics.mostLikedPosts.map((post, idx) => (
-                <div key={post._id} className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-gray-400 w-5">#{idx + 1}</span>
-                  {post.media?.[0]?.url ? (
-                    <img src={post.media[0].url} alt="" className="w-10 h-10 rounded object-cover" />
-                  ) : (
-                    <div className="w-10 h-10 rounded bg-gray-200" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">@{post.authorId?.username || 'unknown'}</p>
-                    <p className="text-xs text-gray-500 truncate">{post.caption || 'No caption'}</p>
+                <div key={post._id} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-gray-400 w-5">#{idx + 1}</span>
+                    {post.media?.[0]?.url ? (
+                      <img src={post.media[0].url} alt="" className="w-10 h-10 rounded object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-gray-200" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">@{post.authorId?.username || 'unknown'}</p>
+                      <p className="text-xs text-gray-500 truncate">{post.caption || 'No caption'}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-red-500">{post.likesCount || 0}</span>
                   </div>
-                  <span className="text-sm font-semibold text-red-500">{post.likesCount || 0}</span>
+                  <div className="flex items-center gap-1 ml-8">
+                    <span className="text-xs font-mono text-gray-400 truncate max-w-[140px]">{post._id}</span>
+                    <button
+                      onClick={() => copyToClipboard(post._id)}
+                      className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+                      title="Copy Post ID"
+                    >
+                      {copiedId === post._id ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -321,18 +361,30 @@ export const Dashboard = () => {
           ) : feedAnalytics?.mostSavedPosts?.length ? (
             <div className="space-y-3">
               {feedAnalytics.mostSavedPosts.map((post, idx) => (
-                <div key={post._id} className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-gray-400 w-5">#{idx + 1}</span>
-                  {post.media?.[0]?.url ? (
-                    <img src={post.media[0].url} alt="" className="w-10 h-10 rounded object-cover" />
-                  ) : (
-                    <div className="w-10 h-10 rounded bg-gray-200" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">@{post.authorId?.username || 'unknown'}</p>
-                    <p className="text-xs text-gray-500 truncate">{post.caption || 'No caption'}</p>
+                <div key={post._id} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-gray-400 w-5">#{idx + 1}</span>
+                    {post.media?.[0]?.url ? (
+                      <img src={post.media[0].url} alt="" className="w-10 h-10 rounded object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-gray-200" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">@{post.authorId?.username || 'unknown'}</p>
+                      <p className="text-xs text-gray-500 truncate">{post.caption || 'No caption'}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-blue-500">{post.savesCount || 0}</span>
                   </div>
-                  <span className="text-sm font-semibold text-blue-500">{post.savesCount || 0}</span>
+                  <div className="flex items-center gap-1 ml-8">
+                    <span className="text-xs font-mono text-gray-400 truncate max-w-[140px]">{post._id}</span>
+                    <button
+                      onClick={() => copyToClipboard(post._id)}
+                      className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+                      title="Copy Post ID"
+                    >
+                      {copiedId === post._id ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -356,17 +408,29 @@ export const Dashboard = () => {
           ) : feedAnalytics?.mostFollowedArtists?.length ? (
             <div className="space-y-3">
               {feedAnalytics.mostFollowedArtists.map((artist, idx) => (
-                <div key={artist._id} className="flex items-center gap-3">
-                  <span className="text-sm font-bold text-gray-400 w-5">#{idx + 1}</span>
-                  {artist.avatarUrl ? (
-                    <img src={artist.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-200" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">@{artist.username}</p>
+                <div key={artist._id} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-gray-400 w-5">#{idx + 1}</span>
+                    {artist.avatarUrl ? (
+                      <img src={artist.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-200" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">@{artist.username}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-green-500">{artist.stats?.followers || 0}</span>
                   </div>
-                  <span className="text-sm font-semibold text-green-500">{artist.stats?.followers || 0}</span>
+                  <div className="flex items-center gap-1 ml-8">
+                    <span className="text-xs font-mono text-gray-400 truncate max-w-[140px]">{artist._id}</span>
+                    <button
+                      onClick={() => copyToClipboard(artist._id)}
+                      className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+                      title="Copy User ID"
+                    >
+                      {copiedId === artist._id ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

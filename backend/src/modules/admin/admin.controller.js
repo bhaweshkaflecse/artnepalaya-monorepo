@@ -400,7 +400,8 @@ export const mergeAdminTags = async (req, res, next) => {
 
 export const getFeedAnalytics = async (req, res, next) => {
   try {
-    const data = await adminService.getFeedAnalytics();
+    const limit = parseInt(req.query.limit) || 10;
+    const data = await adminService.getFeedAnalytics(limit);
     res.status(200).json({ success: true, data });
   } catch (err) { next(err); }
 };
