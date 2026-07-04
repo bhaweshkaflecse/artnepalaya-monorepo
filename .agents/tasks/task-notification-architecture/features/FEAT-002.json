@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Rewrite notification.service.js to use the new grouped notification model with time-windowed grouping, push cooldowns, and smart socket updates. This replaces the existing per-event notification creation with group-based upserts.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Rewrite createNotification() in backend/src/modules/notifications/notification.service.js. The new logic: (a) Self-notification check remains (recipientId === senderId -> return null). (b) Load config via getNotificationConfig(). (c) For groupable types (Like, Save, Follow, Comment): calculate windowStart = new Date(Date.now() - config.groupingWindows[type]). Query NotificationGroup for an active group: {recipientId, type, targetId: postId||senderId, groupCreatedAt: {$gte: windowStart}}. If found: use findOneAndUpdate to $inc actorCount, $push recentActors (with $slice -maxRecentActors), set latestActivityAt=now, set isRead=false. If not found: create new NotificationGroup with actorCount:1, recentActors:[senderId], latestActivityAt:now, groupCreatedAt:now. (d) For AdminBroadcast/System: always create independent group (no aggregation). (e) After upsert/create: emit socket event NOTIFICATION_UPDATED (new event) with the full populated group data to allow client-side patching. Also emit NOTIFICATION_COUNT_CHANGED with fresh unread count from NotificationGroup.countDocuments({recipientId, isRead:false}). (f) Push cooldown logic: check lastPushSentAt on the group. If (now - lastPushSentAt) > config.pushCooldowns[type], send push and update lastPushSentAt. If within cooldown, skip push (socket + DB update still happen).",
     "Step 2: Rewrite getUserNotifications() to query NotificationGroup instead of Notification. Populate recentActors with 'username avatarUrl'. Populate targetId conditionally - if targetType is 'Post', populate with 'media title'. Sort by latestActivityAt descending. Keep pagination, filter logic (all/unread/read), and unread count.",
@@ -30,5 +30,5 @@
     "Run 'node --check backend/src/realtime/events.js' to verify syntax"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All files pass node --check syntax validation (NODE_OPTIONS='' node --check). The implementation maintains full backward compatibility with existing callers in post.service.js and user.service.js. The Notification import is kept for reference but no new documents are created in the old collection. The controller works unchanged since getUserNotifications, markAllAsRead, and markOneAsRead maintain the same response shape."
 }
