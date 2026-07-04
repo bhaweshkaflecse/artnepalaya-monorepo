@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authGuard } from '../../middlewares/authGuard.js';
 import { optionalAuth } from '../../middlewares/optionalAuth.js';
 import { validate } from '../../middlewares/validator.js';
+import { secureUpload, handleUploadErrors } from '../../middlewares/upload.js';
 import * as controller from './user.controller.js';
 import * as validation from './user.validation.js';
 
@@ -11,6 +12,10 @@ const router = Router();
 router.get('/me', authGuard, controller.getMe);
 router.put('/me', authGuard, validate(validation.updateProfileSchema), controller.updateMe);
 router.get('/me/saved', authGuard, validate(validation.paginationSchema), controller.getSavedPosts);
+
+// === Avatar Routes (require auth) ===
+router.post('/me/avatar', authGuard, secureUpload.single('avatar'), handleUploadErrors, controller.uploadAvatar);
+router.delete('/me/avatar', authGuard, controller.removeAvatar);
 
 // === Push Token Routes (require auth) ===
 router.post('/me/push-token', authGuard, controller.registerPushToken);

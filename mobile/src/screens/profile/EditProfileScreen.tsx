@@ -12,6 +12,7 @@ import {
   Image,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { lightColors } from '../../theme/colors';
 import { useAppSelector, useAppDispatch } from '../../store';
@@ -159,6 +160,8 @@ export const EditProfileScreen = () => {
   const [artworkTypes, setArtworkTypes] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [contactError, setContactError] = useState('');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [localAvatarUri, setLocalAvatarUri] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchArtworkTypes = async () => {
@@ -176,6 +179,78 @@ export const EditProfileScreen = () => {
     };
     fetchArtworkTypes();
   }, []);
+
+  const handlePickAvatar = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      setIsUploadingAvatar(true);
+
+      const formData = new FormData();
+      const uriParts = asset.uri.split('.');
+      const fileType = uriParts[uriParts.length - 1];
+      formData.append('avatar', {
+        uri: asset.uri,
+        name: `avatar.${fileType}`,
+        type: `image/${fileType === 'jpg' ? 'jpeg' : fileType}`,
+      } as any);
+
+      const response = await api.post('/users/me/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (response.data?.success && response.data.data) {
+        setLocalAvatarUri(response.data.data.avatarUrl || asset.uri);
+        dispatch(setProfile(response.data.data));
+        Alert.alert('Success', 'Profile photo updated!');
+      }
+    } catch (error: any) {
+      const message = error?.response?.data?.error?.message || 'Failed to upload photo. Please try again.';
+      Alert.alert('Error', message);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    Alert.alert(
+      'Remove Photo',
+      'Are you sure you want to remove your profile photo?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsUploadingAvatar(true);
+              const response = await api.delete('/users/me/avatar');
+              if (response.data?.success && response.data.data) {
+                setLocalAvatarUri(null);
+                dispatch(setProfile(response.data.data));
+                Alert.alert('Success', 'Profile photo removed.');
+              }
+            } catch (error: any) {
+              const message = error?.response?.data?.error?.message || 'Failed to remove photo. Please try again.';
+              Alert.alert('Error', message);
+            } finally {
+              setIsUploadingAvatar(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const validateContactFields = (): boolean => {
     // Validate website - check for blocked social domains
@@ -322,12 +397,36 @@ export const EditProfileScreen = () => {
 
         {/* Avatar Preview */}
         <View style={styles.avatarSection}>
-          {displayUser?.avatarUrl ? (
-            <Image source={{ uri: displayUser.avatarUrl }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Feather name="user" size={36} color={lightColors.textSecondary} />
-            </View>
+          <View style={styles.avatarWrapper}>
+            {(localAvatarUri || displayUser?.avatarUrl) ? (
+              <Image source={{ uri: localAvatarUri || displayUser?.avatarUrl }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Feather name="user" size={36} color={lightColors.textSecondary} />
+              </View>
+            )}
+            {isUploadingAvatar && (
+              <View style={styles.avatarOverlay}>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              </View>
+            )}
+          </View>
+          <TouchableOpacity
+            style={styles.changePhotoBtn}
+            onPress={handlePickAvatar}
+            disabled={isUploadingAvatar}
+          >
+            <Feather name="camera" size={14} color={lightColors.accent} />
+            <Text style={styles.changePhotoText}>Change Photo</Text>
+          </TouchableOpacity>
+          {(localAvatarUri || displayUser?.avatarUrl) && (
+            <TouchableOpacity
+              style={styles.removePhotoBtn}
+              onPress={handleRemoveAvatar}
+              disabled={isUploadingAvatar}
+            >
+              <Text style={styles.removePhotoText}>Remove Photo</Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -576,6 +675,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
+  avatarWrapper: {
+    position: 'relative',
+  },
   avatar: {
     width: 88,
     height: 88,
@@ -588,6 +690,40 @@ const styles = StyleSheet.create({
     backgroundColor: lightColors.surface,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 44,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  changePhotoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: lightColors.accent + '12',
+  },
+  changePhotoText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: lightColors.accent,
+    marginLeft: 6,
+  },
+  removePhotoBtn: {
+    marginTop: 8,
+    paddingVertical: 4,
+  },
+  removePhotoText: {
+    fontSize: 13,
+    color: lightColors.textSecondary,
   },
   fieldGroup: {
     marginBottom: 20,

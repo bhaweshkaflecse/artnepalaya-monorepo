@@ -1,6 +1,24 @@
 import mongoose from 'mongoose';
+import { v2 as cloudinary } from 'cloudinary';
 import * as userService from './user.service.js';
 import { Post } from '../posts/post.model.js';
+
+// Helper: Uploads buffer to Cloudinary (same pattern as post.controller.js)
+const uploadBufferToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'art_nepalaya_avatars',
+        resource_type: 'image',
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+    stream.end(buffer);
+  });
+};
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 const invalidIdResponse = (res) => res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid user ID format' } });
@@ -208,6 +226,31 @@ export const updateNotificationPreferences = async (req, res, next) => {
     if (err.status === 404) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: err.message } });
     }
+    next(err);
+  }
+};
+
+// === Avatar Management ===
+export const uploadAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'No avatar file provided' } });
+    }
+
+    const result = await uploadBufferToCloudinary(req.file.buffer);
+    const updatedUser = await userService.updateUserProfile(req.user.id, { avatarUrl: result.secure_url });
+
+    res.status(200).json({ success: true, message: 'Avatar uploaded successfully', data: updatedUser });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const removeAvatar = async (req, res, next) => {
+  try {
+    const updatedUser = await userService.updateUserProfile(req.user.id, { avatarUrl: null });
+    res.status(200).json({ success: true, message: 'Avatar removed successfully', data: updatedUser });
+  } catch (err) {
     next(err);
   }
 };
