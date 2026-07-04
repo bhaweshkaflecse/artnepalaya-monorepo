@@ -241,6 +241,16 @@ export const getFeed = async (userId, cursor, limit, showMatureContent) => {
   return baseFeed;
 };
 
+// === QUERIES ===
+export const getPostLikes = async (postId) => {
+  const likes = await Like.find({ postId })
+    .populate('userId', 'username avatarUrl fullName')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return likes.map(like => like.userId);
+};
+
 // === INTERACTIONS ===
 export const addLike = async (userId, postId) => {
   try {

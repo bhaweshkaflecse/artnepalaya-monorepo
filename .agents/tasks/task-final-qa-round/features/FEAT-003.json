@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Post Like Count Display and 'Liked By' Modal - Add visible like count to PostCard and PostDetailScreen. When tapped, show a modal listing users who liked the post. Requires: (1) backend endpoint GET /posts/:postId/likes to return list of users who liked, (2) mobile service method, (3) UI in PostCard and PostDetailScreen.",
+  "status": "in_progress",
+  "steps": [
+    "1. Backend: In backend/src/modules/posts/post.controller.js - Add a getPostLikes controller function that: (a) validates postId, (b) calls postService.getPostLikes(postId), (c) returns the list with success response.",
+    "2. Backend: In backend/src/modules/posts/post.service.js - Add getPostLikes function that: (a) queries Like model for all likes on this postId, (b) populates userId with 'username avatarUrl fullName', (c) returns the array of liking users.",
+    "3. Backend: In backend/src/modules/posts/post.routes.js - Add: router.get('/:postId/likes', optionalAuth, controller.getPostLikes) - place it BEFORE the authGuard router.use() so it's publicly accessible (or place after if you prefer auth-only). Place it after the /:postId GET route.",
+    "4. Mobile: In mobile/src/services/post.service.ts - Add a getPostLikes method: getPostLikes: async (postId: string): Promise<Array<{_id: string, username: string, avatarUrl?: string, fullName?: string}>> => { const response = await api.get('/posts/' + postId + '/likes'); return response.data.data; }",
+    "5. Mobile: In mobile/src/components/home/PostCard.tsx - After the actions View (which has like/share/save buttons), add a likes count section: (a) Show 'X likes' text (using post.likesCount, adjusting for local like state: display isLiked ? (post.likesCount || 0) + (post.isLikedByMe ? 0 : 1) : Math.max(0, (post.likesCount || 0) - (post.isLikedByMe ? 1 : 0))). (b) Make it a TouchableOpacity that opens a 'Liked By' modal. (c) Add the modal with a FlatList showing avatar + username + fullName for each liker.",
+    "6. Mobile: In mobile/src/screens/post/PostDetailScreen.tsx - After the actions View, add a similar likes count display with the same modal functionality. Use the same pattern: TouchableOpacity showing 'X likes', tapping opens a modal that fetches and displays the list of likers.",
+    "7. Style the likes count text: fontSize 14, fontWeight '600', color '#FFFFFF', paddingHorizontal 12, marginBottom 4. The modal should have a clean white/dark background matching the screen theme (dark for both PostCard and PostDetailScreen since they use darkColors)."
+  ],
+  "acceptance_criteria": [
+    "Backend GET /posts/:postId/likes endpoint returns array of users who liked the post",
+    "PostCard shows like count (e.g., '24 likes') between the action buttons and the content section",
+    "PostDetailScreen shows like count in the same position",
+    "Tapping the like count opens a modal showing avatars, usernames, and full names of likers",
+    "Like count updates optimistically when user likes/unlikes (adjusts display count based on local isLiked state vs server likesCount)",
+    "Modal has proper loading state and empty state"
+  ],
+  "verification": [
+    "Read backend post.routes.js and confirm GET /:postId/likes route exists",
+    "Read PostCard.tsx and confirm likesCount display exists after actions section",
+    "Read PostDetailScreen.tsx and confirm likesCount display exists",
+    "Verify post.service.ts has getPostLikes method"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

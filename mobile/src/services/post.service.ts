@@ -108,4 +108,9 @@ export const postService = {
   deletePost: async (postId: string): Promise<void> => {
     await api.delete(`/posts/${postId}`);
   },
+
+  getPostLikes: async (postId: string): Promise<Array<{ _id: string; username: string; avatarUrl?: string; fullName?: string }>> => {
+    const response = await api.get(`/posts/${postId}/likes`);
+    return response.data.data;
+  },
 };

@@ -11,6 +11,7 @@ const router = Router();
 // === Public Routes (no auth required) ===
 router.get('/feed', optionalAuth, validate(validation.feedPaginationSchema), controller.getFeed);
 router.get('/:postId', optionalAuth, controller.getSinglePost);
+router.get('/:postId/likes', optionalAuth, controller.getPostLikes);
 
 // Protect all routes below
 router.use(authGuard);

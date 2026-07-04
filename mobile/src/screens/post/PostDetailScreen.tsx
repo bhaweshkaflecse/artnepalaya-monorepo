@@ -14,6 +14,7 @@ import {
   Share,
   Alert,
   Animated,
+  Modal,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation, useFocusEffect, RouteProp } from '@react-navigation/native';
@@ -47,6 +48,9 @@ export const PostDetailScreen = () => {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [shouldPlay, setShouldPlay] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(initialMediaIndex);
+  const [showLikedByModal, setShowLikedByModal] = useState(false);
+  const [likedByUsers, setLikedByUsers] = useState<Array<{ _id: string; username: string; avatarUrl?: string; fullName?: string }>>([]);
+  const [likedByLoading, setLikedByLoading] = useState(false);
 
   const isGuest = useAppSelector(selectIsGuest);
   const currentUser = useAppSelector(selectUser);
@@ -265,6 +269,34 @@ export const PostDetailScreen = () => {
       // Share cancelled
     }
   };
+
+  const handleOpenLikedBy = async () => {
+    if (!post) return;
+    setShowLikedByModal(true);
+    setLikedByLoading(true);
+    try {
+      const users = await postService.getPostLikes(post._id);
+      setLikedByUsers(users);
+    } catch {
+      setLikedByUsers([]);
+    } finally {
+      setLikedByLoading(false);
+    }
+  };
+
+  const getDisplayedLikeCount = (): number => {
+    if (!post) return 0;
+    const serverCount = post.likesCount || 0;
+    if (isLiked && !post.isLikedByMe) {
+      return serverCount + 1;
+    }
+    if (!isLiked && post.isLikedByMe) {
+      return Math.max(0, serverCount - 1);
+    }
+    return serverCount;
+  };
+
+  const displayedLikeCount = getDisplayedLikeCount();
 
   if (isLoading) {
     return (
@@ -561,6 +593,15 @@ export const PostDetailScreen = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Likes Count */}
+        {displayedLikeCount > 0 && (
+          <TouchableOpacity onPress={handleOpenLikedBy} activeOpacity={0.7}>
+            <Text style={styles.likesCountText}>
+              {displayedLikeCount} {displayedLikeCount === 1 ? 'like' : 'likes'}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         {/* Content Transparency Badges */}
         {(((post as any).isAIGenerated === true || post.isHumanMade === false) || (post as any).isOriginalContent === true || (post as any).isNsfw === true) && (
           <View style={styles.badgesContainer}>
@@ -609,6 +650,69 @@ export const PostDetailScreen = () => {
         onClose={() => setShowReportModal(false)}
         postId={post._id}
       />
+
+      {/* Liked By Modal */}
+      <Modal
+        visible={showLikedByModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowLikedByModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Liked By</Text>
+              <TouchableOpacity onPress={() => setShowLikedByModal(false)} style={styles.modalCloseBtn}>
+                <Feather name="x" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            {likedByLoading ? (
+              <View style={styles.modalLoadingContainer}>
+                <ActivityIndicator size="large" color="#FF3B30" />
+              </View>
+            ) : likedByUsers.length === 0 ? (
+              <View style={styles.modalEmptyContainer}>
+                <Feather name="heart" size={32} color={darkColors.textSecondary} />
+                <Text style={styles.modalEmptyText}>No likes yet</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={likedByUsers}
+                keyExtractor={(item) => item._id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.likerRow}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setShowLikedByModal(false);
+                      if (currentUser && item._id === currentUser.id) {
+                        navigation.navigate('MainTabs' as any, { screen: 'Profile' } as any);
+                      } else {
+                        navigation.navigate('UserProfile', { userId: item._id });
+                      }
+                    }}
+                  >
+                    <View style={styles.likerAvatar}>
+                      {item.avatarUrl ? (
+                        <Image source={{ uri: item.avatarUrl }} style={styles.likerAvatarImage} />
+                      ) : (
+                        <Feather name="user" size={16} color={darkColors.textSecondary} />
+                      )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.likerUsername}>{item.username}</Text>
+                      {item.fullName && (
+                        <Text style={styles.likerFullName}>{item.fullName}</Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                )}
+                style={styles.likersList}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -833,5 +937,89 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '600',
+  },
+  likesCountText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    paddingHorizontal: 12,
+    marginBottom: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#1A1A1A',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '60%',
+    minHeight: 200,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2A2A',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalLoadingContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalEmptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalEmptyText: {
+    fontSize: 14,
+    color: darkColors.textSecondary,
+    marginTop: 8,
+  },
+  likersList: {
+    paddingHorizontal: 16,
+  },
+  likerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  likerAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: darkColors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    overflow: 'hidden',
+  },
+  likerAvatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  likerUsername: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  likerFullName: {
+    fontSize: 12,
+    color: darkColors.textSecondary,
+    marginTop: 1,
   },
 });

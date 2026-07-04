@@ -54,6 +54,18 @@ export const createPost = async (req, res, next) => {
   }
 };
 
+export const getPostLikes = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
+      return res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid post ID format' } });
+    }
+    const users = await postService.getPostLikes(req.params.postId);
+    res.status(200).json({ success: true, data: users });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getSinglePost = async (req, res, next) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
