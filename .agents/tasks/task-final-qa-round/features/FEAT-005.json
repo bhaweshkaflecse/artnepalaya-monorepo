@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-005",
+  "type": "docs",
+  "description": "Produce two audit documents: (1) Notification Architecture Audit explaining which notifications work for in-app vs push vs socket events (Follow, Like, Save). (2) Post Publishing Pipeline Audit tracing media from picker to rendering, identifying where data could be lost.",
+  "status": "in_progress",
+  "steps": [
+    "1. Create .agents/tasks/task-final-qa-round/NOTIFICATION_AUDIT.md documenting: (a) Follow notifications: in-app created via notification.service.js createNotification({type:'Follow'}), push sent via pushServiceSend if user has tokens and push prefs enabled, socket event NOTIFICATION_COUNT_CHANGED emitted to recipient. (b) Like notifications: same flow with type 'Like', but deduplicates (findOneAndUpdate). Re-likes do NOT re-trigger push. (c) Save notifications: same as Like with type 'Save', same dedup behavior. (d) Summary table: Type | In-App | Push | Socket | Notes.",
+    "2. Create .agents/tasks/task-final-qa-round/POST_PIPELINE_AUDIT.md documenting the 7-stage pipeline: Stage 1 (Media Picker): CreateScreen uses ImagePicker.launchImageLibraryAsync with allowsMultipleSelection:true, selectionLimit: Math.max(1, 6 - mediaItems.length). MAX_IMAGES=5, MAX_VIDEOS=1. Stage 2 (FormData Construction): All items in mediaItems array are appended as formData.append('media', ...) in a loop. Stage 3 (Multer): secureUpload.array('media', 6) - accepts up to 6 files in memory. Stage 4 (Cloudinary): post.controller.js maps over req.files and uploads each buffer to Cloudinary. Stage 5 (MongoDB): post.media array stores ALL uploaded media objects (url, providerId, type). Stage 6 (GET API): getSinglePost returns full post document including ALL media items. getFeed also returns full media array. Stage 7 (Rendering): PostCard uses FlatList with data={post.media} - renders ALL items as swipeable pages. PostDetailScreen same - FlatList horizontal paginated with data={post.media}.",
+    "3. In the POST_PIPELINE_AUDIT.md, include the VERDICT: No media loss at any stage. The pipeline correctly handles multiple media items end-to-end. If the user reports seeing only 1 image in Post Detail, the issue is likely: (a) the post was created before the multi-media fix was deployed, (b) the initial scroll position hides other items (but pagination dots should show), (c) a specific device rendering issue. Profile grid and Explore grid intentionally show only the FIRST image (using getPrimaryImageUrl helper) which is by design for grid thumbnails.",
+    "4. Include evidence references for each stage (file paths and line numbers)."
+  ],
+  "acceptance_criteria": [
+    "NOTIFICATION_AUDIT.md exists with clear documentation of Follow/Like/Save notification flows",
+    "POST_PIPELINE_AUDIT.md exists with 7-stage pipeline analysis",
+    "Each stage references specific file paths and code patterns",
+    "Clear verdict on where (if anywhere) media could be lost"
+  ],
+  "verification": [
+    "Read both audit documents and confirm they reference actual code paths",
+    "Verify the pipeline stages match the actual code flow"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
