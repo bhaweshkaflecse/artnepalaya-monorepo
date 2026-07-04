@@ -186,12 +186,12 @@ export const OnboardingScreen = () => {
 
             {/* Title */}
             <Text style={styles.heroTitle}>
-              Made for Art Lovers{'\n'}& Creators
+              Made for Artists,{'\n'}Art Lovers & Creatives
             </Text>
 
             {/* Description */}
             <Text style={styles.heroDescription}>
-              Nepal's premier platform for discovering, sharing, and celebrating art from across the Himalayan region.
+              A digital platform for Nepalese arts and culture, connecting artists, art lovers, creative professionals, and businesses.
             </Text>
 
             {/* Decorative divider */}
@@ -229,8 +229,13 @@ export const OnboardingScreen = () => {
             </View>
 
             {/* Subtitle */}
+            <Text style={styles.originMiddleText}>
+              Celebrating Nepal's Creative Heritage
+            </Text>
+
+            {/* Main Description */}
             <Text style={styles.originSubtitle}>
-              Bridging traditional craftsmanship with modern platforms to bring Nepali artistry to collectors worldwide.
+              Bringing Nepal's arts and culture to the digital world, creating opportunities for artists, galleries, businesses, and art lovers to connect beyond borders.
             </Text>
           </Animated.View>
         </View>
@@ -259,41 +264,41 @@ export const OnboardingScreen = () => {
             <View style={styles.benefitsContainer}>
               <View style={styles.benefitItem}>
                 <View style={styles.benefitIconContainer}>
-                  <MaterialCommunityIcons name="brush" size={22} color="#FF3B30" />
+                  <Text style={styles.benefitEmoji}>🎨</Text>
                 </View>
                 <View style={styles.benefitTextContainer}>
-                  <Text style={styles.benefitTitle}>Showcase Your Art</Text>
-                  <Text style={styles.benefitSubtitle}>Share your creations with a global audience</Text>
+                  <Text style={styles.benefitTitle}>Showcase Your Artwork</Text>
+                  <Text style={styles.benefitSubtitle}>Share your creations with a growing creative community.</Text>
                 </View>
               </View>
 
               <View style={styles.benefitItem}>
                 <View style={styles.benefitIconContainer}>
-                  <Feather name="search" size={22} color="#FF3B30" />
+                  <Text style={styles.benefitEmoji}>🖼️</Text>
                 </View>
                 <View style={styles.benefitTextContainer}>
-                  <Text style={styles.benefitTitle}>Discover Pieces</Text>
-                  <Text style={styles.benefitSubtitle}>Find unique artworks from talented creators</Text>
+                  <Text style={styles.benefitTitle}>Discover Art</Text>
+                  <Text style={styles.benefitSubtitle}>Explore inspiring artwork from talented artists.</Text>
                 </View>
               </View>
 
               <View style={styles.benefitItem}>
                 <View style={styles.benefitIconContainer}>
-                  <Feather name="home" size={22} color="#FF3B30" />
+                  <Text style={styles.benefitEmoji}>🏛️</Text>
                 </View>
                 <View style={styles.benefitTextContainer}>
-                  <Text style={styles.benefitTitle}>Connect with Galleries</Text>
-                  <Text style={styles.benefitSubtitle}>Explore exhibitions and collections</Text>
+                  <Text style={styles.benefitTitle}>Explore Galleries</Text>
+                  <Text style={styles.benefitSubtitle}>Browse exhibitions and curated collections.</Text>
                 </View>
               </View>
 
               <View style={styles.benefitItem}>
                 <View style={styles.benefitIconContainer}>
-                  <Feather name="trending-up" size={22} color="#FF3B30" />
+                  <Text style={styles.benefitEmoji}>🚀</Text>
                 </View>
                 <View style={styles.benefitTextContainer}>
-                  <Text style={styles.benefitTitle}>Grow Your Business</Text>
-                  <Text style={styles.benefitSubtitle}>Reach collectors and art enthusiasts</Text>
+                  <Text style={styles.benefitTitle}>Grow Your Creative Business</Text>
+                  <Text style={styles.benefitSubtitle}>Connect with artists, reach new audiences, and unlock creative opportunities.</Text>
                 </View>
               </View>
             </View>
@@ -399,9 +404,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 96,
-    height: 96,
-    borderRadius: 24,
+    width: 110,
+    height: 110,
+    borderRadius: 28,
   },
 
   // ---- Screen 1: Welcome ----
@@ -469,6 +474,14 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     paddingHorizontal: 12,
   },
+  originMiddleText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
+    marginBottom: 16,
+    letterSpacing: 0.3,
+  },
 
   // ---- Screen 3: Get Started ----
   screen3SafeArea: {
@@ -510,6 +523,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
+  },
+  benefitEmoji: {
+    fontSize: 22,
   },
   benefitTextContainer: {
     flex: 1,
