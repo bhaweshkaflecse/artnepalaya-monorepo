@@ -105,7 +105,7 @@ router.get('/featured', optionalAuth, async (req, res, next) => {
       .map((f) => f.postId);
 
     // NSFW Protection: Exclude NSFW posts for guests and users without mature content opt-in
-    const showMatureContent = req.user?.showMatureContent || false;
+    const showMatureContent = req.user?.showMatureContent ?? true;
     if (!req.user || !showMatureContent) {
       data = data.filter((post) => !post.isNsfw);
     }

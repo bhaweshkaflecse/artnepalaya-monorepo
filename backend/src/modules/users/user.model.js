@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema(
     },
     isAdult: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     role: {
       type: String,
@@ -106,11 +106,11 @@ const userSchema = new mongoose.Schema(
     },
     nsfwBlurEnabled: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     showMatureContent: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     pushTokens: [
       {

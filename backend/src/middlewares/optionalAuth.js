@@ -24,7 +24,7 @@ export const optionalAuth = async (req, res, next) => {
 
     const user = await User.findById(decoded.id).select('_id role status username email showMatureContent').lean();
     if (user && user.status !== 'banned' && user.status !== 'suspended') {
-      req.user = { id: user._id.toString(), role: user.role, username: user.username, email: user.email, showMatureContent: user.showMatureContent || false };
+      req.user = { id: user._id.toString(), role: user.role, username: user.username, email: user.email, showMatureContent: user.showMatureContent ?? true };
     } else {
       req.user = null;
     }

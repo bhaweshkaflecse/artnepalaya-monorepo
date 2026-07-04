@@ -41,7 +41,7 @@ export const SettingsScreen = () => {
   const isGuest = useAppSelector(selectIsGuest);
   const dispatch = useAppDispatch();
   const [showMatureContent, setShowMatureContent] = useState(
-    (profile as any)?.showMatureContent ?? false
+    (profile as any)?.showMatureContent ?? true
   );
   const [showMatureModal, setShowMatureModal] = useState(false);
 
