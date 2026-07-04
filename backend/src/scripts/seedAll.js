@@ -520,6 +520,40 @@ async function seedAll() {
     console.log('AppConfig auth_background_media created (5 images).');
 
     // ----------------------------------------------------------
+    // 9b. Create AppConfig: notification_config
+    // ----------------------------------------------------------
+    await AppConfig.findOneAndUpdate(
+      { key: 'notification_config' },
+      {
+        $set: {
+          key: 'notification_config',
+          value: {
+            groupingWindows: {
+              Like: 86400000,
+              Save: 86400000,
+              Follow: 86400000
+            },
+            pushCooldowns: {
+              Like: 300000,
+              Save: 600000,
+              Follow: 600000,
+              AdminBroadcast: 0,
+              Comment: 300000
+            },
+            maxRecentActors: 5,
+            displayThresholds: {
+              showNames: 2,
+              showNamesAndOthers: 20
+            }
+          },
+          updatedBy: adminUser._id
+        }
+      },
+      { upsert: true, new: true }
+    );
+    console.log('AppConfig notification_config created.');
+
+    // ----------------------------------------------------------
     // 10. Create Notifications (18)
     // ----------------------------------------------------------
     console.log('\n--- Creating 18 Notifications ---');
@@ -634,7 +668,7 @@ async function seedAll() {
     console.log(`  Posts:          ${createdPosts.length}`);
     console.log(`  Reports:        ${createdReports.length}`);
     console.log(`  Featured Posts: ${featuredCandidates.length}`);
-    console.log(`  AppConfig:      1 (auth_background_media)`);
+    console.log(`  AppConfig:      2 (auth_background_media, notification_config)`);
     console.log(`  Notifications:  ${createdNotifications.length}`);
     console.log(`  CMS Pages:      ${cmsPages.length}`);
     console.log(`  Global Popup:   1 (Active)`);

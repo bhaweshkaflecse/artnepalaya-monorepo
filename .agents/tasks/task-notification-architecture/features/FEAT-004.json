@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Update admin panel compatibility and add notification configuration management. Ensure broadcast still works, add ability to view/edit notification config (grouping windows, push cooldowns) from admin panel, and update notification stats.",
+  "status": "pending",
+  "steps": [
+    "Step 1: Update backend/src/modules/admin/admin.controller.js - Update broadcastNotification() if needed (it delegates to notificationService.broadcastNotification which was already updated in FEAT-002). Add a new controller getNotificationConfig() that reads AppConfig key 'notification_config' and returns current values merged with defaults. Add updateNotificationConfig() that validates and updates the AppConfig entry.",
+    "Step 2: Add new admin routes in backend/src/modules/admin/admin.routes.js: GET /notifications/config -> controller.getNotificationConfig, PUT /notifications/config -> controller.updateNotificationConfig. These sit alongside the existing /notifications/broadcast and /notifications/history routes.",
+    "Step 3: Update admin/src/pages/PushNotifications.tsx - Add a new section 'Notification Configuration' below the existing broadcast form. Display current config values (grouping windows in hours, push cooldowns in minutes for readability). Allow editing with a save button. Fields: Like Grouping Window (hours), Follow Grouping Window (hours), Save Grouping Window (hours), Like Push Cooldown (minutes), Follow Push Cooldown (minutes), Save Push Cooldown (minutes). Convert between display units (hours/minutes) and storage units (milliseconds) on save/load. Keep all existing functionality (broadcast form, history table, push stats) exactly as-is.",
+    "Step 4: Update the admin push stats endpoint (getPushStats in admin.controller.js) to also return notification group stats: total groups, unread groups across all users, groups created in last 24h. This gives admins visibility into the new system's behavior."
+  ],
+  "acceptance_criteria": [
+    "Admin can still broadcast notifications (existing flow unchanged)",
+    "Admin can view current notification configuration values",
+    "Admin can update grouping windows and push cooldowns from the panel",
+    "Updated config values are persisted to AppConfig and take effect on next notification creation",
+    "Broadcast history table still displays correctly",
+    "Push stats section shows additional group-level metrics",
+    "node --check passes for all modified backend files",
+    "TypeScript compiles for admin panel changes"
+  ],
+  "verification": [
+    "Run 'node --check backend/src/modules/admin/admin.controller.js' to verify syntax",
+    "Run 'node --check backend/src/modules/admin/admin.routes.js' to verify syntax"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -1,0 +1,7 @@
+{
+  "task_id": "task-notification-architecture",
+  "task_description": "Production-grade notification architecture redesign for ArtNepalaya. Replaces per-event notification documents with time-windowed grouped notifications, push cooldowns, configurable parameters, and real-time group updates via Socket.IO. Covers backend model, service, migration, mobile client, and admin panel.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}

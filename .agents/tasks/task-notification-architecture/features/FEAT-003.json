@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Update the mobile client (NotificationsScreen, notification service, socket service, Redux state) to handle grouped notifications with proper display formatting, real-time updates that patch existing groups instead of creating duplicates, and correct unread badge behavior.",
+  "status": "pending",
+  "steps": [
+    "Step 1: Update mobile/src/services/notification.service.ts - Update the Notification interface to reflect the new grouped model: add actorCount (number), recentActors (array of {_id, username, avatarUrl}), latestActivityAt (string), targetType ('Post'|'User'|'System'|null), targetId (object or string or null), groupCreatedAt (string). Remove senderId (replaced by recentActors). Keep type enum but add future types. Update NotificationsResponse meta to use the new field names if needed.",
+    "Step 2: Update mobile/src/services/socket.service.ts - Add listener for 'notification.updated' event. When received, dispatch a new Redux action (e.g., upsertNotification) that either updates an existing notification in the list or prepends it. This ensures real-time updates patch existing notifications rather than adding duplicates. Keep the existing 'notification.count.changed' listener.",
+    "Step 3: Update mobile/src/store/slices/appSlice.ts (or create a dedicated notificationSlice if cleaner) - Add state for the notification list so socket updates can patch it. Add actions: upsertNotification (update existing by _id or prepend if new), setNotifications (full replace on fetch), markNotificationRead, markAllRead. The upsertNotification action should: if notification exists in list, update it in place and move to top; if new, prepend to list. Also handle isRead: if a read notification gets updated, mark it unread again and move to top (as per requirements).",
+    "Step 4: Rewrite the display logic in mobile/src/screens/notifications/NotificationsScreen.tsx. Replace getNotificationMessage() with a new formatGroupedMessage() function that implements the progressive display: actorCount===1: 'Username liked your artwork', actorCount===2: 'User1 and User2 liked your artwork', actorCount 3-20: 'User1, User2 and N others liked your artwork', actorCount>20: 'N people liked your artwork'. Handle each type (Like, Save, Follow, Comment, AdminBroadcast, System). Use recentActors[0].username, recentActors[1].username etc.",
+    "Step 5: Update the avatar display in NotificationsScreen.tsx - For groups with multiple actors, show a stacked avatar indicator (e.g., show first actor's avatar with a small badge showing +N). For single actors, show the actor's avatar. For AdminBroadcast, show a bell icon as before.",
+    "Step 6: Update handleNotificationPress() - For grouped notifications: if actorCount===1 and type is Like/Save/Comment, navigate to PostDetail. If actorCount>1 and type is Like/Save, navigate to PostDetail (showing the artwork). For Follow with actorCount===1, navigate to UserProfile of the single actor. For Follow with actorCount>1, could navigate to a followers list or just expand. For AdminBroadcast, toggle expand as before.",
+    "Step 7: Update the time display - Use latestActivityAt instead of createdAt for the time ago calculation.",
+    "Step 8: Connect the NotificationsScreen to Redux state instead of local useState for notifications. The screen should read from the store (populated by socket updates) and also do initial fetch on mount. This way socket updates are reflected immediately without refresh."
+  ],
+  "acceptance_criteria": [
+    "Notification list displays grouped messages: '264 people liked your artwork' format",
+    "Socket 'notification.updated' events patch existing notifications in-place without creating duplicates",
+    "A read notification that receives new activity becomes unread and moves to top",
+    "Unread badge shows count of unread groups, not individual events",
+    "AdminBroadcast notifications display independently with title and message",
+    "Single-actor notifications show the actor's avatar",
+    "Multi-actor notifications indicate multiple actors visually",
+    "Tapping a notification navigates appropriately based on type and actorCount",
+    "TypeScript compiles without errors for all modified mobile files"
+  ],
+  "verification": [
+    "Run 'npx tsc --noEmit --project mobile/tsconfig.json 2>&1 | head -50' to check for TypeScript errors in modified files (may have pre-existing errors but should not introduce new ones in notification files)"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Rewrite notification.service.js to use the new grouped notification model with time-windowed grouping, push cooldowns, and smart socket updates. This replaces the existing per-event notification creation with group-based upserts.",
+  "status": "pending",
+  "steps": [
+    "Step 1: Rewrite createNotification() in backend/src/modules/notifications/notification.service.js. The new logic: (a) Self-notification check remains (recipientId === senderId -> return null). (b) Load config via getNotificationConfig(). (c) For groupable types (Like, Save, Follow, Comment): calculate windowStart = new Date(Date.now() - config.groupingWindows[type]). Query NotificationGroup for an active group: {recipientId, type, targetId: postId||senderId, groupCreatedAt: {$gte: windowStart}}. If found: use findOneAndUpdate to $inc actorCount, $push recentActors (with $slice -maxRecentActors), set latestActivityAt=now, set isRead=false. If not found: create new NotificationGroup with actorCount:1, recentActors:[senderId], latestActivityAt:now, groupCreatedAt:now. (d) For AdminBroadcast/System: always create independent group (no aggregation). (e) After upsert/create: emit socket event NOTIFICATION_UPDATED (new event) with the full populated group data to allow client-side patching. Also emit NOTIFICATION_COUNT_CHANGED with fresh unread count from NotificationGroup.countDocuments({recipientId, isRead:false}). (f) Push cooldown logic: check lastPushSentAt on the group. If (now - lastPushSentAt) > config.pushCooldowns[type], send push and update lastPushSentAt. If within cooldown, skip push (socket + DB update still happen).",
+    "Step 2: Rewrite getUserNotifications() to query NotificationGroup instead of Notification. Populate recentActors with 'username avatarUrl'. Populate targetId conditionally - if targetType is 'Post', populate with 'media title'. Sort by latestActivityAt descending. Keep pagination, filter logic (all/unread/read), and unread count.",
+    "Step 3: Rewrite markAllAsRead() and markOneAsRead() to operate on NotificationGroup. Ensure markOneAsRead validates recipientId ownership.",
+    "Step 4: Update broadcastNotification() to create individual NotificationGroup documents (type: AdminBroadcast, targetType: System, actorCount: 0, recentActors: []) for each active user. Push sends immediately (cooldown = 0 for broadcasts). Keep BroadcastLog creation and push stats tracking exactly as-is.",
+    "Step 5: Add the new socket event to backend/src/realtime/events.js: NOTIFICATION_UPDATED: 'notification.updated'. Keep NOTIFICATION_COUNT_CHANGED as-is.",
+    "Step 6: Determine targetType and targetId mapping: For Like/Save/Comment -> targetType:'Post', targetId:postId. For Follow -> targetType:'User', targetId:senderId (the person being followed is the recipient, so targetId is who followed them - actually no, targetId should be the recipient's own ID or null... Let me reconsider. For Follow: the target is the user relationship itself. Set targetType:'User', targetId:null (since follows don't have a specific target entity other than the recipient). Actually the correct mapping for grouping Follow notifications is: targetType:null, targetId:null - group all follows to the same recipient within the window. This means all follows within 24h to user X become one group '5 people followed you'.",
+    "Step 7: Update the import in notification.service.js from './notification.model.js' (Notification) to also import from './notificationGroup.model.js' (NotificationGroup). Keep the old Notification import temporarily for backward compatibility during transition but do not create new documents in the old collection."
+  ],
+  "acceptance_criteria": [
+    "createNotification() finds or creates a NotificationGroup within the configured time window",
+    "Repeated likes on the same post within 24h update the same group (increment actorCount, append to recentActors)",
+    "Repeated follows to the same user within 24h update the same group",
+    "After time window expires, a new group is created for subsequent activity",
+    "Push notifications respect cooldown - first activity sends push, subsequent within cooldown do not",
+    "AdminBroadcast creates individual groups per recipient with immediate push",
+    "Socket emits both NOTIFICATION_UPDATED (with group data) and NOTIFICATION_COUNT_CHANGED",
+    "getUserNotifications returns populated groups sorted by latestActivityAt",
+    "Unread count reflects number of unread groups, not individual events",
+    "node --check backend/src/modules/notifications/notification.service.js passes",
+    "node --check backend/src/realtime/events.js passes"
+  ],
+  "verification": [
+    "Run 'node --check backend/src/modules/notifications/notification.service.js' to verify syntax",
+    "Run 'node --check backend/src/realtime/events.js' to verify syntax"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

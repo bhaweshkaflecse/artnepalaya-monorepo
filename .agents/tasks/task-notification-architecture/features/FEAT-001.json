@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Redesign the notification model and create configuration module for grouped notifications with time-windowed aggregation, push cooldowns, and configurable parameters. This is the foundational backend work - new model schema, configuration constants, and the migration script.",
+  "status": "in_progress",
+  "steps": [
+    "Step 1: Create backend/src/modules/notifications/notificationConfig.js - a configuration module that exports all tunable notification parameters. Store defaults locally and provide a function that loads overrides from AppConfig (key: 'notification_config'). Parameters to include: groupingWindows (Like: 24h, Save: 24h, Follow: 24h in milliseconds), pushCooldowns (Like: 5min, Save: 10min, Follow: 10min, AdminBroadcast: 0, Comment: 5min in milliseconds), maxRecentActors (default: 5 - how many recent actor IDs to store in the array), displayThresholds (showNames: 2, showNamesAndOthers: 20 - controls display format transitions).",
+    "Step 2: Create backend/src/modules/notifications/notificationGroup.model.js - the new grouped notification model. Schema fields: recipientId (ObjectId ref User, required, indexed), type (String, enum expanded to include future types: Like, Save, Follow, Comment, AdminBroadcast, System, Mention, ArtworkApproved, ArtworkRejected, Reply), targetType (String, enum: Post, User, System, null - what the notification is about), targetId (ObjectId, default null - the post or user being acted upon), actorCount (Number, default 1), recentActors (Array of ObjectId refs to User, max 5 entries), latestActivityAt (Date, default Date.now), isRead (Boolean, default false), lastPushSentAt (Date, default null), groupCreatedAt (Date, default Date.now - when window started), title (String, default null - for AdminBroadcast/System), message (String, default null - for AdminBroadcast/System). Indexes: {recipientId: 1, latestActivityAt: -1} for paginated fetch, {recipientId: 1, isRead: 1} for unread count, {recipientId: 1, type: 1, targetId: 1, groupCreatedAt: -1} for group lookup (compound unique-ish for finding active groups), {latestActivityAt: 1} for TTL/cleanup queries.",
+    "Step 3: Create backend/src/scripts/migrateNotifications.js - a standalone migration script that: (a) reads all existing Notification documents in batches of 500, (b) groups them by {recipientId, type, postId} within 24-hour windows, (c) creates corresponding NotificationGroup documents with actorCount, recentActors (last 5 senderIds), proper timestamps, (d) preserves isRead status (if ANY notification in the group was unread, the group is unread), (e) handles AdminBroadcast types as independent groups (one per original notification). The script should be idempotent - check if NotificationGroup collection has documents before running. Log progress. Do NOT delete the old Notification collection - keep it as backup.",
+    "Step 4: Add a seed entry for the notification_config AppConfig in backend/src/scripts/seedAll.js. Use AppConfig.findOneAndUpdate with upsert:true for key 'notification_config' with default values matching what notificationConfig.js exports."
+  ],
+  "acceptance_criteria": [
+    "notificationConfig.js exports getNotificationConfig() that returns grouping windows, push cooldowns, maxRecentActors, and display thresholds",
+    "notificationGroup.model.js defines the schema with all required fields, proper types, and indexes",
+    "Migration script handles batched processing of existing notifications into groups",
+    "Migration script is idempotent - running twice does not create duplicates",
+    "AdminBroadcast notifications remain as individual groups (not aggregated)",
+    "Future notification types are included in the enum but do not break existing logic",
+    "node --check passes for all new .js files"
+  ],
+  "verification": [
+    "Run 'node --check backend/src/modules/notifications/notificationConfig.js' to verify syntax",
+    "Run 'node --check backend/src/modules/notifications/notificationGroup.model.js' to verify syntax",
+    "Run 'node --check backend/src/scripts/migrateNotifications.js' to verify syntax"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
