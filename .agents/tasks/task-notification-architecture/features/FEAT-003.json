@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Update the mobile client (NotificationsScreen, notification service, socket service, Redux state) to handle grouped notifications with proper display formatting, real-time updates that patch existing groups instead of creating duplicates, and correct unread badge behavior.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Update mobile/src/services/notification.service.ts - Update the Notification interface to reflect the new grouped model: add actorCount (number), recentActors (array of {_id, username, avatarUrl}), latestActivityAt (string), targetType ('Post'|'User'|'System'|null), targetId (object or string or null), groupCreatedAt (string). Remove senderId (replaced by recentActors). Keep type enum but add future types. Update NotificationsResponse meta to use the new field names if needed.",
     "Step 2: Update mobile/src/services/socket.service.ts - Add listener for 'notification.updated' event. When received, dispatch a new Redux action (e.g., upsertNotification) that either updates an existing notification in the list or prepends it. This ensures real-time updates patch existing notifications rather than adding duplicates. Keep the existing 'notification.count.changed' listener.",
@@ -28,5 +28,5 @@
     "Run 'npx tsc --noEmit --project mobile/tsconfig.json 2>&1 | head -50' to check for TypeScript errors in modified files (may have pre-existing errors but should not introduce new ones in notification files)"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All notification-related files compile cleanly. Pre-existing TS errors in the project (NativeStackNavigationProp not found, socket.io-client types missing) affect 10+ files project-wide but are not introduced by this change. Created notificationSlice.ts as a dedicated slice rather than extending appSlice for cleaner separation. The NotificationsScreen now fetches all notifications from the API and filters client-side via Redux selectors, which allows socket updates to appear instantly across all filter tabs."
 }
