@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Plus, X, Award, ArrowUp, ArrowDown, Calendar, Copy, Check } from 'lucide-react';
 import { api } from '../services/api';
 
+const FEATURED_MAX = 10;
+
 interface FeaturedPost {
   _id: string;
   postId: {
@@ -63,7 +65,7 @@ export const Featured = () => {
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
           : null;
-      setAddError(message || 'Failed to add featured post. Maximum 3 allowed.');
+      setAddError(message || 'Failed to add featured post. Maximum 10 featured artworks allowed.');
     } finally {
       setActionLoading(false);
     }
@@ -132,18 +134,18 @@ export const Featured = () => {
         <div>
           <h3 className="text-lg font-semibold">Featured Carousel</h3>
           <p className="text-sm text-gray-500">
-            Maximum 3 artworks. These appear at the top of the mobile home feed. Drag to reorder.
+            Maximum {FEATURED_MAX} artworks. These appear at the top of the mobile home feed. Drag to reorder.
           </p>
           <div className="mt-2 flex items-center space-x-2">
             <Award size={16} className="text-accent" />
             <span className="text-sm font-medium">
-              {featured.length}/3 Featured Slots Used
+              {featured.length}/{FEATURED_MAX} Featured Slots Used
             </span>
           </div>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          disabled={featured.length >= 3}
+          disabled={featured.length >= FEATURED_MAX}
           className="bg-black text-white px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800"
         >
           <Plus size={16} />
@@ -153,7 +155,7 @@ export const Featured = () => {
 
       {loading ? (
         <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="flex items-center gap-4">
                 <div className="h-20 w-20 animate-pulse bg-gray-200 rounded" />
@@ -168,7 +170,7 @@ export const Featured = () => {
       ) : featured.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
           <Award size={48} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500">No featured posts yet. Add up to 3 artworks to the carousel.</p>
+          <p className="text-gray-500">No featured posts yet. Add up to {FEATURED_MAX} artworks to the carousel.</p>
         </div>
       ) : (
         <div className="space-y-4">
