@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Update admin panel compatibility and add notification configuration management. Ensure broadcast still works, add ability to view/edit notification config (grouping windows, push cooldowns) from admin panel, and update notification stats.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Update backend/src/modules/admin/admin.controller.js - Update broadcastNotification() if needed (it delegates to notificationService.broadcastNotification which was already updated in FEAT-002). Add a new controller getNotificationConfig() that reads AppConfig key 'notification_config' and returns current values merged with defaults. Add updateNotificationConfig() that validates and updates the AppConfig entry.",
     "Step 2: Add new admin routes in backend/src/modules/admin/admin.routes.js: GET /notifications/config -> controller.getNotificationConfig, PUT /notifications/config -> controller.updateNotificationConfig. These sit alongside the existing /notifications/broadcast and /notifications/history routes.",
@@ -24,5 +24,5 @@
     "Run 'node --check backend/src/modules/admin/admin.routes.js' to verify syntax"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All backend files pass node --check. Admin TypeScript compiles with zero errors (tsc --noEmit --skipLibCheck). Named import conflict between getNotificationConfig (from notificationConfig.js) and the controller export was resolved by aliasing the import to loadNotificationConfig. Push cooldown validation allows zero (for AdminBroadcast type) while grouping windows require strictly positive values."
 }
