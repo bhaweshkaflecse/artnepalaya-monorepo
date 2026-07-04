@@ -65,7 +65,13 @@ export const notificationService = {
   },
 
   registerPushToken: async (token: string): Promise<void> => {
-    await api.post('/users/me/push-token', { token });
+    console.log('[PushReg] API call starting...');
+    try {
+      await api.post('/users/me/push-token', { token });
+    } catch (error: any) {
+      console.error('[PushReg] API call FAILED:', error.response?.status, error.response?.data, error.message);
+      throw error;
+    }
   },
 
   removePushToken: async (token: string): Promise<void> => {

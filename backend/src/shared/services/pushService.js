@@ -24,6 +24,7 @@ const expo = new Expo();
  * @returns {Promise<{ sent: number, failed: number }>}
  */
 export const send = async ({ tokens, title, body, data }) => {
+  console.log('[PushService] Attempting to send to', tokens ? tokens.length : 0, 'tokens');
   if (!tokens || tokens.length === 0) {
     console.log('[PushService] No tokens provided, skipping send');
     return { sent: 0, failed: 0 };
@@ -42,6 +43,8 @@ export const send = async ({ tokens, title, body, data }) => {
     console.log('[PushService] No valid Expo push tokens after filtering');
     return { sent: 0, failed: tokens.length };
   }
+
+  console.log('[PushService] Valid tokens after filtering:', validTokens.length, 'of', tokens.length);
 
   // Build messages
   const messages = validTokens.map((token) => ({

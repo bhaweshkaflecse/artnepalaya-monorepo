@@ -27,6 +27,7 @@ async function setupAndroidChannel(): Promise<void> {
 export async function registerForPushNotifications(): Promise<string | null> {
   try {
     // Push notifications only work on physical devices
+    console.log('[PushReg] Stage 1: Starting registration, isDevice=' + Device.isDevice);
     if (!Device.isDevice) {
       console.log('[PushNotifications] Must use physical device for push notifications');
       return null;
@@ -34,9 +35,11 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
     // Set up Android notification channel
     await setupAndroidChannel();
+    console.log('[PushReg] Stage 2: Android channel setup complete');
 
     // Check existing permissions
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    console.log('[PushReg] Stage 3: Permission status existing=' + existingStatus);
     let finalStatus = existingStatus;
 
     // Request permission if not already granted
@@ -44,6 +47,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
+    console.log('[PushReg] Stage 4: Permission after request=' + finalStatus);
 
     if (finalStatus !== 'granted') {
       console.log('[PushNotifications] Permission not granted');
@@ -51,15 +55,19 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
 
     // Get the Expo push token
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? 'bb44fc58-146f-4483-b61f-c9b7edbad4e6';
+    console.log('[PushReg] Stage 5: Getting token with projectId=' + projectId);
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: Constants.expoConfig?.extra?.eas?.projectId ?? 'bb44fc58-146f-4483-b61f-c9b7edbad4e6',
+      projectId,
     });
     const token = tokenData.data;
 
-    console.log('[PushNotifications] Token:', token);
+    console.log('[PushReg] Stage 6: Token received=' + token);
 
     // Register the token with the backend
+    console.log('[PushReg] Stage 7: Calling POST /users/me/push-token');
     await notificationService.registerPushToken(token);
+    console.log('[PushReg] Stage 8: Token registered successfully');
 
     return token;
   } catch (error) {

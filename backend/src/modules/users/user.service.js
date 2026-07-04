@@ -190,6 +190,7 @@ export const getSavedPosts = async (userId, page, limit) => {
 
 // === Push Token Management ===
 export const registerPushToken = async (userId, token) => {
+  console.log('[PushToken] $addToSet pushTokens for userId:', userId, 'token:', token.substring(0, 20) + '...');
   await User.findByIdAndUpdate(
     userId,
     { $addToSet: { pushTokens: token } }
