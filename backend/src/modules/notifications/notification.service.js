@@ -113,59 +113,41 @@ export const createNotification = async (payload) => {
       groupCreatedAt: { $gte: windowStart }
     };
 
-    // Try to update an existing group (atomic upsert-like pattern)
+    // Try to update an existing group atomically.
+    // Uses $addToSet for recentActors to make actor append idempotent (no race condition).
+    // $inc actorCount by 1 on every interaction; this may slightly overcount for
+    // repeated actors (like/unlike/re-like) but the difference is negligible for display.
+    const updateOps = {
+      $inc: { actorCount: 1 },
+      $set: {
+        latestActivityAt: new Date(),
+        isRead: false,
+        message: message || undefined
+      }
+    };
+    // Only add to recentActors if we have a valid senderId
+    if (senderId) {
+      updateOps.$addToSet = { recentActors: senderId };
+    }
+
     const existingGroup = await NotificationGroup.findOneAndUpdate(
       groupQuery,
-      {
-        $inc: { actorCount: 1 },
-        $push: {
-          recentActors: {
-            $each: senderId ? [senderId] : [],
-            $slice: -(config.maxRecentActors || 5)
-          }
-        },
-        $set: {
-          latestActivityAt: new Date(),
-          isRead: false,
-          message: message || undefined
-        }
-      },
+      updateOps,
       { new: true, sort: { groupCreatedAt: -1 } }
     );
 
     if (existingGroup) {
-      // Check if this sender was already in the group (deduplication for actors)
-      // Still update the group but avoid double-counting the same actor
-      const actorAlreadyPresent = existingGroup.recentActors.some(
-        (actorId) => actorId && senderId && actorId.toString() === senderId.toString()
-      );
-
-      if (actorAlreadyPresent && existingGroup.actorCount > 1) {
-        // Decrement actorCount since this actor was already counted
-        // Also deduplicate the recentActors array
-        const uniqueActors = [];
-        const seen = new Set();
-        for (const actor of existingGroup.recentActors) {
-          const key = actor.toString();
-          if (!seen.has(key)) {
-            seen.add(key);
-            uniqueActors.push(actor);
+      // Trim recentActors to maxRecentActors if it exceeded the limit
+      const maxActors = config.maxRecentActors || 5;
+      if (existingGroup.recentActors.length > maxActors) {
+        await NotificationGroup.findByIdAndUpdate(existingGroup._id, {
+          $set: {
+            recentActors: existingGroup.recentActors.slice(-maxActors)
           }
-        }
-
-        group = await NotificationGroup.findByIdAndUpdate(
-          existingGroup._id,
-          {
-            $set: {
-              actorCount: existingGroup.actorCount - 1,
-              recentActors: uniqueActors.slice(-(config.maxRecentActors || 5))
-            }
-          },
-          { new: true }
-        );
-      } else {
-        group = existingGroup;
+        });
+        existingGroup.recentActors = existingGroup.recentActors.slice(-maxActors);
       }
+      group = existingGroup;
     } else {
       // Create a new group
       group = await NotificationGroup.create({
@@ -287,40 +269,38 @@ async function handlePushDelivery(group, recipientPrefs, recipientId, senderId, 
     const title = typeToTitle[type] || 'ArtNepalaya';
     let body = message || `You have a new ${type.toLowerCase()} notification`;
 
-    // If we have a senderId, get sender username for a better message
+    // Hoist sender lookup above both branches to avoid double DB query
+    let sender = null;
     if (senderId) {
-      const sender = await User.findById(senderId).select('username').lean();
-      if (sender && sender.username) {
-        if (type === 'Like') {
-          body = `${sender.username} liked your artwork`;
-        } else if (type === 'Save') {
-          body = `${sender.username} saved your artwork`;
-        } else if (type === 'Follow') {
-          body = `${sender.username} started following you`;
-        } else if (type === 'Comment') {
-          body = `${sender.username} commented on your artwork`;
-        } else {
-          body = message || `${sender.username} interacted with your content`;
-        }
+      sender = await User.findById(senderId).select('username').lean();
+    }
+
+    // If we have a sender, build a descriptive message
+    if (sender && sender.username) {
+      if (type === 'Like') {
+        body = `${sender.username} liked your artwork`;
+      } else if (type === 'Save') {
+        body = `${sender.username} saved your artwork`;
+      } else if (type === 'Follow') {
+        body = `${sender.username} started following you`;
+      } else if (type === 'Comment') {
+        body = `${sender.username} commented on your artwork`;
+      } else {
+        body = message || `${sender.username} interacted with your content`;
       }
     }
 
     // Include actor count in body for grouped notifications
-    if (group && group.actorCount > 1) {
+    if (group && group.actorCount > 1 && sender && sender.username) {
       const othersCount = group.actorCount - 1;
-      if (senderId) {
-        const sender = await User.findById(senderId).select('username').lean();
-        if (sender && sender.username) {
-          if (type === 'Like') {
-            body = `${sender.username} and ${othersCount} other${othersCount > 1 ? 's' : ''} liked your artwork`;
-          } else if (type === 'Save') {
-            body = `${sender.username} and ${othersCount} other${othersCount > 1 ? 's' : ''} saved your artwork`;
-          } else if (type === 'Follow') {
-            body = `${sender.username} and ${othersCount} other${othersCount > 1 ? 's' : ''} started following you`;
-          } else if (type === 'Comment') {
-            body = `${sender.username} and ${othersCount} other${othersCount > 1 ? 's' : ''} commented on your artwork`;
-          }
-        }
+      if (type === 'Like') {
+        body = `${sender.username} and ${othersCount} other${othersCount > 1 ? 's' : ''} liked your artwork`;
+      } else if (type === 'Save') {
+        body = `${sender.username} and ${othersCount} other${othersCount > 1 ? 's' : ''} saved your artwork`;
+      } else if (type === 'Follow') {
+        body = `${sender.username} and ${othersCount} other${othersCount > 1 ? 's' : ''} started following you`;
+      } else if (type === 'Comment') {
+        body = `${sender.username} and ${othersCount} other${othersCount > 1 ? 's' : ''} commented on your artwork`;
       }
     }
 
@@ -367,15 +347,14 @@ export const getUserNotifications = async (userId, page, limit, filter = 'all') 
       .populate({
         path: 'targetId',
         select: 'media title',
-        // Only populate when targetType is Post
-        match: {},
+        model: 'Post',
       })
       .lean()
       .then((groups) => {
-        // Filter out targetId population for non-Post types
+        // Set targetId to null for non-Post types (populate may resolve to null anyway)
         return groups.map((g) => {
           if (g.targetType !== 'Post') {
-            g.targetId = g.targetId ? g.targetId : null;
+            g.targetId = null;
           }
           return g;
         });

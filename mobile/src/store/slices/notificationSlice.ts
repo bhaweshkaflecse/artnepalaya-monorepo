@@ -31,6 +31,10 @@ const notificationSlice = createSlice({
       }
       // Prepend to top of list
       state.notifications.unshift(incoming);
+      // Cap at 100 entries to prevent unbounded growth from socket pushes
+      if (state.notifications.length > 100) {
+        state.notifications = state.notifications.slice(0, 100);
+      }
     },
     markNotificationRead(state, action: PayloadAction<string>) {
       const notification = state.notifications.find((n) => n._id === action.payload);
