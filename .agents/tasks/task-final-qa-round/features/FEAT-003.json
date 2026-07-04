@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Post Like Count Display and 'Liked By' Modal - Add visible like count to PostCard and PostDetailScreen. When tapped, show a modal listing users who liked the post. Requires: (1) backend endpoint GET /posts/:postId/likes to return list of users who liked, (2) mobile service method, (3) UI in PostCard and PostDetailScreen.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. Backend: In backend/src/modules/posts/post.controller.js - Add a getPostLikes controller function that: (a) validates postId, (b) calls postService.getPostLikes(postId), (c) returns the list with success response.",
     "2. Backend: In backend/src/modules/posts/post.service.js - Add getPostLikes function that: (a) queries Like model for all likes on this postId, (b) populates userId with 'username avatarUrl fullName', (c) returns the array of liking users.",
@@ -27,5 +27,5 @@
     "Verify post.service.ts has getPostLikes method"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 6 files modified successfully. Backend: getPostLikes service queries Like model and populates userId with username/avatarUrl/fullName. Controller validates postId format. Route placed as public (optionalAuth) after /:postId GET. Mobile: post.service.ts has getPostLikes method. Both PostCard and PostDetailScreen show likes count between actions bar and content section, with optimistic count calculation. Liked-by modal is dark-themed (#1A1A1A background) with loading/empty states and FlatList of user rows. Tapping a user in the modal navigates to their profile."
 }

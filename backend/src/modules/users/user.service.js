@@ -267,7 +267,7 @@ export const getFollowers = async (userId, page, limit) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('followerId', 'username avatarUrl')
+      .populate('followerId', 'username avatarUrl fullName')
       .lean(),
     Follow.countDocuments({ followingId: userId })
   ]);
@@ -296,7 +296,7 @@ export const getFollowing = async (userId, page, limit) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('followingId', 'username avatarUrl')
+      .populate('followingId', 'username avatarUrl fullName')
       .lean(),
     Follow.countDocuments({ followerId: userId })
   ]);

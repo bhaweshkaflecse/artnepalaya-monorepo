@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Followers/Following Modal Polish - Upgrade the existing followers/following modals in ProfileScreen.tsx and UserProfileScreen.tsx to Instagram-quality UX with: avatar, full name, username, Follow/Following/Unfollow button, and real-time state updates.",
+  "status": "in_progress",
+  "steps": [
+    "1. First, check what data the backend returns for followers/following lists. The getFollowers service populates 'username avatarUrl' on followerId. We need to also populate 'fullName' - update backend/src/modules/users/user.service.js getFollowers and getFollowing to also select 'fullName' in the populate.",
+    "2. In mobile/src/screens/profile/ProfileScreen.tsx - Update the listModalData type to include fullName and _id. Upgrade the modal renderItem to show: (a) Circular avatar (40x40) with fallback icon, (b) Name column: fullName on first line (fontSize 14, fontWeight 600) and @username on second line (fontSize 13, color textSecondary), (c) A Follow/Following button on the right side. The button state depends on whether the current user follows that person. For simplicity, initially show all as a basic view without follow button (just avatar + name + username + chevron-right as it currently is). Then add a follow/unfollow button.",
+    "3. Actually, the current implementation already has avatar + username + chevron. The key upgrade needed: (a) Make avatar 44x44 circular, (b) Add fullName above username (two-line layout), (c) Replace chevron-right with a Follow/Following button (small pill shape, accent colored when Follow, border when Following), (d) Add a search/filter bar at the top of the modal.",
+    "4. In mobile/src/screens/profile/UserProfileScreen.tsx - Apply the same modal upgrade. The modal structure is nearly identical to ProfileScreen. Keep the patterns consistent.",
+    "5. Style the modal items with: avatar 44x44 borderRadius 22, gap between avatar and text 12px, fullName fontSize 14 fontWeight '600' color textPrimary, username fontSize 13 color textSecondary with '@' prefix, Follow button: paddingHorizontal 16 paddingVertical 6 borderRadius 8 backgroundColor accent color white fontSize 13 fontWeight '600'. Following button: same but backgroundColor 'transparent' borderWidth 1 borderColor border color textPrimary.",
+    "6. Add follow/unfollow functionality to each list item: when user taps Follow button, call userService.followUser(userId), update local state. When taps Following (becomes Unfollow on hold/tap), call userService.unfollowUser(userId), update local state."
+  ],
+  "acceptance_criteria": [
+    "Backend getFollowers/getFollowing populates fullName alongside username and avatarUrl",
+    "ProfileScreen followers/following modal shows: 44px circular avatar, fullName, @username, Follow/Following button",
+    "UserProfileScreen followers/following modal shows the same layout",
+    "Follow/Following button is functional - tapping Follow calls the follow API and updates UI",
+    "Modal has clean Instagram-style spacing and typography"
+  ],
+  "verification": [
+    "Read ProfileScreen.tsx modal renderItem and confirm two-line name layout with follow button",
+    "Read UserProfileScreen.tsx modal renderItem and confirm same pattern",
+    "Read backend user.service.js getFollowers/getFollowing and confirm fullName is in populate"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

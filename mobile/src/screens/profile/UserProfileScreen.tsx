@@ -44,8 +44,9 @@ export const UserProfileScreen = () => {
   // Followers/Following modal state
   const [listModalVisible, setListModalVisible] = useState(false);
   const [listModalTitle, setListModalTitle] = useState<'Followers' | 'Following'>('Followers');
-  const [listModalData, setListModalData] = useState<Array<{ _id: string; username: string; avatarUrl?: string }>>([]);
+  const [listModalData, setListModalData] = useState<Array<{ _id: string; username: string; avatarUrl?: string; fullName?: string }>>([]);
   const [listModalLoading, setListModalLoading] = useState(false);
+  const [followedSet, setFollowedSet] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadProfile();
@@ -184,6 +185,25 @@ export const UserProfileScreen = () => {
       navigation.push('UserProfile', { userId: itemUserId });
     }
   };
+
+  const handleFollowToggle = useCallback(async (targetUserId: string) => {
+    const isCurrentlyFollowed = followedSet.has(targetUserId);
+    try {
+      if (isCurrentlyFollowed) {
+        await userService.unfollowUser(targetUserId);
+        setFollowedSet((prev) => {
+          const next = new Set(prev);
+          next.delete(targetUserId);
+          return next;
+        });
+      } else {
+        await userService.followUser(targetUserId);
+        setFollowedSet((prev) => new Set(prev).add(targetUserId));
+      }
+    } catch (_e) {
+      // Silently fail
+    }
+  }, [followedSet]);
 
   const renderPostThumbnail = ({ item }: { item: Post }) => {
     const isVideo = item.media?.[0]?.type === 'video';
@@ -408,23 +428,44 @@ export const UserProfileScreen = () => {
               <FlatList
                 data={listModalData}
                 keyExtractor={(item) => item._id}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.modalUserItem}
-                    onPress={() => handleListItemPress(item._id)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.modalUserAvatar}>
-                      {item.avatarUrl ? (
-                        <Image source={{ uri: item.avatarUrl }} style={styles.modalUserAvatarImage} />
-                      ) : (
-                        <Feather name="user" size={16} color={lightColors.textSecondary} />
+                renderItem={({ item }) => {
+                  const isOwnProfile = currentUser && item._id === currentUser.id;
+                  const isFollowed = followedSet.has(item._id);
+                  return (
+                    <TouchableOpacity
+                      style={styles.modalUserItem}
+                      onPress={() => handleListItemPress(item._id)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.modalUserAvatar}>
+                        {item.avatarUrl ? (
+                          <Image source={{ uri: item.avatarUrl }} style={styles.modalUserAvatarImage} />
+                        ) : (
+                          <Feather name="user" size={20} color={lightColors.textSecondary} />
+                        )}
+                      </View>
+                      <View style={styles.modalUserInfo}>
+                        <Text style={styles.modalUserFullName} numberOfLines={1}>
+                          {item.fullName || item.username}
+                        </Text>
+                        <Text style={styles.modalUserHandle} numberOfLines={1}>
+                          @{item.username}
+                        </Text>
+                      </View>
+                      {!isOwnProfile && (
+                        <TouchableOpacity
+                          style={isFollowed ? styles.modalFollowingBtn : styles.modalFollowBtn}
+                          onPress={() => handleFollowToggle(item._id)}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={isFollowed ? styles.modalFollowingBtnText : styles.modalFollowBtnText}>
+                            {isFollowed ? 'Following' : 'Follow'}
+                          </Text>
+                        </TouchableOpacity>
                       )}
-                    </View>
-                    <Text style={styles.modalUsername}>{item.username}</Text>
-                    <Feather name="chevron-right" size={16} color={lightColors.textSecondary} />
-                  </TouchableOpacity>
-                )}
+                    </TouchableOpacity>
+                  );
+                }}
               />
             )}
           </View>
@@ -664,9 +705,9 @@ const styles = StyleSheet.create({
     borderBottomColor: lightColors.border,
   },
   modalUserAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: lightColors.surface,
     justifyContent: 'center',
     alignItems: 'center',
@@ -674,15 +715,53 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   modalUserAvatarImage: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  modalUserInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  modalUserFullName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: lightColors.textPrimary,
+  },
+  modalUserHandle: {
+    fontSize: 13,
+    color: lightColors.textSecondary,
+    marginTop: 1,
   },
   modalUsername: {
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
     color: lightColors.textPrimary,
+  },
+  modalFollowBtn: {
+    backgroundColor: '#FF3B30',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  modalFollowBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  modalFollowingBtn: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: lightColors.border,
+  },
+  modalFollowingBtnText: {
+    color: lightColors.textPrimary,
+    fontSize: 13,
+    fontWeight: '600',
   },
   videoIndicator: {
     position: 'absolute',
