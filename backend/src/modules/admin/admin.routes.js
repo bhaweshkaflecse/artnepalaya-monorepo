@@ -33,6 +33,8 @@ router.put('/config/auth-media', controller.updateAuthMedia);
 
 router.post('/notifications/broadcast', controller.broadcastNotification);
 router.get('/notifications/history', controller.getBroadcastHistory);
+router.get('/notifications/config', controller.getNotificationConfig);
+router.put('/notifications/config', controller.updateNotificationConfig);
 
 router.get('/push-stats', controller.getPushStats);
 

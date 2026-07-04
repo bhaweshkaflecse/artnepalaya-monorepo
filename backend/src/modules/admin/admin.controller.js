@@ -5,6 +5,8 @@ import { GlobalPopup } from './globalPopup.model.js';
 import { ArtworkType } from './artworkType.model.js';
 import * as notificationService from '../notifications/notification.service.js';
 import { BroadcastLog } from '../notifications/broadcastLog.model.js';
+import { NotificationGroup } from '../notifications/notificationGroup.model.js';
+import { getNotificationConfig as loadNotificationConfig, DEFAULT_CONFIG } from '../notifications/notificationConfig.js';
 import { User } from '../users/user.model.js';
 import { Post } from '../posts/post.model.js';
 import { Tag } from '../tags/tag.model.js';
@@ -230,7 +232,16 @@ export const getPushStats = async (req, res, next) => {
       { $group: { _id: null, totalTokens: { $sum: '$tokenCount' } } },
     ]);
     const totalTokens = result.length > 0 ? result[0].totalTokens : 0;
-    res.status(200).json({ success: true, data: { usersWithTokens, totalTokens } });
+
+    // Notification group stats
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [totalGroups, totalUnread, groupsLast24h] = await Promise.all([
+      NotificationGroup.countDocuments(),
+      NotificationGroup.countDocuments({ isRead: false }),
+      NotificationGroup.countDocuments({ groupCreatedAt: { $gte: twentyFourHoursAgo } })
+    ]);
+
+    res.status(200).json({ success: true, data: { usersWithTokens, totalTokens, totalGroups, totalUnread, groupsLast24h } });
   } catch (err) { next(err); }
 };
 
@@ -497,6 +508,75 @@ export const getBroadcastHistory = async (req, res, next) => {
       data: logs,
       meta: { currentPage: page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) }
     });
+  } catch (err) { next(err); }
+};
+
+// --- Notification Configuration ---
+
+export const getNotificationConfig = async (req, res, next) => {
+  try {
+    const config = await loadNotificationConfig();
+    res.status(200).json({ success: true, data: config });
+  } catch (err) { next(err); }
+};
+
+export const updateNotificationConfig = async (req, res, next) => {
+  try {
+    const { groupingWindows, pushCooldowns } = req.body;
+
+    // Validate input - all values must be positive numbers
+    if (groupingWindows) {
+      for (const [key, value] of Object.entries(groupingWindows)) {
+        if (typeof value !== 'number' || value <= 0) {
+          return res.status(400).json({
+            success: false,
+            error: { code: 'VALIDATION_ERROR', message: `groupingWindows.${key} must be a positive number (in milliseconds)` }
+          });
+        }
+      }
+    }
+
+    if (pushCooldowns) {
+      for (const [key, value] of Object.entries(pushCooldowns)) {
+        if (typeof value !== 'number' || value < 0) {
+          return res.status(400).json({
+            success: false,
+            error: { code: 'VALIDATION_ERROR', message: `pushCooldowns.${key} must be a non-negative number (in milliseconds)` }
+          });
+        }
+      }
+    }
+
+    // Build the update value by merging with defaults
+    const currentConfig = await AppConfig.findOne({ key: 'notification_config' }).lean();
+    const currentValue = currentConfig?.value || {};
+
+    const updatedValue = {
+      groupingWindows: {
+        ...DEFAULT_CONFIG.groupingWindows,
+        ...(currentValue.groupingWindows || {}),
+        ...(groupingWindows || {})
+      },
+      pushCooldowns: {
+        ...DEFAULT_CONFIG.pushCooldowns,
+        ...(currentValue.pushCooldowns || {}),
+        ...(pushCooldowns || {})
+      },
+      maxRecentActors: req.body.maxRecentActors ?? currentValue.maxRecentActors ?? DEFAULT_CONFIG.maxRecentActors,
+      displayThresholds: {
+        ...DEFAULT_CONFIG.displayThresholds,
+        ...(currentValue.displayThresholds || {}),
+        ...(req.body.displayThresholds || {})
+      }
+    };
+
+    await AppConfig.findOneAndUpdate(
+      { key: 'notification_config' },
+      { $set: { value: updatedValue, updatedBy: req.user.id } },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({ success: true, message: 'Notification configuration updated', data: updatedValue });
   } catch (err) { next(err); }
 };
 
