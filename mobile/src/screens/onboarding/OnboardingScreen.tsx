@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   Image,
   Animated,
+  Easing,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Path, Circle, Polygon } from 'react-native-svg';
@@ -129,11 +130,13 @@ export const OnboardingScreen = () => {
       Animated.timing(fadeAnims[index], {
         toValue: 1,
         duration: 600,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
       Animated.timing(slideAnims[index], {
         toValue: 0,
         duration: 600,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
     ]).start();
@@ -327,6 +330,8 @@ export const OnboardingScreen = () => {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
+        decelerationRate="fast"
+        snapToAlignment="center"
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         bounces={false}
