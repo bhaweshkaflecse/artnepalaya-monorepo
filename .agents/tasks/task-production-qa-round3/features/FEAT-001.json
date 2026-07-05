@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix push notification token registration race condition and video playback to not autoplay (items 1 and 2 from QA Round 3)",
+  "status": "completed",
+  "steps": [
+    "1. In mobile/src/screens/auth/LoginScreen.tsx, the push registration is called fire-and-forget after handleAuthSuccess. The issue is that registerForPushNotifications() uses api.post() which reads the access token from SecureStore. But the token is stored to SecureStore via setItemAsync just before registerForPushNotifications is called. The REAL problem: the api interceptor reads from SecureStore, but if the Redux dispatch happens after setCredentials (which triggers re-render and navigation), the async SecureStore write may not have completed before the push registration request fires. Fix: await the SecureStore writes BEFORE calling registerForPushNotifications, and pass the token explicitly or ensure the interceptor can find it. The simplest fix: pass the accessToken directly to registerForPushNotifications and have it use that token instead of relying on the interceptor. Add an optional token parameter to registerForPushNotifications and to notificationService.registerPushToken.",
+    "2. In mobile/src/services/pushNotification.service.ts, add optional accessToken parameter. If provided, call the API with explicit Authorization header instead of relying on the interceptor.",
+    "3. In mobile/src/services/notification.service.ts registerPushToken function, add optional accessToken parameter that gets passed as explicit auth header.",
+    "4. In LoginScreen.tsx handleAuthSuccess, ensure registerForPushNotifications is called with the accessToken that was just received from the auth response. This eliminates the race condition.",
+    "5. In mobile/src/components/home/PostCard.tsx: Change video behavior to NOT autoplay. Currently shouldPlay={isActive && isFocused} which autoplays. Change to: (a) add isPlaying state initialized to false, (b) shouldPlay={isPlaying && isActive && isFocused}, (c) show play button overlay when not playing, (d) tap toggles play/pause, (e) start muted by default (isMuted={true}), (f) pause when scrolling away or navigating away (reset isPlaying on index change). Only one video at a time (already handled by isActive check).",
+    "6. In mobile/src/screens/post/PostDetailScreen.tsx: Change video auto-play behavior. Currently auto-plays if initial slide is video (setShouldPlay(true)). Change to: start with shouldPlay=false, show play button overlay, user taps to play, taps again to pause. Start muted by default. Already has tap-to-toggle logic (handleVideoTap). Just change isMuted default to true and remove the auto-play on load (remove the setShouldPlay(true) line in fetchPost).",
+    "7. In mobile/src/utils/media.ts: Add Cloudinary video delivery optimization. Add a function getOptimizedVideoUrl that adds quality and format transformations (q_auto, f_auto) to Cloudinary video URLs for better performance."
+  ],
+  "acceptance_criteria": [
+    "registerForPushNotifications receives an explicit accessToken and sends it as Authorization header, eliminating the race condition where token is not yet in SecureStore",
+    "Videos in PostCard do NOT autoplay - show play button overlay instead, require user tap to play",
+    "Videos start muted by default",
+    "Only one video plays at a time (already enforced by isActive pattern)",
+    "Navigation away pauses video immediately (already implemented, verify preserved)",
+    "PostDetailScreen does not auto-play video on load - shows play button overlay first",
+    "getOptimizedVideoUrl function exists in utils/media.ts for Cloudinary video optimization"
+  ],
+  "verification": [
+    "Read LoginScreen.tsx handleAuthSuccess and confirm registerForPushNotifications receives accessToken",
+    "Read pushNotification.service.ts and confirm it accepts and uses optional accessToken",
+    "Read PostCard.tsx and confirm shouldPlay requires explicit user interaction (isPlaying state)",
+    "Read PostDetailScreen.tsx and confirm video does not auto-play on initial load"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes implemented successfully. Push notification race condition fixed by passing accessToken explicitly from LoginScreen handleAuthSuccess to registerForPushNotifications, bypassing the SecureStore interceptor timing issue. Video autoplay disabled in both PostCard (feed) and PostDetailScreen (detail view). Videos now start muted and require user tap to play. getOptimizedVideoUrl utility added to media.ts for Cloudinary video delivery optimization."
+}
