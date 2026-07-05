@@ -57,9 +57,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   useEffect(() => { setIsLiked(post.isLikedByMe || false); }, [post.isLikedByMe]);
   useEffect(() => { setIsSaved(post.isSavedByMe || false); }, [post.isSavedByMe]);
 
-  // Pause video on navigation blur, resume on focus
+  // Pause video on navigation blur - NEVER auto-resume on focus
   useFocusEffect(
     useCallback(() => {
+      // Screen focused: do NOT resume video. User must tap play again.
       setIsFocused(true);
       return () => {
         setIsFocused(false);

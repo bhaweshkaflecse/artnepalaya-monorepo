@@ -172,13 +172,14 @@ export const PostDetailScreen = () => {
     }
   };
 
-  // Pause video on navigation blur (e.g., navigating to another screen)
+  // Pause video on navigation blur - NEVER auto-resume on focus
   useFocusEffect(
     useCallback(() => {
-      // Screen focused - resume video if it was playing
+      // Screen focused: do NOT resume video. User must tap play again.
       return () => {
-        // Screen blurred - pause video to prevent background playback
+        // Screen blurred: stop playback completely
         setShouldPlay(false);
+        setIsVideoPlaying(false);
         videoRef.current?.pauseAsync().catch(() => {});
       };
     }, [])
