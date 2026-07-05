@@ -391,7 +391,7 @@ export const CreateScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Feather name="arrow-left" size={22} color={lightColors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Artwork Related Post</Text>
+        <Text style={styles.headerTitle}>Creative Post</Text>
         <Animated.View style={{ transform: [{ scale: publishScaleAnim }] }}>
           <TouchableOpacity
             onPress={handlePublishPress}
@@ -427,32 +427,6 @@ export const CreateScreen = () => {
             </View>
           </View>
         )}
-
-        {/* PUBLISH STATUS BANNER */}
-        <Animated.View style={[
-          styles.statusBanner,
-          mediaItems.length > 0 ? styles.statusBannerReady : styles.statusBannerWarning,
-          { opacity: fadeAnim },
-        ]}>
-          <View style={styles.statusBannerLeft}>
-            <Feather
-              name={mediaItems.length > 0 ? 'check-circle' : 'alert-circle'}
-              size={16}
-              color={mediaItems.length > 0 ? '#16A34A' : '#D97706'}
-            />
-            <Text style={[
-              styles.statusBannerText,
-              { color: mediaItems.length > 0 ? '#16A34A' : '#D97706' },
-            ]}>
-              {mediaItems.length > 0 ? 'Ready to publish' : 'Minimum 1 artwork required'}
-            </Text>
-          </View>
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusBadgeText}>
-              {mediaItems.filter((m) => m.type === 'image').length}/{MAX_IMAGES} img | {mediaItems.filter((m) => m.type === 'video').length}/{MAX_VIDEOS} vid
-            </Text>
-          </View>
-        </Animated.View>
 
         {/* LARGE HERO PREVIEW */}
         <Animated.View style={[styles.heroContainer, { opacity: fadeAnim }]}>
@@ -504,9 +478,9 @@ export const CreateScreen = () => {
                 <View style={styles.heroPlaceholderIcon}>
                   <Feather name="upload-cloud" size={40} color={lightColors.textSecondary} />
                 </View>
-                <Text style={styles.heroPlaceholderTitle}>Tap to select artwork</Text>
+                <Text style={styles.heroPlaceholderTitle}>Upload Media</Text>
                 <Text style={styles.heroPlaceholderSubtitle}>
-                  Up to 5 images + 1 video | JPG, PNG, WEBP, MP4 | Max 10MB/image, 50MB/video
+                  Tap to upload artwork and creative experiences
                 </Text>
               </View>
             )}
@@ -569,16 +543,16 @@ export const CreateScreen = () => {
 
         {/* UPLOAD LIMITS */}
         <Text style={styles.limitsText}>
-          5 images + 1 video {'\u00B7'} JPG PNG WEBP MP4 {'\u00B7'} 10MB/img 50MB/vid
+          Upload up to 5 photos & 1 video
         </Text>
 
         {/* DESCRIPTION FIELD */}
         <Animated.View style={[styles.fieldContainer, { opacity: fadeAnim }]}>
-          <Text style={styles.fieldLabel}>Description</Text>
+          <Text style={styles.fieldLabel}>Caption</Text>
           <View style={styles.textAreaContainer}>
             <TextInput
               style={styles.textArea}
-              placeholder="Describe your artwork..."
+              placeholder="Share the story behind your artwork or creative experience..."
               placeholderTextColor={lightColors.textSecondary}
               multiline
               maxLength={2000}
@@ -594,20 +568,20 @@ export const CreateScreen = () => {
 
         {/* KEYWORDS/TAGS FIELD */}
         <Animated.View style={[styles.fieldContainer, { opacity: fadeAnim }]}>
-          <Text style={styles.fieldLabel}>Keywords / Tags</Text>
+          <Text style={styles.fieldLabel}>Tags</Text>
           <TextInput
             style={styles.tagInput}
-            placeholder="# Add keywords separated by commas"
+            placeholder="Add tags"
             placeholderTextColor={lightColors.textSecondary}
             value={tags}
             onChangeText={setTags}
           />
-          <Text style={styles.helperText}>Separate with commas (e.g., landscape, oil painting, Nepal)</Text>
+          <Text style={styles.helperText}>Separate tags with commas (e.g. landscape, Nepal, watercolor)</Text>
         </Animated.View>
 
         {/* ARTWORK TYPES */}
         <Animated.View style={[styles.fieldContainer, { opacity: fadeAnim }]}>
-          <Text style={styles.fieldLabel}>Artwork Type</Text>
+          <Text style={styles.fieldLabel}>Post Category</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -660,8 +634,7 @@ export const CreateScreen = () => {
                 color={isAIGenerated ? lightColors.accent : lightColors.textSecondary}
               />
               <View style={styles.complianceTextWrap}>
-                <Text style={styles.complianceLabel}>This artwork was created with AI tools</Text>
-                <Text style={styles.complianceHelper}>AI-assisted or AI-generated content</Text>
+                <Text style={styles.complianceLabel}>AI-Assisted or AI-Generated</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => Alert.alert('AI Content Disclosure', 'AI-assisted content includes artwork created or enhanced using artificial intelligence tools such as Midjourney, DALL-E, Stable Diffusion, etc.')}>
@@ -678,8 +651,7 @@ export const CreateScreen = () => {
                 color={isOriginalContent ? lightColors.accent : lightColors.textSecondary}
               />
               <View style={styles.complianceTextWrap}>
-                <Text style={styles.complianceLabel}>I confirm this artwork is NOT AI-generated</Text>
-                <Text style={styles.complianceHelper}>Original creative work declaration</Text>
+                <Text style={styles.complianceLabel}>Original Content</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => Alert.alert('Original Content', 'By checking this, you declare that this artwork is your own original creation and does not infringe on any copyright.')}>
@@ -697,7 +669,6 @@ export const CreateScreen = () => {
               />
               <View style={styles.complianceTextWrap}>
                 <Text style={styles.complianceLabel}>18+ / Mature Content</Text>
-                <Text style={styles.complianceHelper}>Contains sensitive content not suitable for all audiences</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => Alert.alert('Mature Content', 'Mark content as mature if it contains nudity, violence, or other content not suitable for audiences under 18.')}>

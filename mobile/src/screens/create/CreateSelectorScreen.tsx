@@ -25,15 +25,15 @@ interface CardItem {
 const cards: CardItem[] = [
   {
     id: 'artwork',
-    title: 'Artwork Related Post',
-    description: 'Share your artwork with the art community',
+    title: 'Creative Post',
+    description: 'Share artwork, stories, and creative experiences.',
     icon: 'image',
     enabled: true,
   },
   {
     id: 'community',
     title: 'Community Post',
-    description: 'Share thoughts and discussions',
+    description: 'Share events, workshops, opportunities, and discussions.',
     icon: 'message-circle',
     enabled: false,
   },

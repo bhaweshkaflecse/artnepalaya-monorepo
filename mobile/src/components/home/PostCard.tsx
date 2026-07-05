@@ -312,7 +312,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Check out this artwork by ${post.authorId.username} on Artnepalaya!`,
+        message: `Check out this artwork on ArtNepalaya!\nhttps://artnepalaya.com/post/${post._id}`,
       });
     } catch (error) {
       // Silently handle share cancellation
@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionBtn: {
-    marginRight: 16,
+    marginRight: 10,
     minWidth: 44,
     minHeight: 44,
     justifyContent: 'center',

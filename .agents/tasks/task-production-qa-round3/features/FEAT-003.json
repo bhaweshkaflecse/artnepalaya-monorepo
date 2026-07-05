@@ -1,0 +1,37 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Home screen refresh, Post Cards spacing, Share feature URL, Explore search, Create screen polish, Community screen icons (items 5-10, 12)",
+  "status": "in_progress",
+  "steps": [
+    "1. HOME SCREEN (item 5): In mobile/src/navigation/MainTabs.tsx, add a tabPress listener on the Home tab that triggers feed refresh. Use the listeners prop on Tab.Screen: listeners={({ navigation }) => ({ tabPress: (e) => { if (navigation.isFocused()) { /* emit refresh event */ } } })}. In HomeScreen.tsx, listen for this event using navigation.addListener or useScrollToTop. Simplest approach: use React Navigation's built-in useScrollToTop hook with the FlatList ref, then also call handleRefresh when the home tab is pressed while already focused.",
+    "2. POST CARDS SPACING (item 6): In mobile/src/components/home/PostCard.tsx, reduce the marginRight on actionBtn from 16 to 10 to reduce spacing between Like and Share buttons.",
+    "3. SHARE FEATURE (item 7): In PostCard.tsx handleShare, change the share message from plain text to include a deep-link compatible URL. Format: 'Check out this artwork on ArtNepalaya! https://artnepalaya.com/post/{post._id}'. This URL format is future deep-link compatible.",
+    "4. EXPLORE SEARCH (item 8): In mobile/src/screens/explore/ExploreScreen.tsx, add a 'Recent Searches' section that appears when the search input is focused and searchQuery is empty. Store recent searches in local state (or AsyncStorage if time permits). Also add 'Related Posts' section below user results when searching. The related posts can be the filtered posts shown in a horizontal preview strip before the grid.",
+    "5. CREATE SCREEN (item 9): In mobile/src/screens/create/CreateScreen.tsx: (a) Change header title from 'Artwork Related Post' to 'Creative Post'. (b) Remove the 'Minimum 1 artwork required' status banner entirely (remove the entire statusBanner section). (c) Change upload placeholder title to 'Upload Media', subtitle to 'Tap to upload artwork and creative experiences', and limit text to 'Upload up to 5 photos & 1 video'. (d) Rename 'Description' field label to 'Caption' and change placeholder to 'Share the story behind your artwork or creative experience...'. (e) Rename 'Keywords / Tags' to 'Tags' and change placeholder to 'Add tags' and helper text to 'Separate tags with commas (e.g. landscape, Nepal, watercolor)'. (f) Rename 'Artwork Type' to 'Post Category'. (g) Content Declaration: change AI label to 'AI-Assisted or AI-Generated', change original content label to 'Original Content', keep '18+ / Mature Content'. Remove the long helper text, keep only headings with info icon for details.",
+    "6. CREATE SELECTOR SCREEN (item 9 & 10): In mobile/src/screens/create/CreateSelectorScreen.tsx: (a) Rename 'Artwork Related Post' to 'Creative Post' with description 'Share artwork, stories, and creative experiences.' (b) Change Community Post description to 'Share events, workshops, opportunities, and discussions.' (c) Marketplace - no changes.",
+    "7. COMMUNITY SCREEN (item 12): In mobile/src/screens/community/CommunityScreen.tsx, replace the fake statistics chips (2.5K Artists, 10K+ Artworks, 15 Cities) with icon categories: use emoji text - \\ud83c\\udfa8 Events, \\ud83d\\udcda Learning, \\ud83e\\udd1d Opportunities."
+  ],
+  "acceptance_criteria": [
+    "Home tab press while already on Home triggers feed refresh",
+    "Pull to refresh on Home verifies new content (already works, just confirm)",
+    "PostCard Like and Share buttons have reduced spacing (marginRight 10 instead of 16)",
+    "Share produces URL format: https://artnepalaya.com/post/{postId}",
+    "ExploreScreen has Recent Searches section when search is focused with empty query",
+    "CreateScreen header says 'Creative Post'",
+    "Status banner removed from CreateScreen",
+    "Upload placeholder says 'Upload Media' / 'Tap to upload artwork and creative experiences' / 'Upload up to 5 photos & 1 video'",
+    "Description field renamed to Caption with new placeholder",
+    "Keywords/Tags renamed to Tags with placeholder 'Add tags' and helper about comma separation",
+    "Artwork Type renamed to Post Category",
+    "Content Declaration has concise headings: 'AI-Assisted or AI-Generated', 'Original Content', '18+ / Mature Content'",
+    "CreateSelectorScreen shows 'Creative Post' and updated descriptions",
+    "CommunityScreen stats show emoji categories: Events, Learning, Opportunities"
+  ],
+  "verification": [
+    "Grep for old strings to confirm they are replaced",
+    "Read the modified files and verify the specific text changes"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

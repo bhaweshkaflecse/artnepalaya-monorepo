@@ -95,6 +95,8 @@ export const ExploreScreen = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [userResults, setUserResults] = useState<SearchUserResult[]>([]);
   const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const userSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchData = useCallback(async () => {
@@ -183,6 +185,24 @@ export const ExploreScreen = () => {
     };
   }, [searchQuery]);
 
+  const addToRecentSearches = useCallback((query: string) => {
+    if (query.length < 2) return;
+    setRecentSearches((prev) => {
+      const filtered = prev.filter((s) => s !== query);
+      return [query, ...filtered].slice(0, 5);
+    });
+  }, []);
+
+  const clearRecentSearches = useCallback(() => {
+    setRecentSearches([]);
+  }, []);
+
+  const handleSearchSubmit = useCallback(() => {
+    if (searchQuery.length >= 2) {
+      addToRecentSearches(searchQuery);
+    }
+  }, [searchQuery, addToRecentSearches]);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setCursor(null);
@@ -267,6 +287,10 @@ export const ExploreScreen = () => {
             placeholderTextColor={darkColors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+            onSubmitEditing={handleSearchSubmit}
+            returnKeyType="search"
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
@@ -304,6 +328,31 @@ export const ExploreScreen = () => {
           ))}
         </ScrollView>
       </View>
+
+      {/* Recent Searches */}
+      {isSearchFocused && searchQuery.length === 0 && recentSearches.length > 0 && (
+        <View style={styles.recentSearchesContainer}>
+          <View style={styles.recentSearchesHeader}>
+            <Text style={styles.recentSearchesTitle}>Recent Searches</Text>
+            <TouchableOpacity onPress={clearRecentSearches}>
+              <Text style={styles.recentSearchesClear}>Clear</Text>
+            </TouchableOpacity>
+          </View>
+          {recentSearches.map((query, index) => (
+            <TouchableOpacity
+              key={`${query}-${index}`}
+              style={styles.recentSearchItem}
+              onPress={() => {
+                setSearchQuery(query);
+                addToRecentSearches(query);
+              }}
+            >
+              <Feather name="clock" size={14} color={darkColors.textSecondary} />
+              <Text style={styles.recentSearchItemText}>{query}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {/* Search Results Feedback */}
       {searchQuery.length > 0 && !isLoading && (
@@ -563,5 +612,35 @@ const styles = StyleSheet.create({
     color: darkColors.textPrimary,
     marginTop: 4,
     textAlign: 'center',
+  },
+  recentSearchesContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  recentSearchesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  recentSearchesTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: darkColors.textSecondary,
+  },
+  recentSearchesClear: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#FF3B30',
+  },
+  recentSearchItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    gap: 10,
+  },
+  recentSearchItemText: {
+    fontSize: 14,
+    color: darkColors.textPrimary,
   },
 });

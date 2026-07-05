@@ -39,6 +39,13 @@ export const MainTabs = () => {
             <Feather name="home" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            if (navigation.isFocused()) {
+              navigation.emit({ type: 'homeTabRefresh' });
+            }
+          },
+        })}
       />
       <Tab.Screen
         name="Explore"

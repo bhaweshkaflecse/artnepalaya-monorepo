@@ -230,16 +230,13 @@ export const CommunityScreen = () => {
           </Text>
           <View style={styles.statChipsRow}>
             <View style={styles.statChip}>
-              <Feather name="users" size={12} color="#FF3B30" />
-              <Text style={styles.statChipText}>2.5K Artists</Text>
+              <Text style={styles.statChipText}>{'\uD83C\uDFA8'} Events</Text>
             </View>
             <View style={styles.statChip}>
-              <Feather name="image" size={12} color="#FF3B30" />
-              <Text style={styles.statChipText}>10K+ Artworks</Text>
+              <Text style={styles.statChipText}>{'\uD83D\uDCDA'} Learning</Text>
             </View>
             <View style={styles.statChip}>
-              <Feather name="globe" size={12} color="#FF3B30" />
-              <Text style={styles.statChipText}>15 Cities</Text>
+              <Text style={styles.statChipText}>{'\uD83E\uDD1D'} Opportunities</Text>
             </View>
           </View>
         </View>
@@ -345,7 +342,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#333333',
-    marginLeft: 4,
   },
   segmentedControl: {
     flexDirection: 'row',
