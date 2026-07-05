@@ -4,18 +4,24 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { notificationService } from './notification.service';
 
+const TAG = '[PushReg]';
+
 /**
  * Sets up the Android notification channel.
  * Must be called before notifications are displayed on Android.
  */
 async function setupAndroidChannel(): Promise<void> {
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
+    console.log(TAG, 'Setting up Android notification channel...');
+    const channel = await Notifications.setNotificationChannelAsync('default', {
       name: 'Default',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF3B30',
     });
+    console.log(TAG, 'Android channel created:', JSON.stringify(channel));
+  } else {
+    console.log(TAG, 'Skipping Android channel setup (platform=' + Platform.OS + ')');
   }
 }
 
@@ -23,55 +29,121 @@ async function setupAndroidChannel(): Promise<void> {
  * Registers for push notifications by requesting permission,
  * getting the Expo push token, and sending it to the backend.
  * Returns the token string or null if registration fails.
+ *
+ * Verbose logging at every stage so the user can see in Android Logcat
+ * exactly where the token registration pipeline breaks.
  */
 export async function registerForPushNotifications(): Promise<string | null> {
+  const startTime = Date.now();
+  console.log(TAG, '=== PUSH TOKEN REGISTRATION START ===');
+  console.log(TAG, 'Timestamp:', new Date().toISOString());
+  console.log(TAG, 'Platform:', Platform.OS, 'Version:', Platform.Version);
+  console.log(TAG, 'Device.isDevice:', Device.isDevice);
+  console.log(TAG, 'Device.brand:', Device.brand);
+  console.log(TAG, 'Device.modelName:', Device.modelName);
+  console.log(TAG, 'Device.osName:', Device.osName, 'osVersion:', Device.osVersion);
+
   try {
-    // Push notifications only work on physical devices
-    console.log('[PushReg] Stage 1: Starting registration, isDevice=' + Device.isDevice);
+    // Stage 1: Device check
+    console.log(TAG, 'Stage 1/8: Checking if physical device...');
     if (!Device.isDevice) {
-      console.log('[PushNotifications] Must use physical device for push notifications');
+      console.warn(TAG, 'ABORT: Not a physical device. Push notifications require a real device.');
+      console.warn(TAG, 'Device.isDevice =', Device.isDevice, '| This is likely an emulator/simulator.');
       return null;
     }
+    console.log(TAG, 'Stage 1/8: PASS - Running on physical device');
 
-    // Set up Android notification channel
+    // Stage 2: Android channel setup
+    console.log(TAG, 'Stage 2/8: Setting up Android notification channel...');
     await setupAndroidChannel();
-    console.log('[PushReg] Stage 2: Android channel setup complete');
+    console.log(TAG, 'Stage 2/8: PASS - Channel setup complete (' + (Date.now() - startTime) + 'ms elapsed)');
 
-    // Check existing permissions
+    // Stage 3: Check existing permissions
+    console.log(TAG, 'Stage 3/8: Checking existing notification permissions...');
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    console.log('[PushReg] Stage 3: Permission status existing=' + existingStatus);
+    console.log(TAG, 'Stage 3/8: Current permission status =', existingStatus);
+
     let finalStatus = existingStatus;
 
-    // Request permission if not already granted
+    // Stage 4: Request permissions if needed
     if (existingStatus !== 'granted') {
+      console.log(TAG, 'Stage 4/8: Permission not yet granted, requesting...');
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
+      console.log(TAG, 'Stage 4/8: Permission response =', finalStatus);
+    } else {
+      console.log(TAG, 'Stage 4/8: Permission already granted, skipping request');
     }
-    console.log('[PushReg] Stage 4: Permission after request=' + finalStatus);
 
     if (finalStatus !== 'granted') {
-      console.log('[PushNotifications] Permission not granted');
+      console.warn(TAG, 'ABORT: Permission denied. finalStatus =', finalStatus);
+      console.warn(TAG, 'User must enable notifications in device Settings > Apps > ArtNepalaya > Notifications');
       return null;
     }
+    console.log(TAG, 'Stage 4/8: PASS - Notification permission granted (' + (Date.now() - startTime) + 'ms elapsed)');
 
-    // Get the Expo push token
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? 'bb44fc58-146f-4483-b61f-c9b7edbad4e6';
-    console.log('[PushReg] Stage 5: Getting token with projectId=' + projectId);
-    const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId,
-    });
+    // Stage 5: Resolve project ID
+    console.log(TAG, 'Stage 5/8: Resolving Expo project ID...');
+    const expoConfigProjectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const fallbackProjectId = 'bb44fc58-146f-4483-b61f-c9b7edbad4e6';
+    const projectId = expoConfigProjectId ?? fallbackProjectId;
+    console.log(TAG, 'Stage 5/8: expoConfig.extra.eas.projectId =', expoConfigProjectId || '(undefined, using fallback)');
+    console.log(TAG, 'Stage 5/8: Using projectId =', projectId);
+    console.log(TAG, 'Stage 5/8: Constants.expoConfig?.name =', Constants.expoConfig?.name);
+    console.log(TAG, 'Stage 5/8: Constants.expoConfig?.slug =', Constants.expoConfig?.slug);
+
+    // Stage 6: Get Expo push token
+    console.log(TAG, 'Stage 6/8: Calling Notifications.getExpoPushTokenAsync({ projectId })...');
+    const tokenRequestStart = Date.now();
+    let tokenData;
+    try {
+      tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+    } catch (tokenError: any) {
+      console.error(TAG, 'Stage 6/8: FAILED - getExpoPushTokenAsync threw an error');
+      console.error(TAG, 'Error name:', tokenError?.name);
+      console.error(TAG, 'Error message:', tokenError?.message);
+      console.error(TAG, 'Error stack:', tokenError?.stack?.substring(0, 500));
+      console.error(TAG, 'This usually means: invalid projectId, no Google Services config, or network issue');
+      throw tokenError;
+    }
     const token = tokenData.data;
+    console.log(TAG, 'Stage 6/8: PASS - Token received in', (Date.now() - tokenRequestStart) + 'ms');
+    console.log(TAG, 'Stage 6/8: Token type:', tokenData.type);
+    console.log(TAG, 'Stage 6/8: Token value:', token);
+    console.log(TAG, 'Stage 6/8: Token format valid:', token?.startsWith('ExponentPushToken[') ? 'YES' : 'NO (unexpected format!)');
 
-    console.log('[PushReg] Stage 6: Token received=' + token);
+    // Stage 7: Send token to backend
+    console.log(TAG, 'Stage 7/8: Sending token to backend via POST /users/me/push-token...');
+    const backendRequestStart = Date.now();
+    try {
+      await notificationService.registerPushToken(token);
+    } catch (backendError: any) {
+      console.error(TAG, 'Stage 7/8: FAILED - Backend rejected the token registration');
+      console.error(TAG, 'HTTP status:', backendError?.response?.status);
+      console.error(TAG, 'Response data:', JSON.stringify(backendError?.response?.data));
+      console.error(TAG, 'Error message:', backendError?.message);
+      console.error(TAG, 'Is auth token present?', backendError?.config?.headers?.Authorization ? 'YES' : 'NO (likely not authenticated!)');
+      console.error(TAG, 'Request URL:', backendError?.config?.url || backendError?.config?.baseURL);
+      throw backendError;
+    }
+    console.log(TAG, 'Stage 7/8: PASS - Backend accepted token in', (Date.now() - backendRequestStart) + 'ms');
 
-    // Register the token with the backend
-    console.log('[PushReg] Stage 7: Calling POST /users/me/push-token');
-    await notificationService.registerPushToken(token);
-    console.log('[PushReg] Stage 8: Token registered successfully');
+    // Stage 8: Complete
+    console.log(TAG, 'Stage 8/8: Registration complete!');
+    console.log(TAG, '=== PUSH TOKEN REGISTRATION SUCCESS ===');
+    console.log(TAG, 'Total time:', (Date.now() - startTime) + 'ms');
+    console.log(TAG, 'Token:', token);
 
     return token;
-  } catch (error) {
-    console.error('[PushNotifications] Registration failed:', error);
+  } catch (error: any) {
+    console.error(TAG, '=== PUSH TOKEN REGISTRATION FAILED ===');
+    console.error(TAG, 'Total time before failure:', (Date.now() - startTime) + 'ms');
+    console.error(TAG, 'Error type:', error?.constructor?.name || typeof error);
+    console.error(TAG, 'Error message:', error?.message);
+    console.error(TAG, 'Error code:', error?.code);
+    console.error(TAG, 'HTTP status:', error?.response?.status);
+    console.error(TAG, 'Response body:', JSON.stringify(error?.response?.data));
+    console.error(TAG, 'Stack trace:', error?.stack?.substring(0, 800));
     return null;
   }
 }
