@@ -13,8 +13,6 @@ import {
   Animated,
   Easing,
 } from 'react-native';
-
-
 import * as SecureStore from 'expo-secure-store';
 import { useAppDispatch } from '../../store';
 import { setOnboardingComplete } from '../../store/slices/appSlice';

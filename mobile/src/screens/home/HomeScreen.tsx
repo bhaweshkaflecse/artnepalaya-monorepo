@@ -38,6 +38,8 @@ export const HomeScreen = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const showGuestModal = isGuest && guestPostsViewed >= 15 && !modalDismissed;
 
+  const initialLoadDone = useRef(false);
+
   const fetchUnreadCount = useCallback(async () => {
     if (isGuest) return;
     try {
@@ -49,6 +51,8 @@ export const HomeScreen = () => {
   }, [isGuest]);
 
   useEffect(() => {
+    if (initialLoadDone.current) return;
+    initialLoadDone.current = true;
     dispatch(fetchFeed());
     dispatch(fetchFeatured());
     fetchUnreadCount();

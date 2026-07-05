@@ -23,7 +23,7 @@ import * as SecureStore from 'expo-secure-store';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { setCredentials, setGuest } from '../../store/slices/authSlice';
-import { fetchAuthConfig, setNeedsUserOnboarding } from '../../store/slices/appSlice';
+import { setNeedsUserOnboarding } from '../../store/slices/appSlice';
 import { authService } from '../../services/auth.service';
 import { lightColors } from '../../theme/colors';
 import { registerForPushNotifications } from '../../services/pushNotification.service';
@@ -66,10 +66,7 @@ export const LoginScreen = () => {
   const slideAnim = useRef(new Animated.Value(30)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
 
-  // Fetch fresh auth background media on mount
-  useEffect(() => {
-    dispatch(fetchAuthConfig());
-  }, [dispatch]);
+  // Auth background media is fetched by App.tsx on startup - no need to re-fetch here
 
   // Configure Google Sign-In on mount
   useEffect(() => {
