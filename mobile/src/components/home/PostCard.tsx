@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Video, ResizeMode } from 'expo-av';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
@@ -47,12 +47,33 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [showLikedByModal, setShowLikedByModal] = useState(false);
   const [likedByUsers, setLikedByUsers] = useState<Array<{ _id: string; username: string; avatarUrl?: string; fullName?: string }>>([]);
   const [likedByLoading, setLikedByLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(true);
   const mediaIndexRef = useRef(0);
+  const videoRef = useRef<Video>(null);
 
   const isOwnPost = currentUser && post.authorId._id === currentUser.id;
 
   useEffect(() => { setIsLiked(post.isLikedByMe || false); }, [post.isLikedByMe]);
   useEffect(() => { setIsSaved(post.isSavedByMe || false); }, [post.isSavedByMe]);
+
+  // Pause video on navigation blur, resume on focus
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true);
+      return () => {
+        setIsFocused(false);
+        // Pause video when navigating away
+        videoRef.current?.pauseAsync().catch(() => {});
+      };
+    }, [])
+  );
+
+  // Unload video on unmount to prevent OutOfMemoryError
+  useEffect(() => {
+    return () => {
+      videoRef.current?.unloadAsync().catch(() => {});
+    };
+  }, []);
 
   // Single/double-tap detection
   const lastTap = useRef<number>(0);
@@ -140,9 +161,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
   const handleMomentumScrollEnd = useCallback((e: any) => {
     const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    const previousIndex = mediaIndexRef.current;
     mediaIndexRef.current = index;
     setCurrentMediaIndex(index);
-  }, []);
+    // Pause video when scrolling away from a video slide
+    if (previousIndex !== index && post.media[previousIndex]?.type === 'video') {
+      videoRef.current?.pauseAsync().catch(() => {});
+    }
+  }, [post.media]);
 
   const getItemLayout = useCallback((_data: any, index: number) => ({
     length: SCREEN_WIDTH,
@@ -155,20 +181,23 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     const isActive = index === currentMediaIndex;
 
     if (isVideo && item.url) {
+      // Only play if this slide is active AND the screen is focused
+      const shouldPlay = isActive && isFocused;
       return (
         <TouchableWithoutFeedback onPress={handleImageTap}>
           <View style={[styles.imageWrapper, { width: SCREEN_WIDTH }]}>
             <Video
+              ref={isActive ? videoRef : undefined}
               source={{ uri: item.url }}
               style={styles.image}
               resizeMode={ResizeMode.COVER}
-              shouldPlay={isActive}
+              shouldPlay={shouldPlay}
               isLooping
               isMuted={false}
               posterSource={{ uri: getVideoThumbnailUrl(item.url) }}
               usePoster
             />
-            {!isActive && (
+            {!shouldPlay && (
               <View style={styles.videoOverlay}>
                 <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
               </View>
@@ -196,7 +225,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         </View>
       </TouchableWithoutFeedback>
     );
-  }, [currentMediaIndex, handleImageTap]);
+  }, [currentMediaIndex, isFocused, handleImageTap]);
 
   const handleOpenLikedBy = async () => {
     setShowLikedByModal(true);

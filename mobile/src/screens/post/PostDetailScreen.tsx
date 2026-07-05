@@ -107,7 +107,7 @@ export const PostDetailScreen = () => {
   const lastTap = useRef<number>(0);
   const tapTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Clear timeouts on unmount
+  // Clear timeouts on unmount and unload video to prevent OutOfMemoryError
   useEffect(() => {
     return () => {
       if (tapTimeout.current) {
@@ -119,6 +119,8 @@ export const PostDetailScreen = () => {
       if (goBackTimeout.current) {
         clearTimeout(goBackTimeout.current);
       }
+      // Unload video on unmount to free memory
+      videoRef.current?.unloadAsync().catch(() => {});
     };
   }, []);
 
@@ -169,6 +171,18 @@ export const PostDetailScreen = () => {
       triggerHeartAnimation();
     }
   };
+
+  // Pause video on navigation blur (e.g., navigating to another screen)
+  useFocusEffect(
+    useCallback(() => {
+      // Screen focused - resume video if it was playing
+      return () => {
+        // Screen blurred - pause video to prevent background playback
+        setShouldPlay(false);
+        videoRef.current?.pauseAsync().catch(() => {});
+      };
+    }, [])
+  );
 
   useFocusEffect(
     useCallback(() => {
