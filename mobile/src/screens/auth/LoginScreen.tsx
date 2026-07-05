@@ -396,24 +396,24 @@ export const LoginScreen = () => {
             </View>
 
             <Text style={styles.brandName}>ArtNepalaya</Text>
-            <Text style={styles.tagline}>Discover {'\u00B7'} Share {'\u00B7'} Inspire</Text>
+            <Text style={styles.tagline}>Discover {'\u2022'} Create {'\u2022'} Celebrate</Text>
             <Text style={styles.brandDescription}>
-              Nepal's premier platform for artists and art lovers.{'\n'}Showcase your creativity to the world.
+              Welcome to Nepal's Creative Community{'\n'}Join artists, galleries, businesses, and art lovers on one digital platform.
             </Text>
 
             {/* Statistics Cards */}
             <View style={styles.statsRow}>
               <View style={styles.statCard}>
-                <Text style={styles.statNumber}>18K+</Text>
+                <Text style={styles.statNumber}>{'\uD83C\uDFA8'}</Text>
                 <Text style={styles.statLabel}>Artists</Text>
               </View>
               <View style={styles.statCard}>
-                <Text style={styles.statNumber}>75K+</Text>
-                <Text style={styles.statLabel}>Artworks</Text>
+                <Text style={styles.statNumber}>{'\uD83D\uDDBC\uFE0F'}</Text>
+                <Text style={styles.statLabel}>Art Lovers</Text>
               </View>
               <View style={styles.statCard}>
-                <Text style={styles.statNumber}>{'\u{1F1F3}\u{1F1F5}'}</Text>
-                <Text style={styles.statLabel}>Made in Nepal</Text>
+                <Text style={styles.statNumber}>{'\uD83E\uDD1D'}</Text>
+                <Text style={styles.statLabel}>Creative Businesses</Text>
               </View>
             </View>
           </Animated.View>
@@ -472,6 +472,7 @@ export const LoginScreen = () => {
               activeOpacity={0.6}
             >
               <Text style={styles.guestButtonText}>Continue as Guest</Text>
+              <Text style={styles.guestButtonSubtitle}>Explore first. Join when you're ready.</Text>
             </TouchableOpacity>
           </Animated.View>
 
@@ -492,6 +493,15 @@ export const LoginScreen = () => {
               <Text style={styles.termsLink}>Privacy Policy</Text>
             </TouchableOpacity>
           </View>
+
+          {/* QA Developer Login */}
+          <TouchableOpacity
+            style={styles.devLoginButton}
+            onPress={handleGoogleLogin}
+            activeOpacity={0.5}
+          >
+            <Text style={styles.devLoginText}>QA Developer Login</Text>
+          </TouchableOpacity>
 
         </ScrollView>
       </SafeAreaView>
@@ -661,7 +671,7 @@ const styles = StyleSheet.create({
     }),
   },
   statNumber: {
-    fontSize: 15,
+    fontSize: 20,
     fontWeight: '700',
     color: lightColors.textPrimary,
     marginBottom: 1,
@@ -752,6 +762,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: lightColors.textSecondary,
     fontWeight: '400',
+    textDecorationLine: 'underline',
+  },
+  guestButtonSubtitle: {
+    fontSize: 11,
+    color: lightColors.textSecondary,
+    fontWeight: '400',
+    marginTop: 2,
   },
 
   // Terms
@@ -774,6 +791,18 @@ const styles = StyleSheet.create({
     color: lightColors.accent,
     fontWeight: '600',
     lineHeight: 16,
+  },
+
+  // Dev Login
+  devLoginButton: {
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  devLoginText: {
+    fontSize: 10,
+    color: lightColors.textSecondary,
+    opacity: 0.5,
   },
 
 });
