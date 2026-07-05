@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Home screen refresh, Post Cards spacing, Share feature URL, Explore search, Create screen polish, Community screen icons (items 5-10, 12)",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. HOME SCREEN (item 5): In mobile/src/navigation/MainTabs.tsx, add a tabPress listener on the Home tab that triggers feed refresh. Use the listeners prop on Tab.Screen: listeners={({ navigation }) => ({ tabPress: (e) => { if (navigation.isFocused()) { /* emit refresh event */ } } })}. In HomeScreen.tsx, listen for this event using navigation.addListener or useScrollToTop. Simplest approach: use React Navigation's built-in useScrollToTop hook with the FlatList ref, then also call handleRefresh when the home tab is pressed while already focused.",
     "2. POST CARDS SPACING (item 6): In mobile/src/components/home/PostCard.tsx, reduce the marginRight on actionBtn from 16 to 10 to reduce spacing between Like and Share buttons.",
@@ -33,5 +33,5 @@
     "Read the modified files and verify the specific text changes"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All changes applied successfully. StatusBanner JSX removed from CreateScreen render but style definitions left in place (dead code, no runtime impact). CommunityScreen emoji chips have marginLeft removed since the Feather icon was replaced with inline emoji text. ExploreScreen recent searches stored in local state only (no persistence, as specified for MVP). The homeTabRefresh event uses 'as any' type assertion since it is a custom event type not defined in React Navigation types."
 }
