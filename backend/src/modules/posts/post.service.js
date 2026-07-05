@@ -62,6 +62,7 @@ export const createPost = async (userId, postData) => {
   }
 
   const post = await Post.create({ authorId: userId, ...postData });
+  console.log('[CREATE_POST] Saved to MongoDB. media count:', post.media?.length);
 
   // Populate author data before returning
   const populatedPost = await post.populate('authorId', 'username avatarUrl role isVerified verifiedType fullName status');

@@ -23,6 +23,11 @@ const uploadBufferToCloudinary = (buffer, isVideo) => {
 export const createPost = async (req, res, next) => {
   try {
     console.log('[CREATE_POST] HIT - user:', req.user?.id, 'files:', req.files?.length || 0);
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((f, i) => {
+        console.log(`[CREATE_POST] File ${i}: fieldname=${f.fieldname}, originalname=${f.originalname}, mimetype=${f.mimetype}, size=${f.size}`);
+      });
+    }
     const postData = req.body;
     let uploadedFiles = [];
     
@@ -43,6 +48,10 @@ export const createPost = async (req, res, next) => {
 
       // Wait for all images to finish uploading, then attach to database payload
       postData.media = await Promise.all(uploadPromises);
+      console.log('[CREATE_POST] Cloudinary upload complete. Media items stored:', postData.media.length);
+      postData.media.forEach((m, i) => {
+        console.log(`[CREATE_POST] Media ${i}: type=${m.type}, url=${m.url.substring(0, 60)}...`);
+      });
     } else {
       delete postData.media;
     }

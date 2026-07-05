@@ -250,8 +250,16 @@ export const CreateScreen = () => {
     setIsPublishing(true);
     setUploadProgress(0);
 
+    // Pipeline audit logging: pre-upload diagnostics
+    console.log('[PUBLISH] Media items count:', mediaItems.length);
+    console.log('[PUBLISH] Images:', mediaItems.filter(m => m.type === 'image').length, 'Videos:', mediaItems.filter(m => m.type === 'video').length);
+    mediaItems.forEach((item, idx) => {
+      console.log(`[PUBLISH] Item ${idx}: type=${item.type}, uri=${item.uri.substring(item.uri.length - 30)}, size=${item.fileSize || 'unknown'}`);
+    });
+
     try {
       const formData = new FormData();
+      let appendedCount = 0;
 
       // Append all media files
       for (const item of mediaItems) {
@@ -280,7 +288,10 @@ export const CreateScreen = () => {
         };
 
         formData.append('media', mediaAsset as any);
+        appendedCount++;
       }
+
+      console.log('[PUBLISH] FormData items appended:', appendedCount);
 
       if (description) {
         formData.append('caption', description);

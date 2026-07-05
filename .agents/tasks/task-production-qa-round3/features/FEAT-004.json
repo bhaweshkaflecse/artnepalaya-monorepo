@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-004",
+  "type": "fix",
+  "description": "Media pipeline audit - verify media is not lost at any stage of the upload/render pipeline",
+  "status": "in_progress",
+  "steps": [
+    "1. MEDIA PICKER: In CreateScreen.tsx, verify selectionLimit is correctly calculated. Current: selectionLimit: Math.max(1, 6 - mediaItems.length). This allows selecting up to 6 total items (5 images + 1 video). This is correct for the 5+1 limit. Verify the picker allows multiple selection.",
+    "2. FORMDATA: In CreateScreen.tsx handlePublish, verify ALL mediaItems are appended to FormData. Current code: 'for (const item of mediaItems) { formData.append('media', mediaAsset as any); }'. This appends ALL items with field name 'media'. This is correct.",
+    "3. BACKEND MULTER: Check backend route for posts to verify multer accepts multiple files. Check the multer config, field name, and maxCount.",
+    "4. MONGODB STORAGE: Check backend post creation service to verify all uploaded media items are stored in the post document.",
+    "5. GET POST DETAIL: Check backend GET /posts/:id to verify all media items are returned.",
+    "6. RENDERING: Check PostCard.tsx, PostDetailScreen.tsx, ExploreScreen.tsx, ProfileScreen.tsx to verify all post.media items are rendered (not just the first one). PostCard uses FlatList with post.media as data. PostDetailScreen has similar FlatList. ExploreScreen shows only first image (thumbnail for grid). ProfileScreen shows only first image (thumbnail for grid). These last two are by design for grid view.",
+    "7. Add enhanced console logging to handlePublish in CreateScreen.tsx to log: number of mediaItems selected, number of items being appended to FormData, types of items, and file sizes. This helps debug in production.",
+    "8. Check if the 'media' field name in FormData matches the multer field name in the backend route.",
+    "9. Document findings in the feature file."
+  ],
+  "acceptance_criteria": [
+    "Media picker selectionLimit allows up to 6 items (5 images + 1 video)",
+    "All mediaItems are appended to FormData with consistent field name",
+    "Backend multer config matches the field name used in FormData",
+    "Backend stores all received files in the post document",
+    "GET endpoints return all media items",
+    "PostCard and PostDetailScreen render all media items (FlatList with post.media)",
+    "Enhanced logging added to handlePublish for production debugging"
+  ],
+  "verification": [
+    "Read backend post routes and multer config to confirm field names match",
+    "Read CreateScreen handlePublish to confirm all items appended",
+    "Read PostCard and PostDetailScreen to confirm FlatList uses full post.media array"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
