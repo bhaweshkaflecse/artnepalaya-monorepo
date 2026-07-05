@@ -14,7 +14,8 @@ import {
   Easing,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import Svg, { Path, Circle, Polygon } from 'react-native-svg';
+import { SvgXml } from 'react-native-svg';
+import { NEPAL_FLAG_SVG } from '../../assets/nepalFlag';
 import * as SecureStore from 'expo-secure-store';
 import { useAppDispatch } from '../../store';
 import { setOnboardingComplete } from '../../store/slices/appSlice';
@@ -34,58 +35,13 @@ const slides: SlideData[] = [
 
 /**
  * Nepal Flag SVG Component
- * The official flag of Nepal - the only non-rectangular national flag in the world.
- * Double-pennant shape with crimson red (#CE243B) field, dark blue (#003893) border,
- * and white (#FFFFFF) crescent moon (upper) and 12-pointed sun (lower).
- * Based on official geometric construction per Nepal's constitution.
+/**
+ * Nepal National Flag - renders the official Flag_of_Nepal.svg asset.
+ * The SVG XML is imported from mobile/src/assets/nepalFlag.ts.
+ * To update the flag, replace the SVG content in that file.
  */
 const NepalFlag = () => (
-  <Svg width={180} height={220} viewBox="0 0 300 370">
-    {/* Outer blue border - double pennant shape */}
-    <Path
-      d="M 20 350 L 20 15 L 240 145 L 90 145 L 230 280 L 20 280 Z"
-      fill="#003893"
-      stroke="#003893"
-      strokeWidth={2}
-      strokeLinejoin="round"
-    />
-    {/* Upper pennant - crimson red fill */}
-    <Path
-      d="M 35 30 L 35 140 L 220 140 Z"
-      fill="#CE243B"
-    />
-    {/* Lower pennant - crimson red fill */}
-    <Path
-      d="M 35 150 L 35 270 L 210 270 Z"
-      fill="#CE243B"
-    />
-    {/* Crescent moon in upper triangle */}
-    {/* Moon outer (white crescent) */}
-    <Circle cx={95} cy={85} r={28} fill="#FFFFFF" />
-    {/* Moon inner cutout (crimson to create crescent shape) */}
-    <Circle cx={95} cy={72} r={24} fill="#CE243B" />
-    {/* Moon base - upward-facing crescent base points */}
-    <Path
-      d="M 70 95 C 70 110 95 115 95 115 C 95 115 120 110 120 95"
-      fill="#FFFFFF"
-    />
-    {/* 12-pointed sun in lower triangle */}
-    {/* Sun center disc */}
-    <Circle cx={100} cy={215} r={20} fill="#FFFFFF" />
-    {/* 12 triangular rays radiating outward */}
-    <Polygon points="100,187 96,195 104,195" fill="#FFFFFF" />
-    <Polygon points="114,191 108,197 112,201" fill="#FFFFFF" />
-    <Polygon points="122,203 116,205 118,211" fill="#FFFFFF" />
-    <Polygon points="125,215 119,213 119,217" fill="#FFFFFF" />
-    <Polygon points="122,227 118,221 116,225" fill="#FFFFFF" />
-    <Polygon points="114,239 112,231 108,233" fill="#FFFFFF" />
-    <Polygon points="100,243 104,235 96,235" fill="#FFFFFF" />
-    <Polygon points="86,239 88,233 92,231" fill="#FFFFFF" />
-    <Polygon points="78,227 82,225 84,221" fill="#FFFFFF" />
-    <Polygon points="75,215 81,217 81,213" fill="#FFFFFF" />
-    <Polygon points="78,203 82,211 84,205" fill="#FFFFFF" />
-    <Polygon points="86,191 88,201 92,197" fill="#FFFFFF" />
-  </Svg>
+  <SvgXml xml={NEPAL_FLAG_SVG} width={180} height={220} />
 );
 
 export const OnboardingScreen = () => {
