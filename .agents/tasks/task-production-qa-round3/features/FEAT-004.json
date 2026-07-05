@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "fix",
   "description": "Media pipeline audit - verify media is not lost at any stage of the upload/render pipeline",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. MEDIA PICKER: In CreateScreen.tsx, verify selectionLimit is correctly calculated. Current: selectionLimit: Math.max(1, 6 - mediaItems.length). This allows selecting up to 6 total items (5 images + 1 video). This is correct for the 5+1 limit. Verify the picker allows multiple selection.",
     "2. FORMDATA: In CreateScreen.tsx handlePublish, verify ALL mediaItems are appended to FormData. Current code: 'for (const item of mediaItems) { formData.append('media', mediaAsset as any); }'. This appends ALL items with field name 'media'. This is correct.",
@@ -29,5 +29,5 @@
     "Read PostCard and PostDetailScreen to confirm FlatList uses full post.media array"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Pipeline is architecturally correct end-to-end. Field names match (media on client, media on multer). All items are appended in a loop. Multer accepts up to 6 files. All are uploaded to Cloudinary via Promise.all. MongoDB stores full media array. GET endpoints return full array. PostCard and PostDetailScreen render all items via FlatList. ExploreScreen and ProfileScreen show first item only (by design for grid view). Enhanced logging added at: (1) client pre-upload with item count/types/sizes, (2) client post-FormData append count, (3) server file receipt with fieldname/mimetype/size per file, (4) server post-Cloudinary upload with count and URLs, (5) service layer post-MongoDB save with media count. No code fix needed - pipeline works correctly. If users see only 1 image, likely a rendering pagination visibility issue or a React Native FormData edge case that the new logging will capture."
 }
