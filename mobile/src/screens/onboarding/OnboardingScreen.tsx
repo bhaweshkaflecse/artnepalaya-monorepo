@@ -13,9 +13,8 @@ import {
   Animated,
   Easing,
 } from 'react-native';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { SvgXml } from 'react-native-svg';
-import { NEPAL_FLAG_SVG } from '../../assets/nepalFlag';
+
+
 import * as SecureStore from 'expo-secure-store';
 import { useAppDispatch } from '../../store';
 import { setOnboardingComplete } from '../../store/slices/appSlice';
@@ -34,14 +33,16 @@ const slides: SlideData[] = [
 ];
 
 /**
- * Nepal Flag SVG Component
-/**
- * Nepal National Flag - renders the official Flag_of_Nepal.svg asset.
- * The SVG XML is imported from mobile/src/assets/nepalFlag.ts.
- * To update the flag, replace the SVG content in that file.
+ * Nepal Flag Image Component
+ * Renders the official Flag_of_Nepal.png asset.
+ * To update the flag, replace the PNG at mobile/assets/icons/Flag_of_Nepal.png.
  */
 const NepalFlag = () => (
-  <SvgXml xml={NEPAL_FLAG_SVG} width={180} height={220} />
+  <Image
+    source={require('../../../assets/icons/Flag_of_Nepal.png')}
+    style={{ width: 180, height: 220 }}
+    resizeMode="contain"
+  />
 );
 
 export const OnboardingScreen = () => {
