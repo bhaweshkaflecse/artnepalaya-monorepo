@@ -34,64 +34,57 @@ const slides: SlideData[] = [
 
 /**
  * Nepal Flag SVG Component
- * The only non-rectangular national flag in the world.
- * Two stacked triangular pennants in crimson red (#DC143C) with blue border (#003893)
- * and white (#FFFFFF) sun and crescent moon symbols.
+ * The official flag of Nepal - the only non-rectangular national flag in the world.
+ * Double-pennant shape with crimson red (#CE243B) field, dark blue (#003893) border,
+ * and white (#FFFFFF) crescent moon (upper) and 12-pointed sun (lower).
+ * Based on official geometric construction per Nepal's constitution.
  */
 const NepalFlag = () => (
-  <Svg width={200} height={240} viewBox="0 0 200 240">
-    {/* Blue border - outer shape of the flag */}
+  <Svg width={180} height={220} viewBox="0 0 300 370">
+    {/* Outer blue border - double pennant shape */}
     <Path
-      d="M 10 230 L 10 10 L 160 95 L 10 95 L 10 95 L 160 95 Z"
-      fill="none"
-    />
-    {/* Lower pennant - blue border */}
-    <Polygon
-      points="15,225 15,85 165,225"
+      d="M 20 350 L 20 15 L 240 145 L 90 145 L 230 280 L 20 280 Z"
       fill="#003893"
-    />
-    {/* Lower pennant - crimson fill (inset) */}
-    <Polygon
-      points="25,215 25,100 148,215"
-      fill="#DC143C"
-    />
-    {/* Upper pennant - blue border */}
-    <Polygon
-      points="15,105 15,10 145,105"
-      fill="#003893"
-    />
-    {/* Upper pennant - crimson fill (inset) */}
-    <Polygon
-      points="25,98 25,25 128,98"
-      fill="#DC143C"
-    />
-    {/* Crescent moon in upper triangle - white */}
-    {/* Moon outer circle */}
-    <Circle cx={60} cy={60} r={18} fill="#FFFFFF" />
-    {/* Moon inner circle (creates crescent) */}
-    <Circle cx={60} cy={52} r={16} fill="#DC143C" />
-    {/* Moon base arc - small white semi circle at bottom */}
-    <Path
-      d="M 45 65 Q 60 78 75 65"
-      fill="#FFFFFF"
-      stroke="#FFFFFF"
+      stroke="#003893"
       strokeWidth={2}
+      strokeLinejoin="round"
     />
-    {/* 12-pointed sun in lower triangle - white */}
-    <Circle cx={70} cy={165} r={14} fill="#FFFFFF" />
-    {/* Sun rays - 12 triangular points */}
-    <Polygon points="70,145 67,151 73,151" fill="#FFFFFF" />
-    <Polygon points="80,148 76,153 80,155" fill="#FFFFFF" />
-    <Polygon points="87,155 82,157 84,162" fill="#FFFFFF" />
-    <Polygon points="90,165 84,163 84,167" fill="#FFFFFF" />
-    <Polygon points="87,175 84,169 82,173" fill="#FFFFFF" />
-    <Polygon points="80,182 80,176 76,178" fill="#FFFFFF" />
-    <Polygon points="70,185 73,179 67,179" fill="#FFFFFF" />
-    <Polygon points="60,182 64,178 60,176" fill="#FFFFFF" />
-    <Polygon points="53,175 56,173 58,169" fill="#FFFFFF" />
-    <Polygon points="50,165 56,167 56,163" fill="#FFFFFF" />
-    <Polygon points="53,155 56,162 58,157" fill="#FFFFFF" />
-    <Polygon points="60,148 60,155 64,153" fill="#FFFFFF" />
+    {/* Upper pennant - crimson red fill */}
+    <Path
+      d="M 35 30 L 35 140 L 220 140 Z"
+      fill="#CE243B"
+    />
+    {/* Lower pennant - crimson red fill */}
+    <Path
+      d="M 35 150 L 35 270 L 210 270 Z"
+      fill="#CE243B"
+    />
+    {/* Crescent moon in upper triangle */}
+    {/* Moon outer (white crescent) */}
+    <Circle cx={95} cy={85} r={28} fill="#FFFFFF" />
+    {/* Moon inner cutout (crimson to create crescent shape) */}
+    <Circle cx={95} cy={72} r={24} fill="#CE243B" />
+    {/* Moon base - upward-facing crescent base points */}
+    <Path
+      d="M 70 95 C 70 110 95 115 95 115 C 95 115 120 110 120 95"
+      fill="#FFFFFF"
+    />
+    {/* 12-pointed sun in lower triangle */}
+    {/* Sun center disc */}
+    <Circle cx={100} cy={215} r={20} fill="#FFFFFF" />
+    {/* 12 triangular rays radiating outward */}
+    <Polygon points="100,187 96,195 104,195" fill="#FFFFFF" />
+    <Polygon points="114,191 108,197 112,201" fill="#FFFFFF" />
+    <Polygon points="122,203 116,205 118,211" fill="#FFFFFF" />
+    <Polygon points="125,215 119,213 119,217" fill="#FFFFFF" />
+    <Polygon points="122,227 118,221 116,225" fill="#FFFFFF" />
+    <Polygon points="114,239 112,231 108,233" fill="#FFFFFF" />
+    <Polygon points="100,243 104,235 96,235" fill="#FFFFFF" />
+    <Polygon points="86,239 88,233 92,231" fill="#FFFFFF" />
+    <Polygon points="78,227 82,225 84,221" fill="#FFFFFF" />
+    <Polygon points="75,215 81,217 81,213" fill="#FFFFFF" />
+    <Polygon points="78,203 82,211 84,205" fill="#FFFFFF" />
+    <Polygon points="86,191 88,201 92,197" fill="#FFFFFF" />
   </Svg>
 );
 
