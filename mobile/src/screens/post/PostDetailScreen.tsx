@@ -192,10 +192,6 @@ export const PostDetailScreen = () => {
           setPost(data);
           setIsLiked(data.isLikedByMe || false);
           setIsSaved(data.isSavedByMe || false);
-          // Auto-play if initial slide is a video
-          if (data.media && data.media[initialMediaIndex]?.type === 'video') {
-            setShouldPlay(true);
-          }
         } catch (error: any) {
           if (error?.response?.status === 404) {
             dispatch(removeFeedPost(postId));
@@ -485,10 +481,6 @@ export const PostDetailScreen = () => {
                 setShouldPlay(false);
                 videoRef.current?.pauseAsync().catch(() => {});
               }
-              // Auto-play video when swiping to a video slide
-              if (post.media[index]?.type === 'video') {
-                setShouldPlay(true);
-              }
             }}
             renderItem={({ item }) => {
               if (item.type === 'video' && item.url) {
@@ -501,6 +493,7 @@ export const PostDetailScreen = () => {
                         style={styles.postImage}
                         resizeMode={ResizeMode.COVER}
                         shouldPlay={shouldPlay}
+                        isMuted={true}
                         posterSource={{ uri: getVideoThumbnailUrl(item.url) }}
                         usePoster
                         onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {

@@ -56,3 +56,30 @@ export function getVideoThumbnailUrl(videoUrl: string): string {
 
   return `${beforeUpload}so_0,w_400,c_fill/${afterUpload}`;
 }
+
+/**
+ * Transforms a Cloudinary video URL to add quality and format optimizations.
+ * Adds q_auto (automatic quality) and f_auto (automatic format selection)
+ * transformations for better delivery performance.
+ *
+ * Example:
+ *   Input:  https://res.cloudinary.com/demo/video/upload/v123/sample.mp4
+ *   Output: https://res.cloudinary.com/demo/video/upload/q_auto,f_auto/v123/sample.mp4
+ *
+ * If the URL is not a standard Cloudinary URL, returns it unchanged.
+ */
+export function getOptimizedVideoUrl(videoUrl: string): string {
+  if (!videoUrl) return '';
+
+  const uploadSegment = '/upload/';
+  const uploadIdx = videoUrl.indexOf(uploadSegment);
+  if (uploadIdx === -1) {
+    // Not a standard Cloudinary URL, return unchanged
+    return videoUrl;
+  }
+
+  const beforeUpload = videoUrl.substring(0, uploadIdx + uploadSegment.length);
+  const afterUpload = videoUrl.substring(uploadIdx + uploadSegment.length);
+
+  return `${beforeUpload}q_auto,f_auto/${afterUpload}`;
+}

@@ -182,7 +182,7 @@ export const LoginScreen = () => {
 
       // Register push notifications after credentials are fully stored
       console.log('[LoginScreen] Push registration initiated after auth success');
-      registerForPushNotifications().catch((err) =>
+      registerForPushNotifications(accessToken).catch((err) =>
         console.warn('[LoginScreen] Push notification registration failed:', err)
       );
     } catch (error: any) {

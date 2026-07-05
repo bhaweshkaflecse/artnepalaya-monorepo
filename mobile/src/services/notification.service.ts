@@ -62,10 +62,13 @@ export const notificationService = {
     await api.put(`/notifications/${notificationId}/read`);
   },
 
-  registerPushToken: async (token: string): Promise<void> => {
+  registerPushToken: async (token: string, accessToken?: string): Promise<void> => {
     console.log('[PushReg] API call starting...');
     try {
-      await api.post('/users/me/push-token', { token });
+      const config = accessToken
+        ? { headers: { Authorization: `Bearer ${accessToken}` } }
+        : undefined;
+      await api.post('/users/me/push-token', { token }, config);
     } catch (error: any) {
       console.error('[PushReg] API call FAILED:', error.response?.status, error.response?.data, error.message);
       throw error;

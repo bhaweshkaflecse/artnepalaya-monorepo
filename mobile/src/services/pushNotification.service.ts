@@ -33,7 +33,7 @@ async function setupAndroidChannel(): Promise<void> {
  * Verbose logging at every stage so the user can see in Android Logcat
  * exactly where the token registration pipeline breaks.
  */
-export async function registerForPushNotifications(): Promise<string | null> {
+export async function registerForPushNotifications(accessToken?: string): Promise<string | null> {
   const startTime = Date.now();
   console.log(TAG, '=== PUSH TOKEN REGISTRATION START ===');
   console.log(TAG, 'Timestamp:', new Date().toISOString());
@@ -114,9 +114,10 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
     // Stage 7: Send token to backend
     console.log(TAG, 'Stage 7/8: Sending token to backend via POST /users/me/push-token...');
+    console.log(TAG, 'Stage 7/8: Using explicit accessToken?', accessToken ? 'YES' : 'NO (relying on interceptor)');
     const backendRequestStart = Date.now();
     try {
-      await notificationService.registerPushToken(token);
+      await notificationService.registerPushToken(token, accessToken);
     } catch (backendError: any) {
       console.error(TAG, 'Stage 7/8: FAILED - Backend rejected the token registration');
       console.error(TAG, 'HTTP status:', backendError?.response?.status);
