@@ -5,12 +5,15 @@ build/
 *.log
 .expo/
 
+# Task tracking files
+.agents/
+
 # Environment files (contain secrets)
 .env
 .env.local
+.env.production
 *.env.local
 
 # Keep example and template env files checked in
 !.env.example
 !.env.development
-!.env.production
