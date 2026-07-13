@@ -50,23 +50,8 @@ export const LoginScreen = () => {
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: GOOGLE_WEB_CLIENT_ID,
   });
-// Debug: log request configuration to verify correct redirect and response type
-useEffect(() => {
-  if (request) {
-    console.log('[GoogleAuth] Request configured:', {
-      clientId: request.clientId,
-      redirectUri: request.redirectUri,
-      responseType: request.responseType,
-      usePKCE: request.usePKCE,
-    });
-  }
-}, [request]);
   // Handle the auth response when it comes back
 useEffect(() => {
-  if (request) {
-    console.log('GOOGLE_REDIRECT_URI=', request.redirectUri);
-  }
-
   if (response?.type === 'success') {
     const idToken = response.params.id_token;
 
@@ -86,7 +71,6 @@ useEffect(() => {
   } else if (response?.type === 'dismiss') {
     setIsLoading(false);
   }
-  console.log('[GoogleAuth] response=', response);
 }, [request, response]);
 
   const handleAuthSuccess = async (idToken: string) => {

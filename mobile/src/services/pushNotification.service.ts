@@ -52,6 +52,14 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
     // Get the Expo push token
     const projectId = Constants?.expoConfig?.extra?.eas?.projectId;
+
+    if (!projectId || projectId.includes('YOUR_')) {
+      console.warn(
+        '[PushNotifications] WARNING: EAS projectId is not configured. Push notifications will not work. Run \'eas init\' to generate your project ID.'
+      );
+      return null;
+    }
+
     const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     const token = tokenData.data;
 
