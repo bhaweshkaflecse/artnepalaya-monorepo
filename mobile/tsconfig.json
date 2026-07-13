@@ -41,6 +41,9 @@
       "expo-secure-store": [
         "./types/expo-secure-store"
       ],
+      "expo-constants": [
+        "./types/expo-constants"
+      ],
       "expo-image-picker": [
         "./types/expo-image-picker"
       ],

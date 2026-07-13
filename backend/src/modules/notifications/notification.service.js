@@ -7,15 +7,53 @@ export const createNotification = async (payload) => {
   
   if (senderId && recipientId.toString() === senderId.toString()) return null; 
 
+  let notification;
+
   if (type === 'Like' || type === 'Save') {
     const existing = await Notification.findOneAndUpdate(
       { recipientId, senderId, postId, type },
       { $set: { isRead: false, createdAt: new Date() } },
       { new: true }
     );
-    if (existing) return existing;
+    if (existing) {
+      notification = existing;
+    } else {
+      notification = await Notification.create({ recipientId, senderId, postId, type, message });
+    }
+  } else {
+    notification = await Notification.create({ recipientId, senderId, postId, type, message });
   }
-  return Notification.create({ recipientId, senderId, postId, type, message });
+
+  // Send actual push notification to the recipient's device
+  try {
+    const [recipient, sender] = await Promise.all([
+      User.findById(recipientId, 'pushTokens').lean(),
+      senderId ? User.findById(senderId, 'username').lean() : null
+    ]);
+
+    if (recipient && recipient.pushTokens && recipient.pushTokens.length > 0) {
+      const senderName = sender?.username || 'Someone';
+      let title = 'New Notification';
+      let body = message || '';
+
+      if (type === 'Like') {
+        title = 'New Like';
+        body = `${senderName} liked your post`;
+      } else if (type === 'Save') {
+        title = 'New Save';
+        body = `${senderName} saved your post`;
+      } else if (type === 'Follow') {
+        title = 'New Follower';
+        body = `${senderName} started following you`;
+      }
+
+      await sendPushNotifications(recipient.pushTokens, title, body);
+    }
+  } catch (error) {
+    console.error('[createNotification] Failed to send push notification:', error);
+  }
+
+  return notification;
 };
 
 export const getUserNotifications = async (userId, page, limit, filter = 'all') => {
