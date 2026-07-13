@@ -63,7 +63,7 @@ export const notificationService = {
   },
 
   registerPushToken: async (token: string, accessToken?: string): Promise<void> => {
-    console.log('[PushReg] API call starting...');
+    if (__DEV__) console.log('[PushReg] API call starting...');
     try {
       const config = accessToken
         ? { headers: { Authorization: `Bearer ${accessToken}` } }

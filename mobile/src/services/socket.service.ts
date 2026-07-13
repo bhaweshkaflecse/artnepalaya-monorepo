@@ -20,7 +20,7 @@ export function connectSocket(token: string, serverUrl: string): void {
     socket = null;
   }
 
-  console.log('[Socket] Attempting connection to:', serverUrl);
+  if (__DEV__) console.log('[Socket] Attempting connection to:', serverUrl);
 
   socket = io(serverUrl, {
     auth: { token },
@@ -29,11 +29,11 @@ export function connectSocket(token: string, serverUrl: string): void {
   });
 
   socket.on('connect', () => {
-    console.log('[Socket] Connected');
+    if (__DEV__) console.log('[Socket] Connected');
   });
 
   socket.on('disconnect', () => {
-    console.log('[Socket] Disconnected');
+    if (__DEV__) console.log('[Socket] Disconnected');
   });
 
   socket.on('connect_error', (err) => {
