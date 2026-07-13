@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Push notification production readiness and EAS projectId configuration. Fix the placeholder projectId in mobile/app.json, add eas.json for build configuration, clean up debugging console.logs from LoginScreen, and ensure the entire push notification pipeline is production-ready.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "In mobile/app.json, change the 'extra.eas.projectId' from 'YOUR_EAS_PROJECT_ID' to a valid UUID format placeholder that is clearly documented. The EAS project ID must be obtained by running 'eas init' with the owner 'erbhaweshkafle' and slug 'artnepalaya-mobile'. Add a comment-style approach by creating a DEPLOYMENT.md or updating README with clear instructions. Since JSON does not support comments, we need to generate a real EAS project ID or use a deterministic one. Use the approach: generate the project ID by documenting the exact step in a new file mobile/EAS_SETUP.md. For the actual app.json, keep the placeholder but make it clearly identifiable.",
     "Create mobile/eas.json with a proper EAS build configuration for preview and production profiles. Include: build.preview (distribution: internal, android.buildType: apk), build.production (distribution: store, android.buildType: app-bundle).",
@@ -23,5 +23,5 @@
     "Verify eas.json is valid JSON"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All changes verified. JSON files valid. Node 22 --check passes .ts files. Node cannot check .tsx but file is structurally sound (grep confirms no debug logs remain, console.warn preserved). The useEffect dependency array still includes [request, response] even though request is no longer used in the body - left as-is to avoid unrelated refactoring."
 }
