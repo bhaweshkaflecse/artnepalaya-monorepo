@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Priority 1 - Push Notifications: Add investigation logging to backend push-token endpoint. The controller already has one log line, but needs additional logging to confirm: (1) when the endpoint is HIT, (2) what token was received, and (3) whether MongoDB write succeeds or fails. Also add success/failure logging in the service layer.",
+  "status": "completed",
+  "steps": [
+    "In backend/src/modules/users/user.controller.js registerPushToken function: Add a console.log at the VERY TOP of the try block (before validation) that prints '[PushToken] POST /users/me/push-token HIT by userId: <req.user.id>, body: <JSON.stringify(req.body)>'. This tells us the request reached the server.",
+    "After the existing log line that shows the truncated token, add a log showing the FULL token: console.log('[PushToken] Full token received:', token)",
+    "Wrap the userService.registerPushToken call in a try/catch and log success: console.log('[PushToken] MongoDB write SUCCESS for userId:', req.user.id) or failure: console.error('[PushToken] MongoDB write FAILED for userId:', req.user.id, 'error:', err.message)",
+    "In backend/src/modules/users/user.service.js registerPushToken function: After the findByIdAndUpdate call, add console.log('[PushToken] DB $addToSet completed for userId:', userId) to confirm the DB operation completed",
+    "Commit with message: 'fix(backend): add investigation logging to push-token registration endpoint'"
+  ],
+  "acceptance_criteria": [
+    "The registerPushToken controller logs when endpoint is hit (before any validation)",
+    "The registerPushToken controller logs the full token value",
+    "The registerPushToken controller logs whether the MongoDB write succeeded or failed",
+    "The registerPushToken service logs when DB operation completes",
+    "No existing functionality is broken"
+  ],
+  "verification": [
+    "Run: node --check /projects/sandbox/artnepalaya-monorepo/backend/src/modules/users/user.controller.js",
+    "Run: node --check /projects/sandbox/artnepalaya-monorepo/backend/src/modules/users/user.service.js"
+  ],
+  "blocked_reason": null,
+  "findings": "Git object corruption required re-cloning the repository. NODE_OPTIONS env var needed to be cleared for node --check due to sandbox preload issue."
+}

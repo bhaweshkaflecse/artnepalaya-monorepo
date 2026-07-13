@@ -81,12 +81,20 @@ export const getUserPosts = async (req, res, next) => {
 
 export const registerPushToken = async (req, res, next) => {
   try {
+    console.log('[PushToken] POST /users/me/push-token HIT by userId:', req.user.id, 'body:', JSON.stringify(req.body));
     const { token } = req.body;
     if (!token || typeof token !== 'string') {
       return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'token is required' } });
     }
     console.log('[PushToken] Registering token for user:', req.user.id, 'token:', token.substring(0, 20) + '...');
-    await userService.registerPushToken(req.user.id, token);
+    console.log('[PushToken] Full token received:', token);
+    try {
+      await userService.registerPushToken(req.user.id, token);
+      console.log('[PushToken] MongoDB write SUCCESS for userId:', req.user.id);
+    } catch (dbErr) {
+      console.error('[PushToken] MongoDB write FAILED for userId:', req.user.id, 'error:', dbErr.message);
+      throw dbErr;
+    }
     res.status(200).json({ success: true, message: 'Push token registered' });
   } catch (err) {
     next(err);

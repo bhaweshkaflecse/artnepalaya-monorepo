@@ -195,6 +195,7 @@ export const registerPushToken = async (userId, token) => {
     userId,
     { $addToSet: { pushTokens: token } }
   );
+  console.log('[PushToken] DB $addToSet completed for userId:', userId);
   return true;
 };
 
