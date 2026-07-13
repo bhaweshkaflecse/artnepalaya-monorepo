@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Add Nepal flag as a branding element using Flag_of_Nepal.svg as the single source of truth. The SVG file must be added as an asset and rendered in the app (login screen and/or header) using react-native-svg.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Add react-native-svg (^15.0.0) and react-native-svg-transformer (^1.3.0) to mobile/package.json dependencies. Run npm install in mobile/.",
     "Step 2: Create the Flag_of_Nepal.svg file at mobile/assets/Flag_of_Nepal.svg. Use the standard Nepal flag SVG (the unique double-pennant shape with moon and sun symbols in white on crimson/blue background). The SVG must be complete and self-contained.",
@@ -26,5 +26,5 @@
     "Read LoginScreen.tsx and confirm SVG is imported as a component from the asset file"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 35 pre-existing TypeScript errors remain unchanged. No new errors introduced. The SVG is imported as a component from the asset file (single source of truth). Type stubs follow the existing pattern in mobile/types/. metro.config.js configures the SVG transformer correctly."
 }
