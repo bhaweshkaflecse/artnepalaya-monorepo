@@ -14,6 +14,7 @@ import * as SecureStore from 'expo-secure-store';
 import { communityService } from '../../services/community.service';
 import { useAppSelector } from '../../store';
 import { selectIsGuest } from '../../store/slices/authSlice';
+import { safeGetItemAsync } from '../../utils/secureStore';
 
 type SegmentTab = 'community' | 'marketplace';
 
@@ -24,7 +25,7 @@ const CommunityContent = () => {
   const [hasJoined, setHasJoined] = useState(false);
 
   useEffect(() => {
-    SecureStore.getItemAsync('communityWaitlistJoined').then((val) => {
+    safeGetItemAsync('communityWaitlistJoined').then((val) => {
       if (val === 'true') setHasJoined(true);
     });
   }, []);
@@ -122,7 +123,7 @@ const MarketplaceContent = () => {
   const [hasRegistered, setHasRegistered] = useState(false);
 
   useEffect(() => {
-    SecureStore.getItemAsync('marketplaceWaitlistJoined').then((val) => {
+    safeGetItemAsync('marketplaceWaitlistJoined').then((val) => {
       if (val === 'true') setHasRegistered(true);
     });
   }, []);

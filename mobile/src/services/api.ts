@@ -2,6 +2,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { setTokens, logout } from '../store/slices/authSlice';
+import { safeGetItemAsync } from '../utils/secureStore';
 
 // Expo provides EXPO_PUBLIC_* env vars through the Metro bundler.
 // We declare the type inline to avoid requiring @types/node.
@@ -32,7 +33,7 @@ export const api = axios.create({
 // Request Interceptor: Attach JWT from SecureStore or injected store
 api.interceptors.request.use(
   async (config) => {
-    let token = await SecureStore.getItemAsync('accessToken');
+    let token = await safeGetItemAsync('accessToken');
     if (!token && _store) {
       token = _store.getState()?.auth?.accessToken;
     }
@@ -85,7 +86,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      let refreshTokenValue = await SecureStore.getItemAsync('refreshToken');
+      let refreshTokenValue = await safeGetItemAsync('refreshToken');
       if (!refreshTokenValue && _store) {
         refreshTokenValue = _store.getState()?.auth?.refreshToken;
       }

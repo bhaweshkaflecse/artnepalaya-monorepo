@@ -27,6 +27,7 @@ import { setNeedsUserOnboarding } from '../../store/slices/appSlice';
 import { authService } from '../../services/auth.service';
 import { lightColors } from '../../theme/colors';
 import { registerForPushNotifications } from '../../services/pushNotification.service';
+import { safeGetOrCreateDeviceId, safeGetItemAsync } from '../../utils/secureStore';
 
 // Google OAuth configuration
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
@@ -40,15 +41,6 @@ const CAROUSEL_ITEM_HEIGHT = CAROUSEL_ITEM_WIDTH * (4 / 3);
 const CAROUSEL_HEIGHT = SCREEN_HEIGHT * 0.40;
 // Side items peek ~30% from behind center card
 const SIDE_TRANSLATE_X = CAROUSEL_ITEM_WIDTH * 0.38;
-
-/**
- * Generates a unique device identifier for token binding.
- */
-function getDeviceId(): string {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 10);
-  return `${Platform.OS}-${timestamp}-${random}`;
-}
 
 export const LoginScreen = () => {
   const dispatch = useAppDispatch();
@@ -156,11 +148,7 @@ export const LoginScreen = () => {
 
   const handleAuthSuccess = async (idToken: string) => {
     try {
-      let deviceId = await SecureStore.getItemAsync('deviceId');
-      if (!deviceId) {
-        deviceId = getDeviceId();
-        await SecureStore.setItemAsync('deviceId', deviceId);
-      }
+      const deviceId = await safeGetOrCreateDeviceId();
 
       const authResponse = await authService.googleLogin(idToken, deviceId);
       const { user, accessToken, refreshToken, isNewUser } = authResponse.data;
@@ -238,7 +226,7 @@ export const LoginScreen = () => {
       try {
         await SecureStore.deleteItemAsync('accessToken');
         await SecureStore.deleteItemAsync('refreshToken');
-        const existingUsername = await SecureStore.getItemAsync('guestUsername');
+        const existingUsername = await safeGetItemAsync('guestUsername');
         if (!existingUsername) {
           await SecureStore.setItemAsync('guestUsername', guestUsername);
         }

@@ -2,6 +2,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import * as SecureStore from 'expo-secure-store';
 import { configService, AuthMediaItem } from '../../services/config.service';
+import { safeGetItemAsync } from '../../utils/secureStore';
 
 interface AppState {
   hasCompletedOnboarding: boolean;
@@ -23,10 +24,10 @@ const initialState: AppState = {
 
 export const loadAppState = createAsyncThunk('app/loadAppState', async (_, { rejectWithValue }) => {
   try {
-    const value = await SecureStore.getItemAsync('hasCompletedOnboarding');
-    const needsUserOnboardingValue = await SecureStore.getItemAsync('needsUserOnboarding');
-    const accessToken = await SecureStore.getItemAsync('accessToken');
-    const refreshToken = await SecureStore.getItemAsync('refreshToken');
+    const value = await safeGetItemAsync('hasCompletedOnboarding');
+    const needsUserOnboardingValue = await safeGetItemAsync('needsUserOnboarding');
+    const accessToken = await safeGetItemAsync('accessToken');
+    const refreshToken = await safeGetItemAsync('refreshToken');
 
     // Prevent orphaned access tokens from triggering refresh attempts
     if (accessToken && !refreshToken) {
@@ -40,7 +41,7 @@ export const loadAppState = createAsyncThunk('app/loadAppState', async (_, { rej
       };
     }
 
-    const userDataStr = await SecureStore.getItemAsync('userData');
+    const userDataStr = await safeGetItemAsync('userData');
 
     let userData = null;
     if (userDataStr) {
