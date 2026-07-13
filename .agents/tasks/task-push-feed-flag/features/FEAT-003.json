@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Add Nepal flag as a branding element using Flag_of_Nepal.svg as the single source of truth. The SVG file must be added as an asset and rendered in the app (login screen and/or header) using react-native-svg.",
+  "status": "in_progress",
+  "steps": [
+    "Step 1: Add react-native-svg (^15.0.0) and react-native-svg-transformer (^1.3.0) to mobile/package.json dependencies. Run npm install in mobile/.",
+    "Step 2: Create the Flag_of_Nepal.svg file at mobile/assets/Flag_of_Nepal.svg. Use the standard Nepal flag SVG (the unique double-pennant shape with moon and sun symbols in white on crimson/blue background). The SVG must be complete and self-contained.",
+    "Step 3: Create or update mobile/metro.config.js to configure react-native-svg-transformer so .svg files can be imported as React components. The config should extend expo's metro config and add svg to assetExts/sourceExts.",
+    "Step 4: Create a type declaration file mobile/src/types/svg.d.ts that declares module '*.svg' to export a React component (for TypeScript support).",
+    "Step 5: Update mobile/src/screens/auth/LoginScreen.tsx to display the Nepal flag next to or near the 'Discover Nepali Art' tagline. Import the SVG as a component and render it at an appropriate size (e.g., 40x48 pixels). Place it in the logoContainer area.",
+    "Step 6: Verify TypeScript compiles without errors and the SVG import resolves correctly."
+  ],
+  "acceptance_criteria": [
+    "mobile/assets/Flag_of_Nepal.svg exists and contains a valid Nepal flag SVG",
+    "react-native-svg is in mobile/package.json dependencies",
+    "metro.config.js is configured for SVG transformer",
+    "TypeScript declaration for .svg module imports exists",
+    "LoginScreen.tsx imports and renders the Flag_of_Nepal.svg component",
+    "The SVG file is the SINGLE source of truth - no inline SVG strings in TypeScript",
+    "Mobile TypeScript compiles without errors"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/artnepalaya-monorepo/mobile && npx tsc --noEmit",
+    "Verify Flag_of_Nepal.svg exists at mobile/assets/Flag_of_Nepal.svg",
+    "Read LoginScreen.tsx and confirm SVG is imported as a component from the asset file"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

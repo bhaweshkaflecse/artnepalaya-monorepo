@@ -21,6 +21,7 @@ import { api } from '../../services/api';
 import { authService } from '../../services/auth.service';
 import { AnimatedBackground } from '../../components/common/AnimatedBackground';
 import { registerForPushNotifications } from '../../services/pushNotification.service';
+import NepalFlag from '../../../assets/Flag_of_Nepal.svg';
 
 // Complete any pending auth sessions (required for web-based auth)
 WebBrowser.maybeCompleteAuthSession();
@@ -210,6 +211,7 @@ useEffect(() => {
             </View>
             <Text style={styles.logoText}>ARTNEPALAYA</Text>
             <Text style={styles.tagline}>Discover Nepali Art</Text>
+            <NepalFlag width={32} height={40} style={styles.flag} />
           </View>
 
           {/* Login Buttons */}
@@ -302,6 +304,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 8,
+  },
+  flag: {
+    marginTop: 12,
   },
   buttonContainer: {
     width: '100%',

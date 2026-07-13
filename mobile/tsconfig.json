@@ -52,6 +52,9 @@
       ],
       "react-native-safe-area-context": [
         "./types/react-native-safe-area-context"
+      ],
+      "react-native-svg": [
+        "./types/react-native-svg"
       ]
     }
   },
@@ -59,6 +62,7 @@
     "App.tsx",
     "src/**/*.ts",
     "src/**/*.tsx",
+    "src/**/*.d.ts",
     "types/**/*.d.ts"
   ],
   "extends": "expo/tsconfig.base"
