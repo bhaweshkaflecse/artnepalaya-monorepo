@@ -218,7 +218,11 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post }) => {
 };
 
 export const PostCard = React.memo(PostCardComponent, (prevProps, nextProps) => {
-  return prevProps.post._id === nextProps.post._id;
+  return (
+    prevProps.post._id === nextProps.post._id &&
+    prevProps.post.isLikedByMe === nextProps.post.isLikedByMe &&
+    prevProps.post.isSavedByMe === nextProps.post.isSavedByMe
+  );
 });
 
 const styles = StyleSheet.create({

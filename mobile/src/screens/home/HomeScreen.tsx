@@ -101,7 +101,7 @@ export const HomeScreen = () => {
     return null;
   };
 
-  const renderItem = ({ item }: { item: Post }) => <PostCard post={item} />;
+  const renderItem = useCallback(({ item }: { item: Post }) => <PostCard post={item} />, []);
 
   if (isLoadingFeed && feedPosts.length === 0) {
     return (

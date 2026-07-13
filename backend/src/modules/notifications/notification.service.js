@@ -45,6 +45,8 @@ export const createNotification = async (payload) => {
       } else if (type === 'Follow') {
         title = 'New Follower';
         body = `${senderName} started following you`;
+      } else {
+        body = message || `${senderName} interacted with your content`;
       }
 
       await sendPushNotifications(recipient.pushTokens, title, body);
