@@ -3,7 +3,6 @@ import { User } from '../modules/users/user.model.js';
 import { env } from '../config/env.js';
 
 export const authGuard = async (req, res, next) => {
-  console.log('[AUTH_GUARD] Route:', req.method, req.originalUrl);
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {

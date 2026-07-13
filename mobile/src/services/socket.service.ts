@@ -56,30 +56,30 @@ export function connectSocket(token: string, serverUrl: string): void {
 
   socket.on('follow.created', (data: { followerId: string; followingId: string }) => {
     const currentUserId = store.getState().auth.user?.id;
-    console.log('[Socket] follow.created received:', data, 'currentUserId:', currentUserId);
+    if (__DEV__) console.log('[Socket] follow.created received:', data, 'currentUserId:', currentUserId);
     if (!currentUserId) return;
 
     if (data.followerId === currentUserId) {
-      console.log('[Socket] Dispatching incrementFollowing');
+      if (__DEV__) console.log('[Socket] Dispatching incrementFollowing');
       store.dispatch(incrementFollowing());
     }
     if (data.followingId === currentUserId) {
-      console.log('[Socket] Dispatching incrementFollowers');
+      if (__DEV__) console.log('[Socket] Dispatching incrementFollowers');
       store.dispatch(incrementFollowers());
     }
   });
 
   socket.on('follow.deleted', (data: { followerId: string; followingId: string }) => {
     const currentUserId = store.getState().auth.user?.id;
-    console.log('[Socket] follow.deleted received:', data, 'currentUserId:', currentUserId);
+    if (__DEV__) console.log('[Socket] follow.deleted received:', data, 'currentUserId:', currentUserId);
     if (!currentUserId) return;
 
     if (data.followerId === currentUserId) {
-      console.log('[Socket] Dispatching decrementFollowing');
+      if (__DEV__) console.log('[Socket] Dispatching decrementFollowing');
       store.dispatch(decrementFollowing());
     }
     if (data.followingId === currentUserId) {
-      console.log('[Socket] Dispatching decrementFollowers');
+      if (__DEV__) console.log('[Socket] Dispatching decrementFollowers');
       store.dispatch(decrementFollowers());
     }
   });
@@ -89,7 +89,7 @@ export function connectSocket(token: string, serverUrl: string): void {
   });
 
   socket.on('notification.updated', (data: NotificationGroup) => {
-    console.log('[Socket] notification.updated received:', data._id);
+    if (__DEV__) console.log('[Socket] notification.updated received:', data._id);
     store.dispatch(upsertNotification(data));
   });
 }

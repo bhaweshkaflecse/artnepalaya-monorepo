@@ -251,11 +251,13 @@ export const CreateScreen = () => {
     setUploadProgress(0);
 
     // Pipeline audit logging: pre-upload diagnostics
-    console.log('[PUBLISH] Media items count:', mediaItems.length);
-    console.log('[PUBLISH] Images:', mediaItems.filter(m => m.type === 'image').length, 'Videos:', mediaItems.filter(m => m.type === 'video').length);
-    mediaItems.forEach((item, idx) => {
-      console.log(`[PUBLISH] Item ${idx}: type=${item.type}, uri=${item.uri.substring(item.uri.length - 30)}, size=${item.fileSize || 'unknown'}`);
-    });
+    if (__DEV__) {
+      console.log('[PUBLISH] Media items count:', mediaItems.length);
+      console.log('[PUBLISH] Images:', mediaItems.filter(m => m.type === 'image').length, 'Videos:', mediaItems.filter(m => m.type === 'video').length);
+      mediaItems.forEach((item, idx) => {
+        console.log(`[PUBLISH] Item ${idx}: type=${item.type}, uri=${item.uri.substring(item.uri.length - 30)}, size=${item.fileSize || 'unknown'}`);
+      });
+    }
 
     try {
       const formData = new FormData();
@@ -291,7 +293,7 @@ export const CreateScreen = () => {
         appendedCount++;
       }
 
-      console.log('[PUBLISH] FormData items appended:', appendedCount);
+      if (__DEV__) console.log('[PUBLISH] FormData items appended:', appendedCount);
 
       if (description) {
         formData.append('caption', description);
@@ -342,10 +344,12 @@ export const CreateScreen = () => {
         dispatch(prependMyPost(newPost));
       }
     } catch (e: any) {
-      console.log('[PUBLISH] ERROR STATUS:', e?.response?.status);
-      console.log('[PUBLISH] ERROR DATA:', JSON.stringify(e?.response?.data));
-      console.log('[PUBLISH] ERROR MESSAGE:', e?.message);
-      console.log('[PUBLISH] ERROR CODE:', e?.code);
+      if (__DEV__) {
+        console.log('[PUBLISH] ERROR STATUS:', e?.response?.status);
+        console.log('[PUBLISH] ERROR DATA:', JSON.stringify(e?.response?.data));
+        console.log('[PUBLISH] ERROR MESSAGE:', e?.message);
+        console.log('[PUBLISH] ERROR CODE:', e?.code);
+      }
 
       let userMessage = 'Failed to publish artwork. Please try again.';
 
