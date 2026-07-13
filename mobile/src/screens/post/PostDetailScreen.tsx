@@ -23,7 +23,7 @@ import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
-import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getVideoThumbnailUrl, getOptimizedImageUrl } from '../../utils/media';
 import { ReportModal } from '../../components/common/ReportModal';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice';
@@ -63,6 +63,7 @@ export const PostDetailScreen = () => {
   const goBackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Video player state
+  const [isVideoMounted, setIsVideoMounted] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
@@ -88,8 +89,14 @@ export const PostDetailScreen = () => {
 
   // Video tap handler
   const handleVideoTap = useCallback(async () => {
+    if (!isVideoMounted) {
+      // First tap: mount the Video component and start playing
+      setIsVideoMounted(true);
+      setShouldPlay(true);
+      return;
+    }
     if (!shouldPlay) {
-      // Initial state: start video
+      // Video mounted but not playing: start playing
       setShouldPlay(true);
       return;
     }
@@ -101,7 +108,7 @@ export const PostDetailScreen = () => {
       // Currently paused: resume
       await videoRef.current?.playAsync();
     }
-  }, [shouldPlay, isVideoPlaying, showPauseIcon]);
+  }, [isVideoMounted, shouldPlay, isVideoPlaying, showPauseIcon]);
 
   // Double-tap detection
   const lastTap = useRef<number>(0);
@@ -177,10 +184,10 @@ export const PostDetailScreen = () => {
     useCallback(() => {
       // Screen focused: do NOT resume video. User must tap play again.
       return () => {
-        // Screen blurred: stop playback completely
+        // Screen blurred: unmount video completely
         setShouldPlay(false);
         setIsVideoPlaying(false);
-        videoRef.current?.pauseAsync().catch(() => {});
+        setIsVideoMounted(false);
       };
     }, [])
   );
@@ -476,74 +483,87 @@ export const PostDetailScreen = () => {
             })}
             onMomentumScrollEnd={(e) => {
               const index = Math.round(e.nativeEvent.contentOffset.x / screenWidth);
+              const prevIndex = currentIndex;
               setCurrentIndex(index);
-              // Auto-pause video when swiping away from a video slide
-              if (post.media[currentIndex]?.type === 'video' && index !== currentIndex) {
+              // Unmount video when swiping away from a video slide
+              if (post.media[prevIndex]?.type === 'video' && index !== prevIndex) {
                 setShouldPlay(false);
-                videoRef.current?.pauseAsync().catch(() => {});
+                setIsVideoMounted(false);
               }
             }}
             renderItem={({ item }) => {
               if (item.type === 'video' && item.url) {
+                // Only mount Video component if user has tapped play
+                if (isVideoMounted) {
+                  return (
+                    <TouchableWithoutFeedback onPress={handleVideoTap}>
+                      <View style={[styles.imageWrapper, { width: screenWidth }]}>
+                        <Video
+                          ref={videoRef}
+                          source={{ uri: item.url }}
+                          style={styles.postImage}
+                          resizeMode={ResizeMode.COVER}
+                          shouldPlay={shouldPlay}
+                          isMuted={true}
+                          onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
+                            if (status.isLoaded) {
+                              setIsVideoPlaying(status.isPlaying);
+                              setIsBuffering(status.isBuffering);
+                              if (status.durationMillis && status.durationMillis > 0) {
+                                setDurationMs(status.durationMillis);
+                                setPlaybackProgress(
+                                  status.positionMillis / status.durationMillis
+                                );
+                              }
+                            }
+                          }}
+                        />
+                        {shouldPlay && !isVideoPlaying && !isBuffering && (
+                          <Animated.View
+                            style={[styles.videoOverlay, { opacity: pauseIconOpacity }]}
+                            pointerEvents="none"
+                          >
+                            <Ionicons name="pause" size={48} color="rgba(255,255,255,0.85)" />
+                          </Animated.View>
+                        )}
+                        {isBuffering && shouldPlay && (
+                          <View style={styles.videoOverlay} pointerEvents="none">
+                            <ActivityIndicator size="large" color="#FFFFFF" />
+                          </View>
+                        )}
+                        {shouldPlay && (
+                          <View style={styles.progressBarContainer}>
+                            <View
+                              style={[
+                                styles.progressBarFill,
+                                { width: `${playbackProgress * 100}%` },
+                              ]}
+                            />
+                          </View>
+                        )}
+                      </View>
+                    </TouchableWithoutFeedback>
+                  );
+                }
+
+                // Default: show thumbnail with play button overlay (Video NOT mounted)
                 return (
                   <TouchableWithoutFeedback onPress={handleVideoTap}>
                     <View style={[styles.imageWrapper, { width: screenWidth }]}>
-                      <Video
-                        ref={videoRef}
-                        source={{ uri: item.url }}
+                      <Image
+                        source={{ uri: getVideoThumbnailUrl(item.url) }}
                         style={styles.postImage}
-                        resizeMode={ResizeMode.COVER}
-                        shouldPlay={shouldPlay}
-                        isMuted={true}
-                        posterSource={{ uri: getVideoThumbnailUrl(item.url) }}
-                        usePoster
-                        onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
-                          if (status.isLoaded) {
-                            setIsVideoPlaying(status.isPlaying);
-                            setIsBuffering(status.isBuffering);
-                            if (status.durationMillis && status.durationMillis > 0) {
-                              setDurationMs(status.durationMillis);
-                              setPlaybackProgress(
-                                status.positionMillis / status.durationMillis
-                              );
-                            }
-                          }
-                        }}
+                        resizeMode="cover"
                       />
-                      {!shouldPlay && (
-                        <View style={styles.videoOverlay} pointerEvents="none">
-                          <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
-                        </View>
-                      )}
-                      {shouldPlay && !isVideoPlaying && (
-                        <Animated.View
-                          style={[styles.videoOverlay, { opacity: pauseIconOpacity }]}
-                          pointerEvents="none"
-                        >
-                          <Ionicons name="pause" size={48} color="rgba(255,255,255,0.85)" />
-                        </Animated.View>
-                      )}
-                      {isBuffering && shouldPlay && (
-                        <View style={styles.videoOverlay} pointerEvents="none">
-                          <ActivityIndicator size="large" color="#FFFFFF" />
-                        </View>
-                      )}
-                      {shouldPlay && (
-                        <View style={styles.progressBarContainer}>
-                          <View
-                            style={[
-                              styles.progressBarFill,
-                              { width: `${playbackProgress * 100}%` },
-                            ]}
-                          />
-                        </View>
-                      )}
+                      <View style={styles.videoOverlay} pointerEvents="none">
+                        <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
+                      </View>
                     </View>
                   </TouchableWithoutFeedback>
                 );
               }
               // Image item
-              const imageUrl = item.url;
+              const imageUrl = item.url ? getOptimizedImageUrl(item.url) : '';
               return (
                 <TouchableWithoutFeedback onPress={handleImageDoubleTap}>
                   <View style={[styles.imageWrapper, { width: screenWidth }]}>

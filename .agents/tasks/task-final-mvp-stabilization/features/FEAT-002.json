@@ -1,0 +1,7 @@
+{
+  "id": "FEAT-002",
+  "title": "Feed Performance and Video lazy mount",
+  "status": "in_progress",
+  "priority": 2,
+  "description": "Lazy video mount, Cloudinary image optimization, FlatList performance improvements"
+}

@@ -83,3 +83,30 @@ export function getOptimizedVideoUrl(videoUrl: string): string {
 
   return `${beforeUpload}q_auto,f_auto/${afterUpload}`;
 }
+
+/**
+ * Transforms a Cloudinary image URL to add width, quality, and format optimizations.
+ * Inserts w_750,q_auto,f_auto transformations for optimized feed delivery.
+ * Keeps the original file extension.
+ *
+ * Example:
+ *   Input:  https://res.cloudinary.com/demo/image/upload/v123/sample.jpg
+ *   Output: https://res.cloudinary.com/demo/image/upload/w_750,q_auto,f_auto/v123/sample.jpg
+ *
+ * If the URL is not a standard Cloudinary URL, returns it unchanged.
+ */
+export function getOptimizedImageUrl(imageUrl: string): string {
+  if (!imageUrl) return '';
+
+  const uploadSegment = '/upload/';
+  const uploadIdx = imageUrl.indexOf(uploadSegment);
+  if (uploadIdx === -1) {
+    // Not a standard Cloudinary URL, return unchanged
+    return imageUrl;
+  }
+
+  const beforeUpload = imageUrl.substring(0, uploadIdx + uploadSegment.length);
+  const afterUpload = imageUrl.substring(uploadIdx + uploadSegment.length);
+
+  return `${beforeUpload}w_750,q_auto,f_auto/${afterUpload}`;
+}

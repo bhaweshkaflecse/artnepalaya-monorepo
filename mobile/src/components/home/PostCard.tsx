@@ -21,7 +21,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { Post, postService } from '../../services/post.service';
-import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getVideoThumbnailUrl, getOptimizedImageUrl } from '../../utils/media';
 import { ReportModal } from '../common/ReportModal';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice';
@@ -34,7 +34,7 @@ interface PostCardProps {
   post: Post;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post }) => {
+const PostCardInner: React.FC<PostCardProps> = ({ post }) => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const isGuest = useAppSelector(selectIsGuest);
@@ -49,6 +49,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [likedByLoading, setLikedByLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isVideoMounted, setIsVideoMounted] = useState(false);
   const mediaIndexRef = useRef(0);
   const videoRef = useRef<Video>(null);
 
@@ -57,7 +58,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   useEffect(() => { setIsLiked(post.isLikedByMe || false); }, [post.isLikedByMe]);
   useEffect(() => { setIsSaved(post.isSavedByMe || false); }, [post.isSavedByMe]);
 
-  // Pause video on navigation blur - NEVER auto-resume on focus
+  // Unmount video and pause on navigation blur - NEVER auto-resume on focus
   useFocusEffect(
     useCallback(() => {
       // Screen focused: do NOT resume video. User must tap play again.
@@ -65,8 +66,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       return () => {
         setIsFocused(false);
         setIsPlaying(false);
-        // Pause video when navigating away
-        videoRef.current?.pauseAsync().catch(() => {});
+        setIsVideoMounted(false);
       };
     }, [])
   );
@@ -167,10 +167,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     const previousIndex = mediaIndexRef.current;
     mediaIndexRef.current = index;
     setCurrentMediaIndex(index);
-    // Pause video and reset play state when scrolling away from a video slide
+    // Unmount video when scrolling away from a video slide
     if (previousIndex !== index && post.media[previousIndex]?.type === 'video') {
       setIsPlaying(false);
-      videoRef.current?.pauseAsync().catch(() => {});
+      setIsVideoMounted(false);
     }
   }, [post.media]);
 
@@ -181,41 +181,64 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   }), []);
 
   const handleVideoTap = useCallback(() => {
-    setIsPlaying((prev) => !prev);
-  }, []);
+    if (!isVideoMounted) {
+      // First tap: mount the Video component and auto-play
+      setIsVideoMounted(true);
+      setIsPlaying(true);
+    } else {
+      // Subsequent taps: toggle play/pause
+      setIsPlaying((prev) => !prev);
+    }
+  }, [isVideoMounted]);
 
   const renderMediaItem = useCallback(({ item, index }: { item: any; index: number }) => {
     const isVideo = item.type === 'video';
     const isActive = index === currentMediaIndex;
 
     if (isVideo && item.url) {
-      // Only play if user has tapped play AND this slide is active AND screen is focused
-      const shouldPlay = isPlaying && isActive && isFocused;
+      // Only mount Video if user explicitly tapped play
+      if (isVideoMounted && isActive) {
+        const shouldPlay = isPlaying && isFocused;
+        return (
+          <TouchableWithoutFeedback onPress={handleVideoTap}>
+            <View style={[styles.imageWrapper, { width: SCREEN_WIDTH }]}>
+              <Video
+                ref={videoRef}
+                source={{ uri: item.url }}
+                style={styles.image}
+                resizeMode={ResizeMode.COVER}
+                shouldPlay={shouldPlay}
+                isLooping
+                isMuted={true}
+              />
+              {!shouldPlay && (
+                <View style={styles.videoOverlay}>
+                  <Ionicons name="pause" size={48} color="rgba(255,255,255,0.85)" />
+                </View>
+              )}
+            </View>
+          </TouchableWithoutFeedback>
+        );
+      }
+
+      // Default: show thumbnail with play button overlay (Video NOT mounted)
       return (
         <TouchableWithoutFeedback onPress={handleVideoTap}>
           <View style={[styles.imageWrapper, { width: SCREEN_WIDTH }]}>
-            <Video
-              ref={isActive ? videoRef : undefined}
-              source={{ uri: item.url }}
+            <Image
+              source={{ uri: getVideoThumbnailUrl(item.url) }}
               style={styles.image}
-              resizeMode={ResizeMode.COVER}
-              shouldPlay={shouldPlay}
-              isLooping
-              isMuted={true}
-              posterSource={{ uri: getVideoThumbnailUrl(item.url) }}
-              usePoster
+              resizeMode="cover"
             />
-            {!shouldPlay && (
-              <View style={styles.videoOverlay}>
-                <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
-              </View>
-            )}
+            <View style={styles.videoOverlay}>
+              <Feather name="play-circle" size={48} color="rgba(255,255,255,0.85)" />
+            </View>
           </View>
         </TouchableWithoutFeedback>
       );
     }
 
-    const imageUrl = item.url;
+    const imageUrl = item.url ? getOptimizedImageUrl(item.url) : '';
     return (
       <TouchableWithoutFeedback onPress={handleImageTap}>
         <View style={[styles.imageWrapper, { width: SCREEN_WIDTH }]}>
@@ -233,7 +256,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         </View>
       </TouchableWithoutFeedback>
     );
-  }, [currentMediaIndex, isFocused, isPlaying, handleImageTap, handleVideoTap]);
+  }, [currentMediaIndex, isFocused, isPlaying, isVideoMounted, handleImageTap, handleVideoTap]);
 
   const handleOpenLikedBy = async () => {
     setShowLikedByModal(true);
@@ -596,6 +619,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     </View>
   );
 };
+
+export const PostCard = React.memo(PostCardInner);
 
 const styles = StyleSheet.create({
   card: {

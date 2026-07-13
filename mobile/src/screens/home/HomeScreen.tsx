@@ -9,6 +9,7 @@ import {
   StatusBar,
   ViewToken,
   TouchableOpacity,
+  Dimensions,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -23,6 +24,8 @@ import { PostCardSkeleton } from '../../components/common/SkeletonLoader';
 import { GuestLimitModal } from '../../components/common/GuestLimitModal';
 import { Post } from '../../services/post.service';
 import { notificationService } from '../../services/notification.service';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export const HomeScreen = () => {
   const dispatch = useAppDispatch();
@@ -155,6 +158,14 @@ export const HomeScreen = () => {
 
   const renderItem = ({ item }: { item: Post }) => <PostCard post={item} />;
 
+  // Estimated item height for getItemLayout (4:5 aspect ratio + header/footer)
+  const ESTIMATED_ITEM_HEIGHT = SCREEN_WIDTH * (5 / 4) + 160;
+  const getItemLayout = useCallback((_data: any, index: number) => ({
+    length: ESTIMATED_ITEM_HEIGHT,
+    offset: ESTIMATED_ITEM_HEIGHT * index,
+    index,
+  }), []);
+
   if (isLoadingFeed && feedPosts.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -185,6 +196,9 @@ export const HomeScreen = () => {
         onEndReachedThreshold={0.5}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
+        windowSize={5}
+        maxToRenderPerBatch={3}
+        getItemLayout={getItemLayout}
         refreshControl={
           <RefreshControl
             refreshing={isLoadingFeed && feedPosts.length > 0}
