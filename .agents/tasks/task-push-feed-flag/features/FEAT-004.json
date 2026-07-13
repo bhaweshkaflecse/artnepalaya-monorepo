@@ -1,0 +1,23 @@
+{
+  "id": "FEAT-004",
+  "type": "fix",
+  "description": "V2 code review fixes: (1) Skip push notification on re-like/re-save (when findOneAndUpdate returns existing record), (2) Change FlatList windowSize from 5 to 7 for better scroll buffer on lower-end devices.",
+  "status": "in_progress",
+  "steps": [
+    "Step 1: In backend notification.service.js, add isNewNotification flag. Set it to false when existing is truthy, true otherwise. Only send push when isNewNotification is true.",
+    "Step 2: In mobile HomeScreen.tsx, change windowSize from 5 to 7."
+  ],
+  "acceptance_criteria": [
+    "Push notification is NOT sent when findOneAndUpdate returns an existing record (re-like/re-save)",
+    "Push notification IS sent for newly created notifications",
+    "FlatList windowSize is 7",
+    "Backend file passes node --check",
+    "Mobile TypeScript compiles (35 pre-existing errors expected, no new ones)"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/artnepalaya-monorepo/backend && unset NODE_OPTIONS && node --check src/modules/notifications/notification.service.js",
+    "Run: cd /projects/sandbox/artnepalaya-monorepo/mobile && npx tsc --noEmit"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}

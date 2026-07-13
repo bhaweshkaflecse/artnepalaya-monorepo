@@ -8,6 +8,7 @@ export const createNotification = async (payload) => {
   if (senderId && recipientId.toString() === senderId.toString()) return null; 
 
   let notification;
+  let isNewNotification = true;
 
   if (type === 'Like' || type === 'Save') {
     const existing = await Notification.findOneAndUpdate(
@@ -17,6 +18,7 @@ export const createNotification = async (payload) => {
     );
     if (existing) {
       notification = existing;
+      isNewNotification = false;
     } else {
       notification = await Notification.create({ recipientId, senderId, postId, type, message });
     }
@@ -24,7 +26,11 @@ export const createNotification = async (payload) => {
     notification = await Notification.create({ recipientId, senderId, postId, type, message });
   }
 
-  // Send actual push notification to the recipient's device
+  // Send actual push notification to the recipient's device (only for new notifications)
+  if (!isNewNotification) {
+    return notification;
+  }
+
   try {
     const [recipient, sender] = await Promise.all([
       User.findById(recipientId, 'pushTokens').lean(),
