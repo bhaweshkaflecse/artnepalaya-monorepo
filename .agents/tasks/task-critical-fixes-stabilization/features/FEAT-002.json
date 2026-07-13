@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Critical Issue 3 - Auth Media Cache Invalidation: The backend GET /config/auth-media endpoint sends no Cache-Control headers, so CDN/proxy caches and HTTP clients may serve stale data indefinitely. The mobile client fetches with no cache-busting param, and React Native Image component caches Cloudinary URLs in memory. Fix all layers: (1) Backend adds Cache-Control: no-cache headers to the /config/auth-media response, (2) Mobile config.service.ts adds a timestamp cache-busting query parameter, (3) Mobile Image components use cache-busting on Cloudinary URLs, (4) Optionally add a Cloudinary URL transformation to bypass CDN cache.",
+  "status": "in_progress",
+  "steps": [
+    "Update backend/src/modules/admin/config.routes.js: Add Cache-Control headers to the GET /auth-media response. Set 'Cache-Control: no-cache, no-store, must-revalidate' and 'Pragma: no-cache' headers before sending the response. This tells proxies and HTTP clients not to cache.",
+    "Update mobile/src/services/config.service.ts: Add a cache-busting timestamp parameter to the API call. Change api.get('/config/auth-media') to api.get('/config/auth-media', { params: { _t: Date.now() } }) to ensure the request always hits the server fresh.",
+    "Update mobile/src/services/config.service.ts: For each media item returned, append a cache-busting query parameter to the Cloudinary image URL. Map over response.data.data and for each item with a url, append '?_cb=<timestamp>' (or if URL already has params, append '&_cb=<timestamp>'). This forces React Native Image to treat updated URLs as new resources.",
+    "Update mobile/App.tsx fetchAuthConfig dispatch: Currently called once on mount. This is fine since the real fix is cache-busting on the API call itself. No change needed to App.tsx frequency.",
+    "Verify that the LoginScreen.tsx Image components use the authBackgroundMedia URLs from Redux state (which come from fetchAuthConfig) - they already do via the carouselData variable."
+  ],
+  "acceptance_criteria": [
+    "Backend /config/auth-media response includes Cache-Control: no-cache, no-store, must-revalidate header",
+    "Mobile config service request includes cache-busting parameter to prevent HTTP-level caching",
+    "Cloudinary image URLs served to mobile have cache-busting appended so Image component loads fresh",
+    "After admin updates auth media, next app launch shows the updated media without manual cache clearing"
+  ],
+  "verification": [
+    "Read backend/src/modules/admin/config.routes.js and confirm Cache-Control headers are set",
+    "Read mobile/src/services/config.service.ts and confirm cache-busting is applied to both the API request and the returned URLs",
+    "Run node --check on backend/src/modules/admin/config.routes.js to verify syntax"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

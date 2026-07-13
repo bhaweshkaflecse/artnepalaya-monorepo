@@ -41,10 +41,16 @@ router.get('/auth-media', async (req, res, next) => {
           };
         });
 
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
       return res.status(200).json({ success: true, data: resolved });
     }
 
     // Legacy format: already [{url, type}] objects - return as-is for backward compatibility
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.status(200).json({ success: true, data: storedValue });
   } catch (err) {
     next(err);
