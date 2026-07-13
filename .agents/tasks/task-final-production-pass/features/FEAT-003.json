@@ -1,0 +1,20 @@
+{
+  "id": "FEAT-003",
+  "type": "docs",
+  "description": "Create deployment documentation (mobile/EAS_SETUP.md) explaining EAS project ID setup, and add a .gitignore entry for the .agents/ directory to prevent task tracking files from being committed in the future.",
+  "status": "completed",
+  "steps": [
+    "Create mobile/EAS_SETUP.md with clear step-by-step instructions for: 1) Installing EAS CLI (npm install -g eas-cli), 2) Running 'eas init' to generate the real projectId, 3) Replacing the placeholder in app.json, 4) Building a preview APK with 'eas build --profile preview --platform android', 5) Note about the owner being 'erbhaweshkafle' and slug being 'artnepalaya-mobile'.",
+    "Add .agents/ to the root .gitignore file. If .gitignore does not exist at the repo root, create it. This prevents future task tracking files from being committed."
+  ],
+  "acceptance_criteria": [
+    "mobile/EAS_SETUP.md exists with clear, actionable deployment steps",
+    ".gitignore at repo root contains .agents/ entry"
+  ],
+  "verification": [
+    "Verify mobile/EAS_SETUP.md exists and is non-empty",
+    "Verify .gitignore contains .agents/ via grep"
+  ],
+  "blocked_reason": null,
+  "findings": "Created mobile/EAS_SETUP.md with full step-by-step EAS setup instructions. Updated root .gitignore to add .agents/ entry and .env.production (was previously un-ignored via !.env.production). Removed the !.env.production exception per the briefing requirement that .env.production contains secrets and should be ignored."
+}

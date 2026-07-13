@@ -12,14 +12,15 @@ import {
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { darkColors } from '../../theme/colors';
 import { Post, postService } from '../../services/post.service';
-import { getPrimaryImageUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getPrimaryVideo, getOptimizedImageUrl } from '../../utils/media';
 import { ReportModal } from '../common/ReportModal';
 
 interface PostCardProps {
   post: Post;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post }) => {
+const PostCardComponent: React.FC<PostCardProps> = ({ post }) => {
+  const hasVideo = !!getPrimaryVideo(post.media);
   const [isLiked, setIsLiked] = useState(post.isLikedByMe || false);
   const [isSaved, setIsSaved] = useState(post.isSavedByMe || false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -133,7 +134,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         <View style={styles.imageWrapper}>
           {getPrimaryImageUrl(post.media) ? (
             <Image
-              source={{ uri: getPrimaryImageUrl(post.media) }}
+              source={{ uri: getOptimizedImageUrl(getPrimaryImageUrl(post.media)) }}
               style={styles.image}
               resizeMode="cover"
             />
@@ -154,6 +155,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           >
             <Ionicons name="heart" size={80} color="#FFFFFF" />
           </Animated.View>
+          {/* Play icon overlay for video posts */}
+          {hasVideo && (
+            <View style={styles.playIconOverlay}>
+              <View style={styles.playIconBackground}>
+                <Ionicons name="play-circle-outline" size={52} color="#FFFFFF" />
+              </View>
+            </View>
+          )}
         </View>
       </TouchableWithoutFeedback>
 
@@ -207,6 +216,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     </View>
   );
 };
+
+export const PostCard = React.memo(PostCardComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.post._id === nextProps.post._id &&
+    prevProps.post.isLikedByMe === nextProps.post.isLikedByMe &&
+    prevProps.post.isSavedByMe === nextProps.post.isSavedByMe
+  );
+});
 
 const styles = StyleSheet.create({
   card: {
@@ -271,6 +288,20 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  playIconOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playIconBackground: {
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    borderRadius: 30,
+    padding: 4,
   },
   actions: {
     flexDirection: 'row',

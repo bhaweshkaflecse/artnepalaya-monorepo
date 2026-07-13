@@ -17,7 +17,7 @@ import { lightColors } from '../../theme/colors';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { fetchProfile, fetchMyPosts } from '../../store/slices/userSlice';
 import { selectIsGuest, selectGuestUsername } from '../../store/slices/authSlice';
-import { getPrimaryImageUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getThumbnailUrl } from '../../utils/media';
 
 export const ProfileScreen = () => {
   const dispatch = useAppDispatch();
@@ -58,7 +58,7 @@ export const ProfileScreen = () => {
         activeOpacity={0.8}
       >
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.gridImage} />
+          <Image source={{ uri: getThumbnailUrl(imageUrl) }} style={styles.gridImage} />
         ) : (
           <View style={styles.imagePlaceholder}>
             <Feather name="image" size={20} color={lightColors.textSecondary} />

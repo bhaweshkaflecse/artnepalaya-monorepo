@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { notificationService } from './notification.service';
 
@@ -27,7 +28,9 @@ export async function registerForPushNotifications(): Promise<string | null> {
   try {
     // Push notifications only work on physical devices
     if (!Device.isDevice) {
-      console.log('[PushNotifications] Must use physical device for push notifications');
+      if (__DEV__) {
+        console.log('[PushNotifications] Must use physical device for push notifications');
+      }
       return null;
     }
 
@@ -45,15 +48,28 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
 
     if (finalStatus !== 'granted') {
-      console.log('[PushNotifications] Permission not granted');
+      if (__DEV__) {
+        console.log('[PushNotifications] Permission not granted');
+      }
       return null;
     }
 
     // Get the Expo push token
-    const tokenData = await Notifications.getExpoPushTokenAsync();
+    const projectId = Constants?.expoConfig?.extra?.eas?.projectId;
+
+    if (!projectId || projectId.includes('YOUR_')) {
+      console.warn(
+        '[PushNotifications] WARNING: EAS projectId is not configured. Push notifications will not work. Run \'eas init\' to generate your project ID.'
+      );
+      return null;
+    }
+
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     const token = tokenData.data;
 
-    console.log('[PushNotifications] Token:', token);
+    if (__DEV__) {
+      console.log('[PushNotifications] Token:', token);
+    }
 
     // Register the token with the backend
     await notificationService.registerPushToken(token);
@@ -83,12 +99,16 @@ export function setupNotificationListeners(
 
   // Listener for when a notification is received while app is in foreground
   const foregroundSubscription = Notifications.addNotificationReceivedListener((notification) => {
-    console.log('[PushNotifications] Foreground notification:', notification.request.content.title);
+    if (__DEV__) {
+      console.log('[PushNotifications] Foreground notification:', notification.request.content.title);
+    }
   });
 
   // Listener for when user taps on a notification
   const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
-    console.log('[PushNotifications] Notification tapped:', response.notification.request.content.title);
+    if (__DEV__) {
+      console.log('[PushNotifications] Notification tapped:', response.notification.request.content.title);
+    }
     if (onNotificationTap) {
       onNotificationTap(response);
     }

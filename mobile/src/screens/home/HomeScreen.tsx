@@ -101,7 +101,7 @@ export const HomeScreen = () => {
     return null;
   };
 
-  const renderItem = ({ item }: { item: Post }) => <PostCard post={item} />;
+  const renderItem = useCallback(({ item }: { item: Post }) => <PostCard post={item} />, []);
 
   if (isLoadingFeed && feedPosts.length === 0) {
     return (
@@ -141,6 +141,10 @@ export const HomeScreen = () => {
           />
         }
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={5}
+        windowSize={7}
+        initialNumToRender={5}
         contentContainerStyle={styles.listContent}
         style={styles.flatList}
       />

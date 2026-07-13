@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Push notification production readiness and EAS projectId configuration. Fix the placeholder projectId in mobile/app.json, add eas.json for build configuration, clean up debugging console.logs from LoginScreen, and ensure the entire push notification pipeline is production-ready.",
+  "status": "completed",
+  "steps": [
+    "In mobile/app.json, change the 'extra.eas.projectId' from 'YOUR_EAS_PROJECT_ID' to a valid UUID format placeholder that is clearly documented. The EAS project ID must be obtained by running 'eas init' with the owner 'erbhaweshkafle' and slug 'artnepalaya-mobile'. Add a comment-style approach by creating a DEPLOYMENT.md or updating README with clear instructions. Since JSON does not support comments, we need to generate a real EAS project ID or use a deterministic one. Use the approach: generate the project ID by documenting the exact step in a new file mobile/EAS_SETUP.md. For the actual app.json, keep the placeholder but make it clearly identifiable.",
+    "Create mobile/eas.json with a proper EAS build configuration for preview and production profiles. Include: build.preview (distribution: internal, android.buildType: apk), build.production (distribution: store, android.buildType: app-bundle).",
+    "In mobile/src/screens/auth/LoginScreen.tsx, remove the debugging console.log statements: the useEffect that logs request configuration ('[GoogleAuth] Request configured:'), the one that logs 'GOOGLE_REDIRECT_URI=', and the one that logs '[GoogleAuth] response='. Keep the console.warn for actual errors.",
+    "In mobile/src/services/pushNotification.service.ts, verify the projectId extraction is correct: Constants?.expoConfig?.extra?.eas?.projectId. This is already correct. Ensure the error handling is robust - add a warning if projectId is missing/placeholder.",
+    "In mobile/src/services/api.ts, remove the console.log('API URL =', BASE_URL) statement that leaks config to logs in production."
+  ],
+  "acceptance_criteria": [
+    "mobile/app.json still contains a clearly marked placeholder for projectId with documentation on how to replace it",
+    "mobile/eas.json exists with preview and production build profiles",
+    "LoginScreen.tsx has no debugging console.log statements (only console.warn for errors)",
+    "pushNotification.service.ts warns if projectId is undefined or contains 'YOUR_'",
+    "api.ts does not log the BASE_URL in production"
+  ],
+  "verification": [
+    "Run 'node --check mobile/src/services/pushNotification.service.ts' equivalent check - verify TypeScript syntax is valid",
+    "Verify no console.log debugging statements remain in LoginScreen via grep",
+    "Verify eas.json is valid JSON"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes verified. JSON files valid. Node 22 --check passes .ts files. Node cannot check .tsx but file is structurally sound (grep confirms no debug logs remain, console.warn preserved). The useEffect dependency array still includes [request, response] even though request is no longer used in the body - left as-is to avoid unrelated refactoring."
+}

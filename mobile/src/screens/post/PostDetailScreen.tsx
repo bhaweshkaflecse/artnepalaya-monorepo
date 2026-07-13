@@ -15,7 +15,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
-import { getPrimaryImageUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getOptimizedImageUrl } from '../../utils/media';
 import { ReportModal } from '../../components/common/ReportModal';
 
 type PostDetailRouteProp = RouteProp<{ PostDetail: { postId: string } }, 'PostDetail'>;
@@ -142,7 +142,7 @@ export const PostDetailScreen = () => {
         {/* Image */}
         {getPrimaryImageUrl(post.media) && (
           <Image
-            source={{ uri: getPrimaryImageUrl(post.media)! }}
+            source={{ uri: getOptimizedImageUrl(getPrimaryImageUrl(post.media), 800)! }}
             style={styles.postImage}
             resizeMode="cover"
           />

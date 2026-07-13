@@ -9,9 +9,6 @@ module.exports = {
         NODE_ENV: 'production',
       },
       max_memory_restart: '500M',
-      error_file: '/dev/null',
-      out_file: '/dev/null',
-      log_file: '/dev/null',
     },
   ],
 };

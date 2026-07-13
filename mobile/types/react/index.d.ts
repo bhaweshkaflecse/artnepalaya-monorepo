@@ -13,6 +13,10 @@ declare module 'react' {
   export function useRef<T>(initialValue: T): MutableRefObject<T>;
   export function useCallback<T extends (...args: any[]) => any>(callback: T, deps: any[]): T;
   export function useMemo<T>(factory: () => T, deps: any[]): T;
+  export function memo<P extends object>(
+    Component: FC<P>,
+    propsAreEqual?: (prevProps: Readonly<P>, nextProps: Readonly<P>) => boolean
+  ): FC<P>;
 
   namespace JSX {
     interface Element extends ReactElement {}

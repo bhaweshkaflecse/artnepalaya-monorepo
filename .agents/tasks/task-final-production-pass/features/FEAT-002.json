@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-002",
+  "type": "chore",
+  "description": "Repository cleanup: remove dead modules, fix PM2 logging, add Cloudinary URL transformations for optimized media delivery, reduce ExploreScreen initial fetch size, and remove old .agents/tasks/ directory from the previous implementation pass.",
+  "status": "completed",
+  "steps": [
+    "Delete the entire backend/src/modules/interactions/ directory (interaction.controller.js, interaction.routes.js, save.model.js). This module is dead code - not imported in app.js. The active save functionality lives in backend/src/modules/posts/post-interaction.model.js and post.service.js.",
+    "Delete the entire backend/src/modules/taxonomy/ directory (tag.controller.js, tag.model.js, tag.routes.js). This is a duplicate dead module - the active Tag model lives in backend/src/modules/tags/tag.model.js which IS imported in app.js.",
+    "In backend/ecosystem.config.cjs, change error_file, out_file, and log_file from '/dev/null' to 'NONE' (PM2 will then output to stdout/stderr which Docker captures). Actually, for PM2 in Docker with pm2-runtime, the best practice is to remove the file directives entirely OR set them to '/dev/null' is fine for pm2-runtime since pm2-runtime already streams to stdout. But since the briefing says to change to stdout/stderr for Docker log aggregation: remove the error_file, out_file, and log_file lines entirely. PM2-runtime defaults to stdout.",
+    "In mobile/src/utils/media.ts, add a Cloudinary URL transformation helper function that appends width/quality/format parameters. Add getOptimizedImageUrl(url, width=600, quality=80) that transforms Cloudinary URLs to use f_auto,q_auto,w_600 transformations. Also add getThumbnailUrl(url, width=300) for grid/explore views. Only transform URLs that contain 'res.cloudinary.com'.",
+    "In mobile/src/components/home/PostCard.tsx, use the new getOptimizedImageUrl() for the main post image (width 600 for feed cards).",
+    "In mobile/src/components/home/FeaturedSection.tsx, use getOptimizedImageUrl() with width 600 for featured card images.",
+    "In mobile/src/screens/explore/ExploreScreen.tsx, reduce the initial fetch limit from 30 to 20 (fetchData and loadMore calls). Also use getThumbnailUrl() for the grid images since they display at ~48.5% width (approx 200px on most devices), so width=300 is sufficient.",
+    "In mobile/src/screens/profile/ProfileScreen.tsx, use getThumbnailUrl() for the grid thumbnail images (they display at 33.33% width).",
+    "In mobile/src/screens/post/PostDetailScreen.tsx, use getOptimizedImageUrl() with width 800 for the detail page image (higher quality since it's the focus).",
+    "Delete the .agents/tasks/task-push-feed-flag/ directory (old task tracking from previous implementation pass)."
+  ],
+  "acceptance_criteria": [
+    "backend/src/modules/interactions/ directory no longer exists",
+    "backend/src/modules/taxonomy/ directory no longer exists",
+    "backend/ecosystem.config.cjs does not suppress logs to /dev/null",
+    "mobile/src/utils/media.ts exports getOptimizedImageUrl and getThumbnailUrl functions",
+    "Cloudinary transformations applied in PostCard, FeaturedSection, ExploreScreen, ProfileScreen, PostDetailScreen",
+    "ExploreScreen fetches 20 posts per page instead of 30",
+    ".agents/tasks/task-push-feed-flag/ directory no longer exists"
+  ],
+  "verification": [
+    "Verify interactions and taxonomy directories are gone: ls backend/src/modules/interactions/ and ls backend/src/modules/taxonomy/ should fail",
+    "Verify media.ts exports the new functions via grep",
+    "Verify ecosystem.config.cjs no longer has /dev/null references via grep",
+    "Verify ExploreScreen uses 20 limit via grep"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes verified. Deleted 3 dead code directories (interactions, taxonomy, task-push-feed-flag). PM2 ecosystem.config.cjs cleaned of /dev/null log suppression. Cloudinary URL helpers added to media.ts and integrated in 5 screen/component files. ExploreScreen limit reduced from 30 to 20. Node --check passes for .ts and .cjs files. TSX files cannot be syntax-checked without TypeScript compiler but imports and structure are consistent."
+}

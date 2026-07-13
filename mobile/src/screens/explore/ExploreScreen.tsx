@@ -18,7 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
-import { getPrimaryImageUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getThumbnailUrl } from '../../utils/media';
 
 const CATEGORIES = ['All', 'Painting', 'Digital Art', 'Thangka', 'Sculpture', 'Illustration', 'Photography'];
 
@@ -93,7 +93,7 @@ export const ExploreScreen = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await postService.getFeed(null, 30);
+      const response = await postService.getFeed(null, 20);
       setPosts(response.data);
       setCursor(response.meta.nextCursor);
       setHasMore(response.meta.hasNextPage);
@@ -109,7 +109,7 @@ export const ExploreScreen = () => {
     if (!hasMore || isLoadingMore || !cursor) return;
     setIsLoadingMore(true);
     try {
-      const response = await postService.getFeed(cursor, 30);
+      const response = await postService.getFeed(cursor, 20);
       setPosts((prev) => [...prev, ...response.data]);
       setCursor(response.meta.nextCursor);
       setHasMore(response.meta.hasNextPage);
@@ -158,7 +158,7 @@ export const ExploreScreen = () => {
         onPress={() => navigation.navigate('PostDetail', { postId: item._id })}
       >
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.gridImage} />
+          <Image source={{ uri: getThumbnailUrl(imageUrl) }} style={styles.gridImage} />
         ) : (
           <View style={styles.imagePlaceholder}>
             <Feather name="image" size={24} color={darkColors.textSecondary} />
