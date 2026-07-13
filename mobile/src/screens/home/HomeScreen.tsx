@@ -141,6 +141,10 @@ export const HomeScreen = () => {
           />
         }
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        initialNumToRender={5}
         contentContainerStyle={styles.listContent}
         style={styles.flatList}
       />
