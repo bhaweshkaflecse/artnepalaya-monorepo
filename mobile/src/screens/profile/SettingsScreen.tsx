@@ -13,7 +13,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as SecureStore from 'expo-secure-store';
+import { safeDeleteItemAsync } from '../../utils/secureStore';
 import { lightColors } from '../../theme/colors';
 import { userService } from '../../services/user.service';
 import { useAppSelector, useAppDispatch } from '../../store';
@@ -55,8 +55,8 @@ export const SettingsScreen = () => {
           text: 'Logout',
           style: 'destructive',
           onPress: async () => {
-            await SecureStore.deleteItemAsync('accessToken');
-            await SecureStore.deleteItemAsync('refreshToken');
+            await safeDeleteItemAsync('accessToken');
+            await safeDeleteItemAsync('refreshToken');
             dispatch(logout());
           },
         },

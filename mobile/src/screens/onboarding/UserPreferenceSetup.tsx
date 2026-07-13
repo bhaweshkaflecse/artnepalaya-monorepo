@@ -12,7 +12,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import * as SecureStore from 'expo-secure-store';
+import { safeDeleteItemAsync } from '../../utils/secureStore';
 import { useAppDispatch } from '../../store';
 import { clearNeedsUserOnboarding } from '../../store/slices/appSlice';
 import { api } from '../../services/api';
@@ -168,7 +168,7 @@ export const UserPreferenceSetup = () => {
       });
 
       // Clear the flag from SecureStore and Redux
-      await SecureStore.deleteItemAsync('needsUserOnboarding');
+      await safeDeleteItemAsync('needsUserOnboarding');
       dispatch(clearNeedsUserOnboarding());
     } catch (error: any) {
       const message =
@@ -198,7 +198,7 @@ export const UserPreferenceSetup = () => {
   };
 
   const handleSkip = async () => {
-    await SecureStore.deleteItemAsync('needsUserOnboarding');
+    await safeDeleteItemAsync('needsUserOnboarding');
     dispatch(clearNeedsUserOnboarding());
   };
 

@@ -30,6 +30,35 @@ export async function safeGetItemAsync(key: string): Promise<string | null> {
 }
 
 /**
+ * Safely writes a value to SecureStore.
+ * If the Android keystore or iOS keychain is unavailable or corrupted,
+ * the write fails silently and returns false. Never throws.
+ */
+export async function safeSetItemAsync(key: string, value: string): Promise<boolean> {
+  try {
+    await SecureStore.setItemAsync(key, value);
+    return true;
+  } catch (error: any) {
+    console.warn(`[SecureStore] Failed to write key "${key}":`, error?.message || error);
+    return false;
+  }
+}
+
+/**
+ * Safely deletes a value from SecureStore.
+ * If the store is unavailable, the delete fails silently and returns false. Never throws.
+ */
+export async function safeDeleteItemAsync(key: string): Promise<boolean> {
+  try {
+    await SecureStore.deleteItemAsync(key);
+    return true;
+  } catch (error: any) {
+    console.warn(`[SecureStore] Failed to delete key "${key}":`, error?.message || error);
+    return false;
+  }
+}
+
+/**
  * Safely reads the deviceId from SecureStore.
  * If the stored value is corrupted or missing, generates a new deviceId,
  * persists it, and returns it. Never throws.
@@ -45,12 +74,7 @@ export async function safeGetOrCreateDeviceId(): Promise<string> {
   const random = Math.random().toString(36).substring(2, 10);
   const newDeviceId = `${Platform.OS}-${timestamp}-${random}`;
 
-  try {
-    await SecureStore.setItemAsync('deviceId', newDeviceId);
-  } catch (saveError) {
-    console.warn('[SecureStore] Failed to save new deviceId:', saveError);
-    // Return the generated ID anyway so the caller can proceed
-  }
+  await safeSetItemAsync('deviceId', newDeviceId);
 
   return newDeviceId;
 }

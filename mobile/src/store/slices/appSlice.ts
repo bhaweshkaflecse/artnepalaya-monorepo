@@ -1,8 +1,7 @@
 // src/store/slices/appSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import * as SecureStore from 'expo-secure-store';
 import { configService, AuthMediaItem } from '../../services/config.service';
-import { safeGetItemAsync } from '../../utils/secureStore';
+import { safeGetItemAsync, safeDeleteItemAsync } from '../../utils/secureStore';
 
 interface AppState {
   hasCompletedOnboarding: boolean;
@@ -31,7 +30,7 @@ export const loadAppState = createAsyncThunk('app/loadAppState', async (_, { rej
 
     // Prevent orphaned access tokens from triggering refresh attempts
     if (accessToken && !refreshToken) {
-      await SecureStore.deleteItemAsync('accessToken');
+      await safeDeleteItemAsync('accessToken');
       return {
         hasCompletedOnboarding: value === 'true',
         needsUserOnboarding: needsUserOnboardingValue === 'true',

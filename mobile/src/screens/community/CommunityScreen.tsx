@@ -10,11 +10,10 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import * as SecureStore from 'expo-secure-store';
 import { communityService } from '../../services/community.service';
 import { useAppSelector } from '../../store';
 import { selectIsGuest } from '../../store/slices/authSlice';
-import { safeGetItemAsync } from '../../utils/secureStore';
+import { safeGetItemAsync, safeSetItemAsync } from '../../utils/secureStore';
 
 type SegmentTab = 'community' | 'marketplace';
 
@@ -50,14 +49,14 @@ const CommunityContent = () => {
       const result = await communityService.registerInterest('community');
       Alert.alert('Success', result.message || 'You have been added to the waitlist!');
       setHasJoined(true);
-      await SecureStore.setItemAsync('communityWaitlistJoined', 'true');
+      await safeSetItemAsync('communityWaitlistJoined', 'true');
     } catch (error: any) {
       const message =
         error?.response?.data?.message || 'Something went wrong. Please try again.';
       // If already on waitlist, treat as success
       if (message.toLowerCase().includes('already') || message.toLowerCase().includes('waitlist')) {
         setHasJoined(true);
-        await SecureStore.setItemAsync('communityWaitlistJoined', 'true');
+        await safeSetItemAsync('communityWaitlistJoined', 'true');
       }
       Alert.alert('Info', message);
     } finally {
@@ -148,13 +147,13 @@ const MarketplaceContent = () => {
       const result = await communityService.registerInterest('marketplace');
       Alert.alert('Success', result.message || 'You have been added to the marketplace waitlist!');
       setHasRegistered(true);
-      await SecureStore.setItemAsync('marketplaceWaitlistJoined', 'true');
+      await safeSetItemAsync('marketplaceWaitlistJoined', 'true');
     } catch (error: any) {
       const message =
         error?.response?.data?.message || 'Something went wrong. Please try again.';
       if (message.toLowerCase().includes('already') || message.toLowerCase().includes('waitlist')) {
         setHasRegistered(true);
-        await SecureStore.setItemAsync('marketplaceWaitlistJoined', 'true');
+        await safeSetItemAsync('marketplaceWaitlistJoined', 'true');
       }
       Alert.alert('Info', message);
     } finally {

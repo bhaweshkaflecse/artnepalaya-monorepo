@@ -1,8 +1,7 @@
 // src/services/api.ts
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import * as SecureStore from 'expo-secure-store';
 import { setTokens, logout } from '../store/slices/authSlice';
-import { safeGetItemAsync } from '../utils/secureStore';
+import { safeGetItemAsync, safeSetItemAsync, safeDeleteItemAsync } from '../utils/secureStore';
 
 // Expo provides EXPO_PUBLIC_* env vars through the Metro bundler.
 // We declare the type inline to avoid requiring @types/node.
@@ -106,8 +105,8 @@ api.interceptors.response.use(
 
         _store?.dispatch(setTokens({ accessToken, refreshToken: newRefreshToken }));
 
-        await SecureStore.setItemAsync('accessToken', accessToken);
-        await SecureStore.setItemAsync('refreshToken', newRefreshToken);
+        await safeSetItemAsync('accessToken', accessToken);
+        await safeSetItemAsync('refreshToken', newRefreshToken);
 
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
@@ -116,8 +115,8 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError as AxiosError, null);
         _store?.dispatch(logout());
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('refreshToken');
+        await safeDeleteItemAsync('accessToken');
+        await safeDeleteItemAsync('refreshToken');
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

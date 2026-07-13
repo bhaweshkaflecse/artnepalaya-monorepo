@@ -19,7 +19,6 @@ import {
 } from 'react-native';
 import { Feather, AntDesign } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import * as SecureStore from 'expo-secure-store';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { setCredentials, setGuest } from '../../store/slices/authSlice';
@@ -27,7 +26,7 @@ import { setNeedsUserOnboarding } from '../../store/slices/appSlice';
 import { authService } from '../../services/auth.service';
 import { lightColors } from '../../theme/colors';
 import { registerForPushNotifications } from '../../services/pushNotification.service';
-import { safeGetOrCreateDeviceId, safeGetItemAsync } from '../../utils/secureStore';
+import { safeGetOrCreateDeviceId, safeGetItemAsync, safeSetItemAsync, safeDeleteItemAsync } from '../../utils/secureStore';
 
 // Google OAuth configuration
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
@@ -153,15 +152,15 @@ export const LoginScreen = () => {
       const authResponse = await authService.googleLogin(idToken, deviceId);
       const { user, accessToken, refreshToken, isNewUser } = authResponse.data;
 
-      await SecureStore.setItemAsync('accessToken', accessToken);
-      await SecureStore.setItemAsync('refreshToken', refreshToken);
-      await SecureStore.setItemAsync('userData', JSON.stringify(user));
+      await safeSetItemAsync('accessToken', accessToken);
+      await safeSetItemAsync('refreshToken', refreshToken);
+      await safeSetItemAsync('userData', JSON.stringify(user));
 
       dispatch(setCredentials({ user, accessToken, refreshToken }));
 
       // If this is a new user, set needsUserOnboarding so they see preference setup
       if (isNewUser) {
-        await SecureStore.setItemAsync('needsUserOnboarding', 'true');
+        await safeSetItemAsync('needsUserOnboarding', 'true');
         dispatch(setNeedsUserOnboarding());
       }
 
@@ -224,13 +223,13 @@ export const LoginScreen = () => {
     // Background: persist to SecureStore (non-blocking)
     (async () => {
       try {
-        await SecureStore.deleteItemAsync('accessToken');
-        await SecureStore.deleteItemAsync('refreshToken');
+        await safeDeleteItemAsync('accessToken');
+        await safeDeleteItemAsync('refreshToken');
         const existingUsername = await safeGetItemAsync('guestUsername');
         if (!existingUsername) {
-          await SecureStore.setItemAsync('guestUsername', guestUsername);
+          await safeSetItemAsync('guestUsername', guestUsername);
         }
-        await SecureStore.setItemAsync('guestDisplayName', 'Guest Explorer');
+        await safeSetItemAsync('guestDisplayName', 'Guest Explorer');
       } catch (e) {
         console.warn('[LoginScreen] Guest SecureStore cleanup failed:', e);
       }
@@ -478,15 +477,6 @@ export const LoginScreen = () => {
               <Text style={styles.termsLink}>Privacy Policy</Text>
             </TouchableOpacity>
           </View>
-
-          {/* QA Developer Login */}
-          <TouchableOpacity
-            style={styles.devLoginButton}
-            onPress={handleGoogleLogin}
-            activeOpacity={0.5}
-          >
-            <Text style={styles.devLoginText}>QA Developer Login</Text>
-          </TouchableOpacity>
 
         </ScrollView>
       </SafeAreaView>
@@ -776,18 +766,6 @@ const styles = StyleSheet.create({
     color: lightColors.accent,
     fontWeight: '600',
     lineHeight: 16,
-  },
-
-  // Dev Login
-  devLoginButton: {
-    alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 12,
-  },
-  devLoginText: {
-    fontSize: 10,
-    color: lightColors.textSecondary,
-    opacity: 0.5,
   },
 
 });

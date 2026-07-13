@@ -13,7 +13,7 @@ import {
   Animated,
   Easing,
 } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { safeSetItemAsync } from '../../utils/secureStore';
 import { useAppDispatch } from '../../store';
 import { setOnboardingComplete } from '../../store/slices/appSlice';
 
@@ -102,7 +102,7 @@ export const OnboardingScreen = () => {
 
   const handleGetStarted = async () => {
     dispatch(setOnboardingComplete());
-    await SecureStore.setItemAsync('hasCompletedOnboarding', 'true');
+    await safeSetItemAsync('hasCompletedOnboarding', 'true');
   };
 
   // ---- Render Slides ----
