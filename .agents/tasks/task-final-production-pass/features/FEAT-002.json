@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "chore",
   "description": "Repository cleanup: remove dead modules, fix PM2 logging, add Cloudinary URL transformations for optimized media delivery, reduce ExploreScreen initial fetch size, and remove old .agents/tasks/ directory from the previous implementation pass.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Delete the entire backend/src/modules/interactions/ directory (interaction.controller.js, interaction.routes.js, save.model.js). This module is dead code - not imported in app.js. The active save functionality lives in backend/src/modules/posts/post-interaction.model.js and post.service.js.",
     "Delete the entire backend/src/modules/taxonomy/ directory (tag.controller.js, tag.model.js, tag.routes.js). This is a duplicate dead module - the active Tag model lives in backend/src/modules/tags/tag.model.js which IS imported in app.js.",

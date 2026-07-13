@@ -12,7 +12,7 @@ import {
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { darkColors } from '../../theme/colors';
 import { Post, postService } from '../../services/post.service';
-import { getPrimaryImageUrl, getPrimaryVideo } from '../../utils/media';
+import { getPrimaryImageUrl, getPrimaryVideo, getOptimizedImageUrl } from '../../utils/media';
 import { ReportModal } from '../common/ReportModal';
 
 interface PostCardProps {
@@ -134,7 +134,7 @@ const PostCardComponent: React.FC<PostCardProps> = ({ post }) => {
         <View style={styles.imageWrapper}>
           {getPrimaryImageUrl(post.media) ? (
             <Image
-              source={{ uri: getPrimaryImageUrl(post.media) }}
+              source={{ uri: getOptimizedImageUrl(getPrimaryImageUrl(post.media)) }}
               style={styles.image}
               resizeMode="cover"
             />

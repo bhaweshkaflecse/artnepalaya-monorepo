@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity } from 'rea
 import { useNavigation } from '@react-navigation/native';
 import { darkColors } from '../../theme/colors';
 import { Post } from '../../services/post.service';
-import { getPrimaryImageUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getOptimizedImageUrl } from '../../utils/media';
 import { Feather } from '@expo/vector-icons';
 import { FeaturedSkeleton } from '../common/SkeletonLoader';
 
@@ -47,7 +47,7 @@ export const FeaturedSection: React.FC<FeaturedProps> = ({ posts, loading }) => 
             activeOpacity={0.8}
             onPress={() => navigation.navigate('PostDetail', { postId: post._id })}
           >
-            <Image source={{ uri: getPrimaryImageUrl(post.media) }} style={styles.image} />
+            <Image source={{ uri: getOptimizedImageUrl(getPrimaryImageUrl(post.media)) }} style={styles.image} />
             <View style={styles.overlay}>
               <Text style={styles.artist} numberOfLines={1}>
                 {post.authorId.username}
