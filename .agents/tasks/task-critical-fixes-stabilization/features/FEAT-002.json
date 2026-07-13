@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "fix",
   "description": "Critical Issue 3 - Auth Media Cache Invalidation: The backend GET /config/auth-media endpoint sends no Cache-Control headers, so CDN/proxy caches and HTTP clients may serve stale data indefinitely. The mobile client fetches with no cache-busting param, and React Native Image component caches Cloudinary URLs in memory. Fix all layers: (1) Backend adds Cache-Control: no-cache headers to the /config/auth-media response, (2) Mobile config.service.ts adds a timestamp cache-busting query parameter, (3) Mobile Image components use cache-busting on Cloudinary URLs, (4) Optionally add a Cloudinary URL transformation to bypass CDN cache.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Update backend/src/modules/admin/config.routes.js: Add Cache-Control headers to the GET /auth-media response. Set 'Cache-Control: no-cache, no-store, must-revalidate' and 'Pragma: no-cache' headers before sending the response. This tells proxies and HTTP clients not to cache.",
     "Update mobile/src/services/config.service.ts: Add a cache-busting timestamp parameter to the API call. Change api.get('/config/auth-media') to api.get('/config/auth-media', { params: { _t: Date.now() } }) to ensure the request always hits the server fresh.",
@@ -22,5 +22,5 @@
     "Run node --check on backend/src/modules/admin/config.routes.js to verify syntax"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Both backend response paths (new format and legacy format) now include Cache-Control headers. Mobile service adds _t param to API request and _cb param to each Cloudinary URL. NODE_OPTIONS must be cleared for node --check to work in this sandbox environment."
 }
