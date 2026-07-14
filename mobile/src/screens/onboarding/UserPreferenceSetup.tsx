@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Modal,
+  Platform,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { safeDeleteItemAsync } from '../../utils/secureStore';
@@ -19,69 +21,63 @@ import { api } from '../../services/api';
 import { lightColors } from '../../theme/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const TOTAL_STEPS = 4;
+const MAX_INTERESTS = 5;
+const VISIBLE_INTEREST_LIMIT = 7;
 
-// Role definitions
+// Role definitions (3 options only)
 const ROLES = [
   {
-    id: 'artist',
+    id: 'Artist',
     label: 'Artist',
     icon: 'brush' as const,
     iconFamily: 'MaterialCommunityIcons' as const,
     subtitle: 'Showcase and sell your artwork',
   },
   {
-    id: 'art_lover',
+    id: 'Art Lover',
     label: 'Art Lover',
     icon: 'heart' as const,
     iconFamily: 'Feather' as const,
     subtitle: 'Discover and collect amazing pieces',
   },
   {
-    id: 'business',
+    id: 'Business',
     label: 'Business',
     icon: 'briefcase' as const,
     iconFamily: 'Feather' as const,
     subtitle: 'Connect with creative talent',
   },
-  {
-    id: 'gallery',
-    label: 'Gallery',
-    icon: 'image' as const,
-    iconFamily: 'Feather' as const,
-    subtitle: 'Manage your gallery online',
-  },
 ];
 
 // Sub-role definitions per role
-const SUB_ROLES: Record<string, { id: string; label: string }[]> = {
-  artist: [
-    { id: 'painter', label: 'Painter' },
-    { id: 'sculptor', label: 'Sculptor' },
-    { id: 'digital_artist', label: 'Digital Artist' },
-    { id: 'photographer', label: 'Photographer' },
-    { id: 'mixed_media', label: 'Mixed Media' },
+const SUB_ROLES: Record<string, string[]> = {
+  Artist: [
+    'Digital Artist',
+    'Traditional Artist',
+    'Illustrator',
+    'Photographer',
+    'Sculptor',
+    'Animator',
+    'Tattoo Artist',
+    'Handicraft Artist',
+    'Other',
   ],
-  art_lover: [
-    { id: 'collector', label: 'Collector' },
-    { id: 'enthusiast', label: 'Enthusiast' },
-    { id: 'student', label: 'Student' },
-    { id: 'critic', label: 'Critic' },
+  'Art Lover': [
+    'Collector',
+    'Content Creator',
+    'Learner',
+    'Explorer',
+    'Other',
   ],
-  business: [
-    { id: 'gallery_owner', label: 'Gallery Owner' },
-    { id: 'art_dealer', label: 'Art Dealer' },
-    { id: 'frame_maker', label: 'Frame Maker' },
-    { id: 'art_supply', label: 'Art Supply' },
-  ],
-  gallery: [
-    { id: 'contemporary', label: 'Contemporary' },
-    { id: 'traditional', label: 'Traditional' },
-    { id: 'modern', label: 'Modern' },
-    { id: 'mixed', label: 'Mixed' },
+  Business: [
+    'Gallery',
+    'Art Shop',
+    'Creative Space / Cafe',
+    'Organization / Institution',
+    'Other',
   ],
 };
-
-const MAX_INTERESTS = 5;
 
 export const UserPreferenceSetup = () => {
   const dispatch = useAppDispatch();
@@ -89,9 +85,11 @@ export const UserPreferenceSetup = () => {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [selectedSubRoles, setSelectedSubRoles] = useState<string[]>([]);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [artworkTypes, setArtworkTypes] = useState<{ name: string; isActive: boolean }[]>([]);
+  const [showMatureContent, setShowMatureContent] = useState(true);
+  const [artworkTypes, setArtworkTypes] = useState<{ name: string; isActive: boolean; sortOrder: number }[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOtherModal, setShowOtherModal] = useState(false);
 
   // Fetch artwork types when reaching step 3
   useEffect(() => {
@@ -114,25 +112,25 @@ export const UserPreferenceSetup = () => {
       console.warn('[UserPreferenceSetup] Failed to fetch artwork types:', error?.message);
       // Provide fallback types if API fails
       setArtworkTypes([
-        { name: 'Painting', isActive: true },
-        { name: 'Sculpture', isActive: true },
-        { name: 'Photography', isActive: true },
-        { name: 'Digital Art', isActive: true },
-        { name: 'Mixed Media', isActive: true },
-        { name: 'Illustration', isActive: true },
-        { name: 'Printmaking', isActive: true },
-        { name: 'Calligraphy', isActive: true },
+        { name: 'Painting', isActive: true, sortOrder: 1 },
+        { name: 'Sculpture', isActive: true, sortOrder: 2 },
+        { name: 'Photography', isActive: true, sortOrder: 3 },
+        { name: 'Digital Art', isActive: true, sortOrder: 4 },
+        { name: 'Mixed Media', isActive: true, sortOrder: 5 },
+        { name: 'Illustration', isActive: true, sortOrder: 6 },
+        { name: 'Printmaking', isActive: true, sortOrder: 7 },
+        { name: 'Calligraphy', isActive: true, sortOrder: 8 },
       ]);
     } finally {
       setIsLoadingTypes(false);
     }
   };
 
-  const handleToggleSubRole = (subRoleId: string) => {
+  const handleToggleSubRole = (subRole: string) => {
     setSelectedSubRoles((prev) =>
-      prev.includes(subRoleId)
-        ? prev.filter((id) => id !== subRoleId)
-        : [...prev, subRoleId]
+      prev.includes(subRole)
+        ? prev.filter((s) => s !== subRole)
+        : [...prev, subRole]
     );
   };
 
@@ -151,20 +149,13 @@ export const UserPreferenceSetup = () => {
   const handleComplete = async () => {
     if (!selectedRole) return;
 
-    // Map lowercase role IDs to the User model's exact enum values
-    const roleMap: Record<string, string> = {
-      'artist': 'Artist',
-      'art_lover': 'Art Lover',
-      'business': 'Business',
-      'gallery': 'Gallery',
-    };
-
     setIsSubmitting(true);
     try {
       await api.put('/users/me', {
-        role: roleMap[selectedRole] || selectedRole,
+        role: selectedRole,
         subRoles: selectedSubRoles,
         interests: selectedInterests,
+        showMatureContent: showMatureContent,
       });
 
       // Clear the flag from SecureStore and Redux
@@ -186,7 +177,7 @@ export const UserPreferenceSetup = () => {
       Alert.alert('Select a Role', 'Please select your primary role to continue.');
       return;
     }
-    if (step < 3) {
+    if (step < TOTAL_STEPS) {
       setStep(step + 1);
     }
   };
@@ -202,12 +193,21 @@ export const UserPreferenceSetup = () => {
     dispatch(clearNeedsUserOnboarding());
   };
 
-  const renderRoleIcon = (role: typeof ROLES[number]) => {
+  const renderRoleIcon = (role: typeof ROLES[number], isSelected: boolean) => {
+    const color = isSelected ? '#FFFFFF' : lightColors.accent;
     if (role.iconFamily === 'MaterialCommunityIcons') {
-      return <MaterialCommunityIcons name={role.icon as any} size={28} color={selectedRole === role.id ? '#FFFFFF' : lightColors.accent} />;
+      return <MaterialCommunityIcons name={role.icon as any} size={28} color={color} />;
     }
-    return <Feather name={role.icon as any} size={28} color={selectedRole === role.id ? '#FFFFFF' : lightColors.accent} />;
+    return <Feather name={role.icon as any} size={28} color={color} />;
   };
+
+  // Derived data for step 3
+  const visibleTypes = artworkTypes.slice(0, VISIBLE_INTEREST_LIMIT);
+  const overflowTypes = artworkTypes.slice(VISIBLE_INTEREST_LIMIT);
+  const hasOverflow = artworkTypes.length > VISIBLE_INTEREST_LIMIT;
+
+  // Check if any overflow item is selected (to highlight Other chip)
+  const hasOverflowSelection = overflowTypes.some((t) => selectedInterests.includes(t.name));
 
   // Step 1: Role selection
   const renderStep1 = () => (
@@ -221,12 +221,19 @@ export const UserPreferenceSetup = () => {
           return (
             <TouchableOpacity
               key={role.id}
-              style={[styles.roleCard, isSelected && styles.roleCardSelected]}
-              onPress={() => setSelectedRole(role.id)}
+              style={[
+                styles.roleCard,
+                isSelected && styles.roleCardSelected,
+              ]}
+              onPress={() => {
+                setSelectedRole(role.id);
+                // Reset sub-roles when role changes
+                setSelectedSubRoles([]);
+              }}
               activeOpacity={0.7}
             >
               <View style={[styles.roleIconWrap, isSelected && styles.roleIconWrapSelected]}>
-                {renderRoleIcon(role)}
+                {renderRoleIcon(role, isSelected)}
               </View>
               <Text style={[styles.roleLabel, isSelected && styles.roleLabelSelected]}>
                 {role.label}
@@ -241,33 +248,33 @@ export const UserPreferenceSetup = () => {
     </View>
   );
 
-  // Step 2: Sub-role selection
+  // Step 2: Sub-role selection (About You)
   const renderStep2 = () => {
     const subRoles = selectedRole ? SUB_ROLES[selectedRole] || [] : [];
-    const roleLabel = ROLES.find((r) => r.id === selectedRole)?.label || 'Your Role';
+    const roleLabel = selectedRole || 'Your Role';
 
     return (
       <View style={styles.stepContent}>
-        <Text style={styles.stepTitle}>Tell us more about you</Text>
+        <Text style={styles.stepTitle}>About You</Text>
         <Text style={styles.stepSubtitle}>
           Select categories that describe you as {roleLabel === 'Art Lover' ? 'an' : 'a'} {roleLabel}
         </Text>
 
         <View style={styles.chipContainer}>
           {subRoles.map((subRole) => {
-            const isSelected = selectedSubRoles.includes(subRole.id);
+            const isSelected = selectedSubRoles.includes(subRole);
             return (
               <TouchableOpacity
-                key={subRole.id}
+                key={subRole}
                 style={[styles.chip, isSelected && styles.chipSelected]}
-                onPress={() => handleToggleSubRole(subRole.id)}
+                onPress={() => handleToggleSubRole(subRole)}
                 activeOpacity={0.7}
               >
                 {isSelected && (
                   <Feather name="check" size={14} color="#FFFFFF" style={styles.chipCheckIcon} />
                 )}
                 <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                  {subRole.label}
+                  {subRole}
                 </Text>
               </TouchableOpacity>
             );
@@ -282,7 +289,7 @@ export const UserPreferenceSetup = () => {
     <View style={styles.stepContent}>
       <Text style={styles.stepTitle}>What interests you?</Text>
       <Text style={styles.stepSubtitle}>
-        Select up to {MAX_INTERESTS} art types you are interested in ({selectedInterests.length}/{MAX_INTERESTS})
+        Select up to 5 interests ({selectedInterests.length}/{MAX_INTERESTS})
       </Text>
 
       {isLoadingTypes ? (
@@ -292,7 +299,7 @@ export const UserPreferenceSetup = () => {
         </View>
       ) : (
         <View style={styles.chipContainer}>
-          {artworkTypes.map((type) => {
+          {visibleTypes.map((type) => {
             const isSelected = selectedInterests.includes(type.name);
             const isDisabled = !isSelected && selectedInterests.length >= MAX_INTERESTS;
             return (
@@ -322,8 +329,151 @@ export const UserPreferenceSetup = () => {
               </TouchableOpacity>
             );
           })}
+
+          {/* "Other" chip that opens modal with overflow items */}
+          {hasOverflow && (
+            <TouchableOpacity
+              key="__other__"
+              style={[
+                styles.chip,
+                hasOverflowSelection && styles.chipSelected,
+              ]}
+              onPress={() => setShowOtherModal(true)}
+              activeOpacity={0.7}
+            >
+              {hasOverflowSelection && (
+                <Feather name="check" size={14} color="#FFFFFF" style={styles.chipCheckIcon} />
+              )}
+              <Text
+                style={[
+                  styles.chipText,
+                  hasOverflowSelection && styles.chipTextSelected,
+                ]}
+              >
+                Other
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
+
+      {/* Bottom sheet modal for overflow types */}
+      <Modal
+        visible={showOtherModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowOtherModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>More Art Types</Text>
+              <TouchableOpacity onPress={() => setShowOtherModal(false)} activeOpacity={0.7}>
+                <Feather name="x" size={24} color={lightColors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <View style={styles.chipContainer}>
+                {overflowTypes.map((type) => {
+                  const isSelected = selectedInterests.includes(type.name);
+                  const isDisabled = !isSelected && selectedInterests.length >= MAX_INTERESTS;
+                  return (
+                    <TouchableOpacity
+                      key={type.name}
+                      style={[
+                        styles.chip,
+                        isSelected && styles.chipSelected,
+                        isDisabled && styles.chipDisabled,
+                      ]}
+                      onPress={() => handleToggleInterest(type.name)}
+                      activeOpacity={isDisabled ? 1 : 0.7}
+                      disabled={isDisabled}
+                    >
+                      {isSelected && (
+                        <Feather name="check" size={14} color="#FFFFFF" style={styles.chipCheckIcon} />
+                      )}
+                      <Text
+                        style={[
+                          styles.chipText,
+                          isSelected && styles.chipTextSelected,
+                          isDisabled && styles.chipTextDisabled,
+                        ]}
+                      >
+                        {type.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalDoneButton}
+              onPress={() => setShowOtherModal(false)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.modalDoneButtonText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+
+  // Step 4: Mature Content Preference
+  const renderStep4 = () => (
+    <View style={styles.stepContent}>
+      <Text style={styles.stepTitle}>Content Preferences</Text>
+      <Text style={styles.stepSubtitle}>
+        Art sometimes contains artistic nudity, explicit themes, and mature creative content. We
+        respect all forms of artistic expression. If you prefer not to see mature content, you can
+        disable it.
+      </Text>
+
+      <View style={styles.matureOptionsContainer}>
+        <TouchableOpacity
+          style={[styles.matureCard, showMatureContent && styles.matureCardSelected]}
+          onPress={() => setShowMatureContent(true)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.matureCardRow}>
+            <View style={styles.matureCardContent}>
+              <Text style={[styles.matureCardLabel, showMatureContent && styles.matureCardLabelSelected]}>
+                Show Mature Art
+              </Text>
+              <Text style={[styles.matureCardDesc, showMatureContent && styles.matureCardDescSelected]}>
+                All artistic content will be visible
+              </Text>
+            </View>
+            {showMatureContent && (
+              <Feather name="check-circle" size={24} color="#FFFFFF" />
+            )}
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.matureCard, !showMatureContent && styles.matureCardSelected]}
+          onPress={() => setShowMatureContent(false)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.matureCardRow}>
+            <View style={styles.matureCardContent}>
+              <Text style={[styles.matureCardLabel, !showMatureContent && styles.matureCardLabelSelected]}>
+                Hide Mature Art
+              </Text>
+              <Text style={[styles.matureCardDesc, !showMatureContent && styles.matureCardDescSelected]}>
+                Mature content will be filtered out
+              </Text>
+            </View>
+            {!showMatureContent && (
+              <Feather name="check-circle" size={24} color="#FFFFFF" />
+            )}
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.matureFooter}>
+        You can change this anytime later from Settings.
+      </Text>
     </View>
   );
 
@@ -331,9 +481,9 @@ export const UserPreferenceSetup = () => {
     <SafeAreaView style={styles.container}>
       {/* Header with progress */}
       <View style={styles.header}>
-        <Text style={styles.progressText}>Step {step} of 3</Text>
+        <Text style={styles.progressText}>Step {step} of {TOTAL_STEPS}</Text>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${(step / 3) * 100}%` }]} />
+          <View style={[styles.progressFill, { width: `${(step / TOTAL_STEPS) * 100}%` }]} />
         </View>
       </View>
 
@@ -347,6 +497,7 @@ export const UserPreferenceSetup = () => {
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
+        {step === 4 && renderStep4()}
       </ScrollView>
 
       {/* Bottom navigation */}
@@ -360,7 +511,7 @@ export const UserPreferenceSetup = () => {
           <View style={styles.backButtonPlaceholder} />
         )}
 
-        {step < 3 ? (
+        {step < TOTAL_STEPS ? (
           <TouchableOpacity
             style={[styles.nextButton, !selectedRole && step === 1 && styles.nextButtonDisabled]}
             onPress={handleNext}
@@ -465,6 +616,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: lightColors.border,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   roleCardSelected: {
     backgroundColor: lightColors.accent,
@@ -549,6 +711,107 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 14,
     color: lightColors.textSecondary,
+  },
+
+  // Mature content (Step 4)
+  matureOptionsContainer: {
+    gap: 14,
+  },
+  matureCard: {
+    backgroundColor: lightColors.surface,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1.5,
+    borderColor: lightColors.border,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  matureCardSelected: {
+    backgroundColor: lightColors.accent,
+    borderColor: lightColors.accent,
+  },
+  matureCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  matureCardContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  matureCardLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: lightColors.textPrimary,
+    marginBottom: 4,
+  },
+  matureCardLabelSelected: {
+    color: '#FFFFFF',
+  },
+  matureCardDesc: {
+    fontSize: 13,
+    color: lightColors.textSecondary,
+    lineHeight: 18,
+  },
+  matureCardDescSelected: {
+    color: 'rgba(255,255,255,0.8)',
+  },
+  matureFooter: {
+    marginTop: 20,
+    fontSize: 13,
+    color: lightColors.textSecondary,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+
+  // Modal styles (bottom sheet for overflow interests)
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: lightColors.overlay,
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: lightColors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 34,
+    maxHeight: '60%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: lightColors.textPrimary,
+  },
+  modalScroll: {
+    marginBottom: 16,
+  },
+  modalDoneButton: {
+    backgroundColor: lightColors.accent,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalDoneButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 
   // Bottom nav
