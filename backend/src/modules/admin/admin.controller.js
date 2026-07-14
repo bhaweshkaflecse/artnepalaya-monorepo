@@ -273,12 +273,17 @@ export const createArtworkType = async (req, res, next) => {
     if (!name) {
       return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'name is required' } });
     }
-    const effectiveSortOrder = sortOrder || 0;
-    const existingOrder = await ArtworkType.findOne({ sortOrder: effectiveSortOrder });
-    if (existingOrder) {
-      return res.status(409).json({ success: false, error: { code: 'DUPLICATE', message: 'Sort Order must be unique. Another artwork type already uses this value.' } });
+    // Only check sortOrder uniqueness if explicitly provided (not undefined/null).
+    // If not provided, the schema default (0) applies without uniqueness enforcement.
+    if (sortOrder !== undefined && sortOrder !== null) {
+      const existingOrder = await ArtworkType.findOne({ sortOrder });
+      if (existingOrder) {
+        return res.status(409).json({ success: false, error: { code: 'DUPLICATE', message: 'Sort Order must be unique. Another artwork type already uses this value.' } });
+      }
     }
-    const artworkType = await ArtworkType.create({ name, sortOrder: effectiveSortOrder });
+    const createFields = { name };
+    if (sortOrder !== undefined && sortOrder !== null) createFields.sortOrder = sortOrder;
+    const artworkType = await ArtworkType.create(createFields);
     res.status(201).json({ success: true, data: artworkType });
   } catch (err) {
     if (err.code === 11000) {
@@ -297,9 +302,12 @@ export const updateArtworkType = async (req, res, next) => {
         return res.status(409).json({ success: false, error: { code: 'DUPLICATE', message: 'Sort Order must be unique. Another artwork type already uses this value.' } });
       }
     }
+    const updateFields = {};
+    if (name !== undefined) updateFields.name = name;
+    if (sortOrder !== undefined && sortOrder !== null) updateFields.sortOrder = sortOrder;
     const artworkType = await ArtworkType.findByIdAndUpdate(
       req.params.id,
-      { $set: { name, sortOrder } },
+      { $set: updateFields },
       { new: true, runValidators: true }
     );
     if (!artworkType) {
