@@ -51,7 +51,6 @@ router.get('/p/:postId', async (req, res) => {
     const ogImage = post.media && post.media.length > 0 ? post.media[0].url : '';
     const ogUrl = `https://app.artnepalaya.com/p/${postId}`;
     const deepLink = `artnepalaya://p/${postId}`;
-    const universalLink = `https://app.artnepalaya.com/p/${postId}`;
     const likesCount = post.likesCount || 0;
 
     const html = `<!DOCTYPE html>
@@ -225,6 +224,11 @@ router.get('/p/:postId', async (req, res) => {
     .store-btn:hover { opacity: 0.85; }
     .store-btn-play { background: #1DB954; }
     .store-btn-apple { background: #333333; }
+    .store-btn-disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
     .open-app-btn {
       display: inline-flex;
       align-items: center;
@@ -278,20 +282,19 @@ router.get('/p/:postId', async (req, res) => {
       <div class="store-buttons">
         <a href="${escapeHtml(deepLink)}" class="open-app-btn">Open in App</a>
         <a href="https://play.google.com/store/apps/details?id=com.artnepalaya.mobile" class="store-btn store-btn-play">Get on Google Play</a>
-        <!-- TODO: Replace id000000000 with the real App Store ID before production launch -->
-        <a href="https://apps.apple.com/app/art-nepalaya/id000000000" class="store-btn store-btn-apple">Download on App Store</a>
+        <span class="store-btn store-btn-apple store-btn-disabled">Coming Soon to iOS</span>
       </div>
     </div>
   </div>
 
   <script>
     // Attempt deep link redirect for users who have the app installed.
-    // Strategy: Try custom scheme first, then fall back to Android App Links
-    // universal link (https://app.artnepalaya.com/p/{postId}) which Android
-    // intercepts if the app is installed and verified via assetlinks.json.
+    // Strategy: Try custom scheme via hidden iframe on all platforms.
+    // On Android only: if the app doesn't open, redirect to Play Store after 1.5s.
+    // On desktop/iOS: do nothing after iframe attempt (user clicks buttons manually).
     (function() {
       var deepLink = ${JSON.stringify(deepLink)};
-      var universalLink = ${JSON.stringify(universalLink)};
+      var isAndroid = /android/i.test(navigator.userAgent);
       var timeout;
 
       // Try to open the app via custom scheme
@@ -300,19 +303,23 @@ router.get('/p/:postId', async (req, res) => {
       iframe.src = deepLink;
       document.body.appendChild(iframe);
 
-      // After a short delay, try the universal link as a fallback for Android App Links
-      timeout = setTimeout(function() {
-        document.body.removeChild(iframe);
-        // Navigate to the universal link which Android can intercept via App Links
-        window.location.href = universalLink;
-      }, 1500);
+      // On Android, redirect to Play Store if the app didn't intercept
+      if (isAndroid) {
+        timeout = setTimeout(function() {
+          document.body.removeChild(iframe);
+          window.location.href = 'https://play.google.com/store/apps/details?id=com.artnepalaya.mobile';
+        }, 1500);
 
-      // If the page loses visibility (app opened), cancel the fallback
-      document.addEventListener('visibilitychange', function() {
-        if (document.hidden) {
-          clearTimeout(timeout);
-        }
-      });
+        // If the page loses visibility (app opened), cancel the fallback
+        document.addEventListener('visibilitychange', function() {
+          if (document.hidden) {
+            clearTimeout(timeout);
+          }
+        });
+      } else {
+        // Non-Android: just clean up the iframe after a short delay
+        setTimeout(function() { document.body.removeChild(iframe); }, 2000);
+      }
     })();
   </script>
 </body>
@@ -444,6 +451,11 @@ router.get('/u/:username', async (req, res) => {
     .store-btn:hover { opacity: 0.85; }
     .store-btn-play { background: #1DB954; }
     .store-btn-apple { background: #333333; }
+    .store-btn-disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -456,7 +468,7 @@ router.get('/u/:username', async (req, res) => {
     <div class="store-buttons">
       <a href="${escapeHtml(deepLink)}" class="open-app-btn">Open in App</a>
       <a href="https://play.google.com/store/apps/details?id=com.artnepalaya.mobile" class="store-btn store-btn-play">Get on Google Play</a>
-      <a href="https://apps.apple.com/app/art-nepalaya/id000000000" class="store-btn store-btn-apple">Download on App Store</a>
+      <span class="store-btn store-btn-apple store-btn-disabled">Coming Soon to iOS</span>
     </div>
   </div>
 
@@ -610,6 +622,11 @@ function buildGenericPage(title, description, deepLink) {
     .store-btn:hover { opacity: 0.85; }
     .store-btn-play { background: #1DB954; }
     .store-btn-apple { background: #333333; }
+    .store-btn-disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -621,7 +638,7 @@ function buildGenericPage(title, description, deepLink) {
     <div class="store-buttons">
       ${deepLink ? `<a href="${escapeHtml(deepLink)}" class="open-app-btn">Open in App</a>` : ''}
       <a href="https://play.google.com/store/apps/details?id=com.artnepalaya.mobile" class="store-btn store-btn-play">Get on Google Play</a>
-      <a href="https://apps.apple.com/app/art-nepalaya/id000000000" class="store-btn store-btn-apple">Download on App Store</a>
+      <span class="store-btn store-btn-apple store-btn-disabled">Coming Soon to iOS</span>
     </div>
   </div>
 

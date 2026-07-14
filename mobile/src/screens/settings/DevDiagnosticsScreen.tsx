@@ -123,7 +123,7 @@ export const DevDiagnosticsScreen = () => {
       `Email: ${user?.email || 'N/A'}`,
       `Username: ${user?.username || 'N/A'}`,
       `Is Guest: ${isGuest}`,
-      `Access Token (first 20): ${accessToken ? accessToken.substring(0, 20) + '...' : 'N/A'}`,
+      `Access Token: ${accessToken ? '[PRESENT]' : '[ABSENT]'}`,
       '',
       '--- Push Notifications ---',
       `Permission: ${notificationPermission}`,
@@ -191,8 +191,8 @@ export const DevDiagnosticsScreen = () => {
           <DiagRow label="Username" value={user?.username || 'N/A'} />
           <DiagRow label="Is Guest" value={String(isGuest)} />
           <DiagRow
-            label="Access Token (first 20)"
-            value={accessToken ? accessToken.substring(0, 20) + '...' : 'N/A'}
+            label="Access Token"
+            value={accessToken ? '[PRESENT]' : '[ABSENT]'}
           />
         </View>
 
