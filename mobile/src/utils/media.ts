@@ -62,6 +62,10 @@ export function getVideoThumbnailUrl(videoUrl: string): string {
  * Adds q_auto (automatic quality) and f_auto (automatic format selection)
  * transformations for better delivery performance.
  *
+ * If the URL already contains transformations (detected by the segment after
+ * /upload/ matching a transform pattern like c_fill,w_400), returns it unchanged
+ * to avoid double-stacking transforms which produces invalid URLs.
+ *
  * Example:
  *   Input:  https://res.cloudinary.com/demo/video/upload/v123/sample.mp4
  *   Output: https://res.cloudinary.com/demo/video/upload/q_auto,f_auto/v123/sample.mp4
@@ -78,8 +82,17 @@ export function getOptimizedVideoUrl(videoUrl: string): string {
     return videoUrl;
   }
 
-  const beforeUpload = videoUrl.substring(0, uploadIdx + uploadSegment.length);
   const afterUpload = videoUrl.substring(uploadIdx + uploadSegment.length);
+
+  // Detect if transforms already exist after /upload/.
+  // Cloudinary transforms look like: c_fill,w_400/... or w_750,q_auto/...
+  // Version segments look like: v1234567890/...
+  // If the first path segment matches a transform pattern, skip optimization.
+  if (hasExistingTransforms(afterUpload)) {
+    return videoUrl;
+  }
+
+  const beforeUpload = videoUrl.substring(0, uploadIdx + uploadSegment.length);
 
   return `${beforeUpload}q_auto,f_auto/${afterUpload}`;
 }
@@ -88,6 +101,10 @@ export function getOptimizedVideoUrl(videoUrl: string): string {
  * Transforms a Cloudinary image URL to add width, quality, and format optimizations.
  * Inserts w_750,q_auto,f_auto transformations for optimized feed delivery.
  * Keeps the original file extension.
+ *
+ * If the URL already contains transformations (detected by the segment after
+ * /upload/ matching a transform pattern like c_fill,w_400), returns it unchanged
+ * to avoid double-stacking transforms which produces invalid URLs.
  *
  * Example:
  *   Input:  https://res.cloudinary.com/demo/image/upload/v123/sample.jpg
@@ -105,8 +122,49 @@ export function getOptimizedImageUrl(imageUrl: string): string {
     return imageUrl;
   }
 
-  const beforeUpload = imageUrl.substring(0, uploadIdx + uploadSegment.length);
   const afterUpload = imageUrl.substring(uploadIdx + uploadSegment.length);
 
+  // Detect if transforms already exist after /upload/.
+  // Cloudinary transforms look like: c_fill,w_400/... or w_750,q_auto/...
+  // Version segments look like: v1234567890/...
+  // If the first path segment matches a transform pattern, skip optimization.
+  if (hasExistingTransforms(afterUpload)) {
+    return imageUrl;
+  }
+
+  const beforeUpload = imageUrl.substring(0, uploadIdx + uploadSegment.length);
+
   return `${beforeUpload}w_750,q_auto,f_auto/${afterUpload}`;
+}
+
+/**
+ * Detects whether a Cloudinary URL path (the part after /upload/) already
+ * contains transformation parameters.
+ *
+ * Cloudinary transforms are key_value pairs like c_fill, w_400, q_auto, f_auto.
+ * They follow the pattern: one or more lowercase letters, underscore, then value.
+ * Version strings (v followed by digits) are NOT transforms.
+ *
+ * Examples of paths WITH transforms:
+ *   "c_fill,w_400/v123/file.jpg"  -> true
+ *   "w_750,q_auto,f_auto/v123/file.jpg" -> true
+ *
+ * Examples of paths WITHOUT transforms:
+ *   "v123/file.jpg" -> false
+ *   "artnepalaya/posts/file.jpg" -> false
+ */
+function hasExistingTransforms(afterUpload: string): boolean {
+  // Get the first path segment (before the first /)
+  const firstSlash = afterUpload.indexOf('/');
+  const firstSegment = firstSlash === -1 ? afterUpload : afterUpload.substring(0, firstSlash);
+
+  // Skip version-only segments (v followed by digits)
+  if (/^v\d+$/.test(firstSegment)) {
+    return false;
+  }
+
+  // Cloudinary transform pattern: starts with a letter sequence followed by underscore
+  // e.g., c_fill, w_400, q_auto, f_auto, so_0, etc.
+  // A segment is a transform if it matches: letter(s)_value (possibly comma-separated)
+  return /^[a-z][a-z0-9]*_[^/]+$/.test(firstSegment);
 }

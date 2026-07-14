@@ -195,14 +195,23 @@ export const LoginScreen = () => {
       }
     } catch (error: any) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        // User cancelled
+        // User cancelled - no action needed
       } else if (error.code === statusCodes.IN_PROGRESS) {
         // Sign in already in progress
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         Alert.alert('Error', 'Google Play Services are not available on this device.');
       } else {
-        Alert.alert('Sign-In Failed', 'Google authentication encountered an error. Please try again.');
-        console.error('[GoogleAuth] Error:', error);
+        // Log detailed error information for debugging sign-in failures
+        // (SHA fingerprint mismatch, OAuth config issues, etc.)
+        console.error('[GoogleAuth] Sign-In Error Details:', {
+          code: error.code,
+          message: error.message,
+          domain: error.domain || null,
+          nativeStackAndroid: error.nativeStackAndroid || null,
+          userInfo: error.userInfo || null,
+        });
+        console.error('[GoogleAuth] Full error object:', JSON.stringify(error, null, 2));
+        console.error('[GoogleAuth] WebClientId configured:', GOOGLE_WEB_CLIENT_ID ? 'yes (set)' : 'NO - missing!');
       }
       setIsLoading(false);
     }

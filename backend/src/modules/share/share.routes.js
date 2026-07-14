@@ -44,8 +44,11 @@ router.get('/p/:postId', async (req, res) => {
     const ogDescription = caption
       ? `${caption.substring(0, 200)}${caption.length > 200 ? '...' : ''}`
       : `Check out this artwork by ${authorFullName} on Art Nepalaya`;
+    // Use the raw media URL for og:image - do not add optimization transforms
+    // because old Cloudinary URLs may already have transforms embedded,
+    // and double-stacking produces invalid URLs.
     const ogImage = post.media && post.media.length > 0 ? post.media[0].url : '';
-    const ogUrl = `https://api.artnepalaya.com/p/${postId}`;
+    const ogUrl = `https://artnepalaya.com/p/${postId}`;
     const deepLink = `artnepalaya://p/${postId}`;
     const likesCount = post.likesCount || 0;
 
@@ -291,7 +294,7 @@ router.get('/p/:postId', async (req, res) => {
 router.get('/u/:username', async (req, res) => {
   const { username } = req.params;
   const deepLink = `artnepalaya://u/${username}`;
-  const ogUrl = `https://api.artnepalaya.com/u/${username}`;
+  const ogUrl = `https://artnepalaya.com/u/${username}`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">

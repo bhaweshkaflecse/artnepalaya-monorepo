@@ -2,7 +2,7 @@
 // Centralized Share URL Service for generating deep-linkable URLs
 
 const SHARE_BASE_URL =
-  process.env.EXPO_PUBLIC_SHARE_BASE_URL || 'https://api.artnepalaya.com';
+  process.env.EXPO_PUBLIC_SHARE_BASE_URL || 'https://artnepalaya.com';
 
 /**
  * Centralized ShareService for generating all shareable URLs.
