@@ -1,3 +1,16 @@
+/**
+ * Media Utility Functions - Cloudinary URL Optimization
+ *
+ * Recommended usage pattern:
+ * - Feed/grid images: use getOptimizedImageUrl (adds w_750, q_auto, f_auto)
+ * - Video thumbnails: use getVideoThumbnailUrl (extracts still frame as jpg)
+ * - Video playback: use getOptimizedVideoUrl (adds q_auto, f_auto)
+ * - OG/share images: use raw URL (no optimization - crawlers need the original)
+ * - Avatars: use raw URL (already small, no optimization needed)
+ *
+ * All transform functions include a hasExistingTransforms guard to prevent
+ * double-stacking Cloudinary transforms on URLs that are already optimized.
+ */
 import { PostMedia } from '../services/post.service';
 
 /**

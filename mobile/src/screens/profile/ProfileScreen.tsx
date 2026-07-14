@@ -20,7 +20,7 @@ import { lightColors } from '../../theme/colors';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { fetchProfile, fetchMyPosts, fetchSavedPosts } from '../../store/slices/userSlice';
 import { selectIsGuest, selectGuestUsername, logout } from '../../store/slices/authSlice';
-import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getVideoThumbnailUrl, getOptimizedImageUrl } from '../../utils/media';
 import { userService } from '../../services/user.service';
 
 interface UserMetrics {
@@ -144,9 +144,10 @@ export const ProfileScreen = () => {
 
   const renderPostThumbnail = ({ item }: { item: any }) => {
     const isVideo = item.media?.[0]?.type === 'video';
-    const imageUrl = isVideo && item.media[0]?.url
+    const rawUrl = isVideo && item.media[0]?.url
       ? getVideoThumbnailUrl(item.media[0].url)
       : getPrimaryImageUrl(item.media || []);
+    const imageUrl = rawUrl && !isVideo ? getOptimizedImageUrl(rawUrl) : rawUrl;
     return (
       <TouchableOpacity
         style={styles.thumbnailContainer}

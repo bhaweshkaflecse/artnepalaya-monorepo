@@ -20,7 +20,7 @@ import { AppStackParamList } from '../../navigation/AppStack';
 import { lightColors } from '../../theme/colors';
 import { userService, User } from '../../services/user.service';
 import { Post } from '../../services/post.service';
-import { getPrimaryImageUrl, getVideoThumbnailUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getVideoThumbnailUrl, getOptimizedImageUrl } from '../../utils/media';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice';
 
@@ -207,9 +207,10 @@ export const UserProfileScreen = () => {
 
   const renderPostThumbnail = ({ item }: { item: Post }) => {
     const isVideo = item.media?.[0]?.type === 'video';
-    const imageUrl = isVideo && item.media[0]?.url
+    const rawUrl = isVideo && item.media[0]?.url
       ? getVideoThumbnailUrl(item.media[0].url)
       : getPrimaryImageUrl(item.media || []);
+    const imageUrl = rawUrl && !isVideo ? getOptimizedImageUrl(rawUrl) : rawUrl;
     return (
       <TouchableOpacity
         style={styles.thumbnailContainer}

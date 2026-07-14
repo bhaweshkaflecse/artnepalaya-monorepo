@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { darkColors } from '../../theme/colors';
 import { Post } from '../../services/post.service';
-import { getPrimaryImageUrl } from '../../utils/media';
+import { getPrimaryImageUrl, getOptimizedImageUrl } from '../../utils/media';
 import { Feather } from '@expo/vector-icons';
 import { FeaturedSkeleton } from '../common/SkeletonLoader';
 import { useAppSelector } from '../../store';
@@ -47,7 +47,7 @@ export const FeaturedSection: React.FC<FeaturedProps> = ({ posts, loading }) => 
       activeOpacity={0.8}
       onPress={() => navigation.navigate('PostDetail', { postId: item._id })}
     >
-      <Image source={{ uri: getPrimaryImageUrl(item.media) }} style={styles.image} />
+      <Image source={{ uri: getOptimizedImageUrl(getPrimaryImageUrl(item.media) || '') }} style={styles.image} />
       <View style={styles.overlay}>
         <TouchableOpacity
           activeOpacity={0.7}
