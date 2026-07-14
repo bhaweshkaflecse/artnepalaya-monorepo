@@ -643,6 +643,18 @@ export const PostDetailScreen = () => {
           </TouchableOpacity>
         )}
 
+        {/* Artwork Type */}
+        {post.artworkType && post.artworkType.length > 0 && (
+          <View style={styles.artworkTypeContainer}>
+            {post.artworkType.map((type: string) => (
+              <View key={type} style={styles.artworkTypeChip}>
+                <Feather name="tag" size={10} color="#9CA3AF" />
+                <Text style={styles.artworkTypeText}>{type}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
         {/* Content Transparency Badges */}
         {(((post as any).isAIGenerated === true || post.isHumanMade === false) || (post as any).isOriginalContent === true || (post as any).isNsfw === true) && (
           <View style={styles.badgesContainer}>
@@ -962,6 +974,27 @@ const styles = StyleSheet.create({
     gap: 6,
     flexWrap: 'wrap',
     alignItems: 'center',
+  },
+  artworkTypeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 12,
+    paddingBottom: 4,
+    gap: 6,
+  },
+  artworkTypeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 4,
+  },
+  artworkTypeText: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontWeight: '500',
   },
   subtleLabel: {
     fontSize: 12,
