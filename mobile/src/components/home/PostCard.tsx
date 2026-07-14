@@ -23,6 +23,7 @@ import { darkColors } from '../../theme/colors';
 import { Post, postService } from '../../services/post.service';
 import { getPrimaryImageUrl, getVideoThumbnailUrl, getOptimizedImageUrl } from '../../utils/media';
 import { ReportModal } from '../common/ReportModal';
+import { ShareService } from '../../utils/urls';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice';
 import { toggleLike, toggleSave, removePost as removeFeedPost } from '../../store/slices/feedSlice';
@@ -345,7 +346,7 @@ const PostCardInner: React.FC<PostCardProps> = ({ post }) => {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Check out this artwork on ArtNepalaya!\nhttps://artnepalaya.com/post/${post._id}`,
+        message: `Check out this artwork on ArtNepalaya!\n${ShareService.generatePostUrl(post._id)}`,
       });
     } catch (error) {
       // Silently handle share cancellation

@@ -25,6 +25,7 @@ import { darkColors } from '../../theme/colors';
 import { postService, Post } from '../../services/post.service';
 import { getPrimaryImageUrl, getVideoThumbnailUrl, getOptimizedImageUrl } from '../../utils/media';
 import { ReportModal } from '../../components/common/ReportModal';
+import { ShareService } from '../../utils/urls';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { selectIsGuest, selectUser, logout } from '../../store/slices/authSlice';
 import { toggleLike, toggleSave, removePost as removeFeedPost } from '../../store/slices/feedSlice';
@@ -285,7 +286,7 @@ export const PostDetailScreen = () => {
     if (!post) return;
     try {
       await Share.share({
-        message: `Check out this artwork by ${post.authorId.username} on Artnepalaya!`,
+        message: `Check out this artwork by ${post.authorId.username} on Artnepalaya!\n${ShareService.generatePostUrl(post._id)}`,
       });
     } catch (_e) {
       // Share cancelled

@@ -1,32 +1,68 @@
 // src/utils/urls.ts
-// Share URL helper functions for generating deep-linkable URLs
+// Centralized Share URL Service for generating deep-linkable URLs
 
-const APP_URL = process.env.EXPO_PUBLIC_APP_URL || 'https://artnepalaya.com';
+const SHARE_BASE_URL =
+  process.env.EXPO_PUBLIC_SHARE_BASE_URL || 'https://api.artnepalaya.com';
 
 /**
- * Build a shareable URL for a specific post.
+ * Centralized ShareService for generating all shareable URLs.
+ * Uses the API domain with short path prefixes for clean, readable links.
  */
+export const ShareService = {
+  /**
+   * Generate a shareable URL for a specific post/artwork.
+   * Format: /p/<postId>
+   */
+  generatePostUrl(postId: string): string {
+    return `${SHARE_BASE_URL}/p/${postId}`;
+  },
+
+  /**
+   * Generate a shareable URL for a user profile.
+   * Format: /u/<username>
+   */
+  generateProfileUrl(username: string): string {
+    return `${SHARE_BASE_URL}/u/${username}`;
+  },
+
+  /**
+   * Generate a shareable URL for a community.
+   * Format: /c/<communityId>
+   */
+  generateCommunityUrl(communityId: string): string {
+    return `${SHARE_BASE_URL}/c/${communityId}`;
+  },
+
+  /**
+   * Generate a shareable URL for an event.
+   * Format: /e/<eventId>
+   */
+  generateEventUrl(eventId: string): string {
+    return `${SHARE_BASE_URL}/e/${eventId}`;
+  },
+
+  /**
+   * Generate a shareable URL for a marketplace item.
+   * Format: /m/<itemId>
+   */
+  generateMarketplaceUrl(itemId: string): string {
+    return `${SHARE_BASE_URL}/m/${itemId}`;
+  },
+};
+
+// Backward-compatible exports (legacy API)
 export function buildPostUrl(postId: string): string {
-  return `${APP_URL}/post/${postId}`;
+  return ShareService.generatePostUrl(postId);
 }
 
-/**
- * Build a shareable URL for an artist profile.
- */
 export function buildArtistUrl(username: string): string {
-  return `${APP_URL}/artist/${username}`;
+  return ShareService.generateProfileUrl(username);
 }
 
-/**
- * Build a shareable URL for a user's gallery.
- */
 export function buildGalleryUrl(username: string): string {
-  return `${APP_URL}/gallery/${username}`;
+  return `${SHARE_BASE_URL}/u/${username}`;
 }
 
-/**
- * Build a shareable URL for a business profile.
- */
 export function buildBusinessUrl(username: string): string {
-  return `${APP_URL}/business/${username}`;
+  return `${SHARE_BASE_URL}/u/${username}`;
 }

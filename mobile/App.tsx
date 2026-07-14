@@ -3,6 +3,7 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Linking from 'expo-linking';
 import { store } from './src/store';
 import { useAppDispatch } from './src/store';
 import { injectStore } from './src/services/api';
@@ -12,6 +13,25 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 
 // Inject the store into the API module at runtime to avoid circular dependency
 injectStore(store);
+
+// Deep linking configuration
+const linking = {
+  prefixes: [
+    Linking.createURL('/'),
+    'artnepalaya://',
+    'https://api.artnepalaya.com',
+  ],
+  config: {
+    screens: {
+      App: {
+        screens: {
+          PostDetail: 'p/:postId',
+          UserProfile: 'u/:userId',
+        },
+      },
+    },
+  },
+};
 
 /**
  * AppInitializer renders inside <Provider> so it can use hooks.
@@ -45,7 +65,7 @@ export default function App() {
   return (
     <Provider store={store}>
       <SafeAreaProvider>
-        <NavigationContainer>
+        <NavigationContainer linking={linking}>
           <AppInitializer />
         </NavigationContainer>
       </SafeAreaProvider>

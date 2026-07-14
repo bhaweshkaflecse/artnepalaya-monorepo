@@ -13,6 +13,7 @@ import tagRoutes from './modules/tags/tag.routes.js';
 // ... import other modules (tags, notifications, etc.) as needed
 import notificationRoutes from './modules/notifications/notification.routes.js';
 import communityRoutes from './modules/community/community.routes.js';
+import shareRoutes from './modules/share/share.routes.js';
 
 const app = express();
 
@@ -38,7 +39,10 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// 4. Mount Routes
+// 4. Share Landing Pages (mounted at root level for public-facing URLs)
+app.use('/', shareRoutes);
+
+// 5. Mount API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/posts', postRoutes);
@@ -49,7 +53,7 @@ app.use('/api/v1/tags', tagRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/community', communityRoutes);
 
-// 5. Global Error Handler (MUST BE DEFINED AFTER ROUTES)
+// 6. Global Error Handler (MUST BE DEFINED AFTER ROUTES)
 app.use(globalErrorHandler);
 
 export default app;

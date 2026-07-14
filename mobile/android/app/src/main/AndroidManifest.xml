@@ -31,6 +31,16 @@
         <data android:scheme="com.artnepalaya.mobile"/>
         <data android:scheme="exp+artnepalaya-mobile"/>
       </intent-filter>
+      <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="https" android:host="api.artnepalaya.com" android:pathPrefix="/p/"/>
+        <data android:scheme="https" android:host="api.artnepalaya.com" android:pathPrefix="/u/"/>
+        <data android:scheme="https" android:host="api.artnepalaya.com" android:pathPrefix="/c/"/>
+        <data android:scheme="https" android:host="api.artnepalaya.com" android:pathPrefix="/e/"/>
+        <data android:scheme="https" android:host="api.artnepalaya.com" android:pathPrefix="/m/"/>
+      </intent-filter>
     </activity>
     <activity android:name="com.facebook.react.devsupport.DevSettingsActivity" android:exported="false"/>
   </application>
