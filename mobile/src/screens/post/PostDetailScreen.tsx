@@ -504,7 +504,7 @@ export const PostDetailScreen = () => {
                           style={styles.postImage}
                           resizeMode={ResizeMode.COVER}
                           shouldPlay={shouldPlay}
-                          isMuted={true}
+                          isMuted={false}
                           onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
                             if (status.isLoaded) {
                               setIsVideoPlaying(status.isPlaying);

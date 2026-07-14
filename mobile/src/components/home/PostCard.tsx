@@ -210,7 +210,7 @@ const PostCardInner: React.FC<PostCardProps> = ({ post }) => {
                 resizeMode={ResizeMode.COVER}
                 shouldPlay={shouldPlay}
                 isLooping
-                isMuted={true}
+                isMuted={false}
                 onPlaybackStatusUpdate={(status) => {
                   if (status.isLoaded && status.durationMillis) {
                     setPlaybackProgress(status.positionMillis / status.durationMillis);
