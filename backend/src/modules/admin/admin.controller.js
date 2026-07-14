@@ -273,7 +273,12 @@ export const createArtworkType = async (req, res, next) => {
     if (!name) {
       return res.status(400).json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'name is required' } });
     }
-    const artworkType = await ArtworkType.create({ name, sortOrder: sortOrder || 0 });
+    const effectiveSortOrder = sortOrder || 0;
+    const existingOrder = await ArtworkType.findOne({ sortOrder: effectiveSortOrder });
+    if (existingOrder) {
+      return res.status(409).json({ success: false, error: { code: 'DUPLICATE', message: 'Sort Order must be unique. Another artwork type already uses this value.' } });
+    }
+    const artworkType = await ArtworkType.create({ name, sortOrder: effectiveSortOrder });
     res.status(201).json({ success: true, data: artworkType });
   } catch (err) {
     if (err.code === 11000) {
@@ -286,6 +291,12 @@ export const createArtworkType = async (req, res, next) => {
 export const updateArtworkType = async (req, res, next) => {
   try {
     const { name, sortOrder } = req.body;
+    if (sortOrder !== undefined && sortOrder !== null) {
+      const existingOrder = await ArtworkType.findOne({ sortOrder, _id: { $ne: req.params.id } });
+      if (existingOrder) {
+        return res.status(409).json({ success: false, error: { code: 'DUPLICATE', message: 'Sort Order must be unique. Another artwork type already uses this value.' } });
+      }
+    }
     const artworkType = await ArtworkType.findByIdAndUpdate(
       req.params.id,
       { $set: { name, sortOrder } },

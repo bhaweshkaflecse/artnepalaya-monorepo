@@ -1,0 +1,23 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Backend fixes: Google fullName import, cache wildcard invalidation, artwork type sortOrder uniqueness validation",
+  "status": "in_progress",
+  "steps": [
+    "In backend/src/modules/auth/auth.service.js, add fullName: payload.name to the User.create() call (line ~48-54) so that new users get their Google Display Name instead of defaulting to blank/user.",
+    "In backend/src/shared/utils/cache.js, fix the invalidateCache function to support wildcard patterns. Currently it calls redisClient.del(key) which does not support patterns like 'feed:*'. Implement a scanAndDelete approach: if the key contains '*', use redisClient.keys(key) to find all matching keys, then delete them. Import redisClient from ../../server.js as already done.",
+    "In backend/src/modules/admin/admin.controller.js, in createArtworkType and updateArtworkType handlers, add validation to reject duplicate sortOrder values. Before creating/updating, check if another ArtworkType already has the same sortOrder value (excluding the current one on update). Return a 409 with message 'Sort Order must be unique. Another artwork type already uses this value.'"
+  ],
+  "acceptance_criteria": [
+    "auth.service.js User.create includes fullName: payload.name",
+    "cache.js invalidateCache properly handles wildcard patterns using KEYS/SCAN + DEL",
+    "createArtworkType and updateArtworkType reject duplicate sortOrder values with 409 response"
+  ],
+  "verification": [
+    "Run: node --check backend/src/modules/auth/auth.service.js",
+    "Run: node --check backend/src/shared/utils/cache.js",
+    "Run: node --check backend/src/modules/admin/admin.controller.js"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

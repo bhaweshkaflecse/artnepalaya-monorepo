@@ -49,6 +49,7 @@ export const authenticateWithGoogle = async (idToken, deviceId) => {
 
     user = await User.create({
       email: payload.email,
+      fullName: payload.name,
       username,
       avatarUrl: payload.picture,
       status: 'active',

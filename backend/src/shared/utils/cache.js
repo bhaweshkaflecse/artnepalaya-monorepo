@@ -17,6 +17,16 @@ export const getOrSetCache = async (key, ttl, fetchCallback) => {
 };
 
 export const invalidateCache = async (key) => {
-  try { await redisClient.del(key); } 
-  catch (err) { console.error(`[Redis Error] del key: ${key}`, err); }
+  try {
+    if (key.includes('*')) {
+      const keys = await redisClient.keys(key);
+      if (keys.length > 0) {
+        await redisClient.del(keys);
+      }
+    } else {
+      await redisClient.del(key);
+    }
+  } catch (err) {
+    console.error(`[Redis Error] del key: ${key}`, err);
+  }
 };
