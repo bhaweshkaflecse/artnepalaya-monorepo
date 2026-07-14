@@ -9,6 +9,7 @@ import { EditProfileScreen } from '../screens/profile/EditProfileScreen';
 import { SettingsScreen } from '../screens/profile/SettingsScreen';
 import { UserProfileScreen } from '../screens/profile/UserProfileScreen';
 import { CmsPageScreen } from '../screens/settings/CmsPageScreen';
+import { DevDiagnosticsScreen } from '../screens/settings/DevDiagnosticsScreen';
 import { CreateScreen } from '../screens/create/CreateScreen';
 import { setupNotificationListeners } from '../services/pushNotification.service';
 import { connectSocket, disconnectSocket } from '../services/socket.service';
@@ -27,6 +28,7 @@ export type AppStackParamList = {
   CmsPage: { slug: string; title: string };
   UserProfile: { userId: string };
   CreatePost: undefined;
+  DevDiagnostics: undefined;
 };
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -72,6 +74,7 @@ export const AppStack = () => {
       <Stack.Screen name="CmsPage" component={CmsPageScreen} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
       <Stack.Screen name="CreatePost" component={CreateScreen} />
+      <Stack.Screen name="DevDiagnostics" component={DevDiagnosticsScreen} />
     </Stack.Navigator>
   );
 };

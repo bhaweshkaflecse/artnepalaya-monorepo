@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import { fetchProfile } from '../../store/slices/userSlice';
 
 type SettingsNavProp = NativeStackNavigationProp<{
   CmsPage: { slug: string; title: string };
+  DevDiagnostics: undefined;
 }>;
 
 const CMS_PAGES = [
@@ -44,6 +45,27 @@ export const SettingsScreen = () => {
     (profile as any)?.showMatureContent ?? true
   );
   const [showMatureModal, setShowMatureModal] = useState(false);
+
+  // Hidden dev diagnostics: 10 rapid taps on version text within 3 seconds
+  const tapCountRef = useRef(0);
+  const firstTapTimeRef = useRef<number>(0);
+
+  const handleVersionTap = () => {
+    const now = Date.now();
+    // Reset if more than 3 seconds since first tap
+    if (now - firstTapTimeRef.current > 3000) {
+      tapCountRef.current = 0;
+      firstTapTimeRef.current = now;
+    }
+    if (tapCountRef.current === 0) {
+      firstTapTimeRef.current = now;
+    }
+    tapCountRef.current += 1;
+    if (tapCountRef.current >= 10) {
+      tapCountRef.current = 0;
+      navigation.navigate('DevDiagnostics' as any);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -150,6 +172,11 @@ export const SettingsScreen = () => {
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Version - tap 10 times rapidly to open Dev Diagnostics */}
+        <TouchableOpacity onPress={handleVersionTap} activeOpacity={1}>
+          <Text style={styles.versionText}>v1.0.0</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Show Mature Content Warning Modal */}
@@ -321,5 +348,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#6B7280',
+  },
+  versionText: {
+    fontSize: 13,
+    color: lightColors.textSecondary,
+    textAlign: 'center',
+    marginTop: 24,
+    marginBottom: 16,
   },
 });

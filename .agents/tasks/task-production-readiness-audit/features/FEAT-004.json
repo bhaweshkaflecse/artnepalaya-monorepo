@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "QA/Debug Panel: Create a hidden developer/QA screen accessible only in development mode or via a hidden gesture (10 rapid taps on app version in Settings). The screen displays diagnostic information for debugging production issues.",
+  "status": "in_progress",
+  "steps": [
+    "1. Create mobile/src/screens/settings/DevDiagnosticsScreen.tsx with the following sections: App Info (version, build number from app.json, environment name), Configuration (API URL from ENV, Socket URL, Share Base URL), Auth State (logged in user email/username/id, isGuest flag, access token first 20 chars), Push Notifications (token if registered, permission status, last registration attempt result), Device Info (platform, OS version, device brand/model, screen dimensions), Backend Health (fetch /health endpoint and show status), Deep Link Test (buttons to test artnepalaya://p/test and https://app.artnepalaya.com/p/test links), Firebase/Google Sign-In (GoogleSignin configuration status, web client ID configured or not)",
+    "2. Register the screen in mobile/src/navigation/AppStack.tsx as 'DevDiagnostics' route",
+    "3. In mobile/src/screens/profile/SettingsScreen.tsx: Add a hidden trigger - when user taps the app version text 10 times rapidly, navigate to DevDiagnostics. Show the app version at the bottom of settings (e.g., 'v1.0.0') and attach the tap counter to it. Only expose this in __DEV__ mode OR after 10 rapid taps.",
+    "4. The DevDiagnosticsScreen should have a 'Copy All' button that copies all diagnostic info to clipboard for easy sharing with developers"
+  ],
+  "acceptance_criteria": [
+    "DevDiagnosticsScreen.tsx exists and shows: app version, API URL, logged in user info, push token status, device info, backend health check result",
+    "The screen is accessible via 10 rapid taps on version text in Settings",
+    "The screen is NOT visible as a normal menu item to regular users",
+    "Navigation type is properly defined in AppStack",
+    "Copy All button works to copy diagnostics to clipboard"
+  ],
+  "verification": [
+    "Read mobile/src/screens/settings/DevDiagnosticsScreen.tsx and verify all diagnostic sections are present",
+    "Read mobile/src/navigation/AppStack.tsx and verify DevDiagnostics route is registered",
+    "Read mobile/src/screens/profile/SettingsScreen.tsx and verify the hidden gesture trigger exists"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
