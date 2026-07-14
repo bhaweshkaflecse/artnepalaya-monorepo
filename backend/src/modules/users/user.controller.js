@@ -20,8 +20,7 @@ const uploadBufferToCloudinary = (buffer) => {
   });
 };
 
-const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
-const invalidIdResponse = (res) => res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Invalid user ID format' } });
+const notFoundResponse = (res) => res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'User not found' } });
 
 export const getMe = async (req, res, next) => {
   try {
@@ -50,16 +49,10 @@ export const updateMe = async (req, res, next) => {
 export const getPublicProfile = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    let user;
+    const resolvedId = await userService.resolveUserId(userId);
+    if (!resolvedId) return notFoundResponse(res);
 
-    if (isValidId(userId)) {
-      // Lookup by ObjectId
-      user = await userService.getUserProfile(userId, true);
-    } else {
-      // Fallback: treat as username (supports deep links that pass username)
-      user = await userService.getUserProfileByUsername(userId, true);
-    }
-
+    const user = await userService.getUserProfile(resolvedId, true);
     res.status(200).json({ success: true, data: user });
   } catch (err) {
     if (err.status === 404) {
@@ -71,12 +64,12 @@ export const getPublicProfile = async (req, res, next) => {
 
 export const getUserPosts = async (req, res, next) => {
   try {
-    if (!req.params.userId || !isValidId(req.params.userId)) {
-      return invalidIdResponse(res);
-    }
+    const resolvedId = await userService.resolveUserId(req.params.userId);
+    if (!resolvedId) return notFoundResponse(res);
+
     const { page, limit } = req.query; // Already parsed to Numbers by Zod
     const viewerId = req.user?.id;
-    const result = await userService.getUserPosts(req.params.userId, page, limit, viewerId);
+    const result = await userService.getUserPosts(resolvedId, page, limit, viewerId);
     
     res.status(200).json({ 
       success: true, 
@@ -136,8 +129,10 @@ export const removePushToken = async (req, res, next) => {
 // === Follow System ===
 export const followUser = async (req, res, next) => {
   try {
-    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
-    await userService.followUser(req.user.id, req.params.userId);
+    const resolvedId = await userService.resolveUserId(req.params.userId);
+    if (!resolvedId) return notFoundResponse(res);
+
+    await userService.followUser(req.user.id, resolvedId);
     res.status(200).json({ success: true, message: 'Followed successfully' });
   } catch (err) {
     if (err.status === 400) {
@@ -149,8 +144,10 @@ export const followUser = async (req, res, next) => {
 
 export const unfollowUser = async (req, res, next) => {
   try {
-    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
-    await userService.unfollowUser(req.user.id, req.params.userId);
+    const resolvedId = await userService.resolveUserId(req.params.userId);
+    if (!resolvedId) return notFoundResponse(res);
+
+    await userService.unfollowUser(req.user.id, resolvedId);
     res.status(200).json({ success: true, message: 'Unfollowed successfully' });
   } catch (err) {
     next(err);
@@ -159,10 +156,12 @@ export const unfollowUser = async (req, res, next) => {
 
 export const getFollowers = async (req, res, next) => {
   try {
-    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
+    const resolvedId = await userService.resolveUserId(req.params.userId);
+    if (!resolvedId) return notFoundResponse(res);
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    const result = await userService.getFollowers(req.params.userId, page, limit);
+    const result = await userService.getFollowers(resolvedId, page, limit);
     res.status(200).json({ success: true, data: result.data, meta: result.meta });
   } catch (err) {
     next(err);
@@ -171,10 +170,12 @@ export const getFollowers = async (req, res, next) => {
 
 export const getFollowing = async (req, res, next) => {
   try {
-    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
+    const resolvedId = await userService.resolveUserId(req.params.userId);
+    if (!resolvedId) return notFoundResponse(res);
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    const result = await userService.getFollowing(req.params.userId, page, limit);
+    const result = await userService.getFollowing(resolvedId, page, limit);
     res.status(200).json({ success: true, data: result.data, meta: result.meta });
   } catch (err) {
     next(err);
@@ -183,8 +184,10 @@ export const getFollowing = async (req, res, next) => {
 
 export const getFollowStatus = async (req, res, next) => {
   try {
-    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
-    const isFollowing = await userService.isFollowing(req.user.id, req.params.userId);
+    const resolvedId = await userService.resolveUserId(req.params.userId);
+    if (!resolvedId) return notFoundResponse(res);
+
+    const isFollowing = await userService.isFollowing(req.user.id, resolvedId);
     res.status(200).json({ success: true, data: { isFollowing } });
   } catch (err) {
     next(err);
@@ -193,8 +196,10 @@ export const getFollowStatus = async (req, res, next) => {
 
 export const getUserMetrics = async (req, res, next) => {
   try {
-    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
-    const userId = new mongoose.Types.ObjectId(req.params.userId);
+    const resolvedId = await userService.resolveUserId(req.params.userId);
+    if (!resolvedId) return notFoundResponse(res);
+
+    const userId = new mongoose.Types.ObjectId(resolvedId);
     const result = await Post.aggregate([
       { $match: { authorId: userId, deletedAt: null } },
       {

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { User } from './user.model.js';
 import { Post } from '../posts/post.model.js';
 import { Like, Save } from '../posts/post-interaction.model.js';
@@ -9,6 +10,26 @@ import { EVENTS } from '../../realtime/events.js';
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+// === Unified Identifier Resolver ===
+// Resolves a user identifier (ObjectId string or username) to a MongoDB ObjectId string.
+// Returns null if no user is found.
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+export const resolveUserId = async (identifier) => {
+  if (!identifier) return null;
+
+  if (isValidObjectId(identifier)) {
+    // Verify the user actually exists
+    const user = await User.findById(identifier).select('_id').lean();
+    return user ? user._id.toString() : null;
+  }
+
+  // Treat as username - case-insensitive lookup
+  const safeUsername = identifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const user = await User.findOne({ username: { $regex: new RegExp(`^${safeUsername}$`, 'i') } }).select('_id').lean();
+  return user ? user._id.toString() : null;
+};
 
 // === Fetch Profile ===
 export const getUserProfile = async (userId, isPublic = false) => {
