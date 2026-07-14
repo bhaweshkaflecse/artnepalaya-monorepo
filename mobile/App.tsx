@@ -19,8 +19,7 @@ const linking = {
   prefixes: [
     Linking.createURL('/'),
     'artnepalaya://',
-    'https://artnepalaya.com',
-    'https://api.artnepalaya.com',
+    'https://app.artnepalaya.com',
   ],
   config: {
     screens: {

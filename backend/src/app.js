@@ -40,6 +40,10 @@ app.get('/health', (req, res) => {
 });
 
 // 4. Android App Links verification placeholder (Digital Asset Links)
+// IMPORTANT: This endpoint must be served from app.artnepalaya.com (the domain
+// specified in AndroidManifest.xml intent-filter android:host) for Android App
+// Links verification to succeed. Ensure nginx routes /.well-known/assetlinks.json
+// requests on app.artnepalaya.com to this backend.
 app.get('/.well-known/assetlinks.json', (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.status(200).json([

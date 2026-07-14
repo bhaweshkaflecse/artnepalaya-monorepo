@@ -3,6 +3,8 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
 
+// NOTE: In production, ensure CORS_ORIGIN includes https://app.artnepalaya.com
+// (the share/deep-link domain) in addition to other allowed origins.
 const corsOptions = {
   origin: process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
