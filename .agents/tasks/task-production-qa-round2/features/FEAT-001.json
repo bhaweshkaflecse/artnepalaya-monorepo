@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Backend fixes: Google fullName import, cache wildcard invalidation, artwork type sortOrder uniqueness validation",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "In backend/src/modules/auth/auth.service.js, add fullName: payload.name to the User.create() call (line ~48-54) so that new users get their Google Display Name instead of defaulting to blank/user.",
     "In backend/src/shared/utils/cache.js, fix the invalidateCache function to support wildcard patterns. Currently it calls redisClient.del(key) which does not support patterns like 'feed:*'. Implement a scanAndDelete approach: if the key contains '*', use redisClient.keys(key) to find all matching keys, then delete them. Import redisClient from ../../server.js as already done.",
@@ -19,5 +19,5 @@
     "Run: node --check backend/src/modules/admin/admin.controller.js"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "NODE_OPTIONS env var has a broken preload path; use NODE_OPTIONS='' for node --check. All three changes verified syntactically correct."
 }
