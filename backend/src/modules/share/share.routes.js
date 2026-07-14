@@ -254,7 +254,7 @@ router.get('/p/:postId', async (req, res) => {
   <script>
     // Attempt deep link redirect for users who have the app installed
     (function() {
-      var deepLink = "${deepLink}";
+      var deepLink = ${JSON.stringify(deepLink)};
       var timeout;
 
       // Try to open the app via custom scheme
@@ -416,7 +416,7 @@ router.get('/u/:username', async (req, res) => {
 
   <script>
     (function() {
-      var deepLink = "${deepLink}";
+      var deepLink = ${JSON.stringify(deepLink)};
       var iframe = document.createElement('iframe');
       iframe.style.display = 'none';
       iframe.src = deepLink;
@@ -581,7 +581,7 @@ function buildGenericPage(title, description, deepLink) {
 
   ${deepLink ? `<script>
     (function() {
-      var deepLink = "${deepLink}";
+      var deepLink = ${JSON.stringify(deepLink)};
       var iframe = document.createElement('iframe');
       iframe.style.display = 'none';
       iframe.src = deepLink;
