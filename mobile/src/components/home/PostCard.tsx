@@ -50,6 +50,7 @@ const PostCardInner: React.FC<PostCardProps> = ({ post }) => {
   const [isFocused, setIsFocused] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isVideoMounted, setIsVideoMounted] = useState(false);
+  const [playbackProgress, setPlaybackProgress] = useState(0);
   const mediaIndexRef = useRef(0);
   const videoRef = useRef<Video>(null);
 
@@ -182,14 +183,14 @@ const PostCardInner: React.FC<PostCardProps> = ({ post }) => {
 
   const handleVideoTap = useCallback(() => {
     if (!isVideoMounted) {
-      // First tap: mount the Video component and auto-play
+      // First tap on play overlay: mount the Video component and auto-play
       setIsVideoMounted(true);
       setIsPlaying(true);
     } else {
-      // Subsequent taps: toggle play/pause
-      setIsPlaying((prev) => !prev);
+      // Video is already mounted (playing or paused): navigate to detail
+      navigation.navigate('PostDetail', { postId: post._id, initialMediaIndex: mediaIndexRef.current });
     }
-  }, [isVideoMounted]);
+  }, [isVideoMounted, navigation, post._id]);
 
   const renderMediaItem = useCallback(({ item, index }: { item: any; index: number }) => {
     const isVideo = item.type === 'video';
@@ -210,12 +211,20 @@ const PostCardInner: React.FC<PostCardProps> = ({ post }) => {
                 shouldPlay={shouldPlay}
                 isLooping
                 isMuted={true}
+                onPlaybackStatusUpdate={(status) => {
+                  if (status.isLoaded && status.durationMillis) {
+                    setPlaybackProgress(status.positionMillis / status.durationMillis);
+                  }
+                }}
               />
               {!shouldPlay && (
                 <View style={styles.videoOverlay}>
                   <Ionicons name="pause" size={48} color="rgba(255,255,255,0.85)" />
                 </View>
               )}
+              <View style={styles.progressBarContainer}>
+                <View style={[styles.progressBarFill, { width: `${playbackProgress * 100}%` }]} />
+              </View>
             </View>
           </TouchableWithoutFeedback>
         );
@@ -700,6 +709,18 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  progressBarContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  progressBarFill: {
+    height: 3,
+    backgroundColor: '#FF3B30',
   },
   actions: {
     flexDirection: 'row',
