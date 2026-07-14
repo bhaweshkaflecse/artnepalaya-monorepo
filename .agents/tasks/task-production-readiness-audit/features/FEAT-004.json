@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "QA/Debug Panel: Create a hidden developer/QA screen accessible only in development mode or via a hidden gesture (10 rapid taps on app version in Settings). The screen displays diagnostic information for debugging production issues.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. Create mobile/src/screens/settings/DevDiagnosticsScreen.tsx with the following sections: App Info (version, build number from app.json, environment name), Configuration (API URL from ENV, Socket URL, Share Base URL), Auth State (logged in user email/username/id, isGuest flag, access token first 20 chars), Push Notifications (token if registered, permission status, last registration attempt result), Device Info (platform, OS version, device brand/model, screen dimensions), Backend Health (fetch /health endpoint and show status), Deep Link Test (buttons to test artnepalaya://p/test and https://app.artnepalaya.com/p/test links), Firebase/Google Sign-In (GoogleSignin configuration status, web client ID configured or not)",
     "2. Register the screen in mobile/src/navigation/AppStack.tsx as 'DevDiagnostics' route",
@@ -22,5 +22,5 @@
     "Read mobile/src/screens/profile/SettingsScreen.tsx and verify the hidden gesture trigger exists"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All expo packages (expo-clipboard, expo-linking, expo-constants, expo-device, expo-notifications) confirmed available. Used dark theme (#000000 bg, #1A1A1A cards) per spec. Version tap counter uses useRef to avoid re-renders. Screen registered as DevDiagnostics in AppStackParamList. No build/test possible due to INTEGRATIONS_ONLY network mode."
 }
