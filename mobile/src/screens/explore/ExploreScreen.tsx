@@ -213,8 +213,8 @@ export const ExploreScreen = () => {
   const filteredPosts = posts.filter((post) => {
     const matchesCategory =
       activeCategory === 'All' ||
-      post.tags?.some((tag: string) => {
-        return tag?.toLowerCase().includes(activeCategory.toLowerCase());
+      post.artworkType?.some((type: string) => {
+        return type?.toLowerCase().includes(activeCategory.toLowerCase());
       });
     const matchesSearch =
       !searchQuery ||

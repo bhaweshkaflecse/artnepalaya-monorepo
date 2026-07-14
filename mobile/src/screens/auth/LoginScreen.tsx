@@ -431,24 +431,6 @@ export const LoginScreen = () => {
               )}
             </TouchableOpacity>
 
-            {/* Divider */}
-            <View style={styles.orDivider}>
-              <View style={styles.orDividerLine} />
-              <Text style={styles.orDividerText}>or</Text>
-              <View style={styles.orDividerLine} />
-            </View>
-
-            {/* Secondary: Sign up with Google */}
-            <TouchableOpacity
-              style={[styles.secondaryButton, isLoading && styles.buttonDisabled]}
-              onPress={handleGoogleLogin}
-              disabled={isLoading}
-              activeOpacity={0.7}
-            >
-              <AntDesign name="google" size={18} color={lightColors.accent} style={styles.buttonIcon} />
-              <Text style={styles.secondaryButtonText}>Sign up with Google</Text>
-            </TouchableOpacity>
-
             {/* Continue as Guest */}
             <TouchableOpacity
               style={styles.guestButton}
@@ -694,40 +676,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     letterSpacing: 0.3,
-  },
-  secondaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    paddingVertical: 12,
-    borderRadius: 12,
-    width: '100%',
-    marginBottom: 8,
-    borderWidth: 1.5,
-    borderColor: lightColors.accent,
-  },
-  secondaryButtonText: {
-    color: lightColors.accent,
-    fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-  orDivider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  orDividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: lightColors.border,
-  },
-  orDividerText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: lightColors.textSecondary,
-    marginHorizontal: 14,
   },
   guestButton: {
     alignItems: 'center',
