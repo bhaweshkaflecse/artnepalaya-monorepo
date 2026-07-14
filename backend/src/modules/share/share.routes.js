@@ -38,9 +38,10 @@ router.get('/p/:postId', async (req, res) => {
     const authorName = post.authorId?.username || 'Artist';
     const authorFullName = post.authorId?.fullName || authorName;
     const caption = post.caption || '';
+    const artworkTypes = Array.isArray(post.artworkType) ? post.artworkType : [];
     const ogTitle = caption
-      ? `${caption.substring(0, 60)}${caption.length > 60 ? '...' : ''} - by ${authorName}`
-      : `Artwork by ${authorName}`;
+      ? `${caption.substring(0, 60)}${caption.length > 60 ? '...' : ''} - by ${authorFullName}`
+      : `Artwork by ${authorFullName}`;
     const ogDescription = caption
       ? `${caption.substring(0, 200)}${caption.length > 200 ? '...' : ''}`
       : `Check out this artwork by ${authorFullName} on Art Nepalaya`;
@@ -50,6 +51,7 @@ router.get('/p/:postId', async (req, res) => {
     const ogImage = post.media && post.media.length > 0 ? post.media[0].url : '';
     const ogUrl = `https://app.artnepalaya.com/p/${postId}`;
     const deepLink = `artnepalaya://p/${postId}`;
+    const universalLink = `https://app.artnepalaya.com/p/${postId}`;
     const likesCount = post.likesCount || 0;
 
     const html = `<!DOCTYPE html>
@@ -144,21 +146,45 @@ router.get('/p/:postId', async (req, res) => {
     .author-info {
       flex: 1;
     }
-    .author-name {
+    .author-fullname {
       font-size: 16px;
       font-weight: 600;
       color: #FFFFFF;
     }
-    .likes-count {
+    .author-username {
       font-size: 13px;
       color: #9CA3AF;
     }
+    .likes-count {
+      font-size: 13px;
+      color: #9CA3AF;
+      margin-top: 2px;
+    }
+    .artwork-types {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .artwork-type-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      background: #1A1A2E;
+      color: #A78BFA;
+      border: 1px solid #2D2D44;
+    }
     .caption {
       width: 100%;
-      font-size: 14px;
-      line-height: 1.5;
+      font-size: 15px;
+      line-height: 1.6;
       color: #E5E5E5;
       margin-bottom: 24px;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
     .cta-section {
       width: 100%;
@@ -231,14 +257,17 @@ router.get('/p/:postId', async (req, res) => {
     <div class="author-row">
       <div class="author-avatar">
         ${post.authorId?.avatarUrl
-          ? `<img src="${escapeHtml(post.authorId.avatarUrl)}" alt="${escapeHtml(authorName)}">`
+          ? `<img src="${escapeHtml(post.authorId.avatarUrl)}" alt="${escapeHtml(authorFullName)}">`
           : ''}
       </div>
       <div class="author-info">
-        <div class="author-name">${escapeHtml(authorName)}</div>
+        <div class="author-fullname">${escapeHtml(authorFullName)}</div>
+        <div class="author-username">@${escapeHtml(authorName)}</div>
         <div class="likes-count">${likesCount} ${likesCount === 1 ? 'like' : 'likes'}</div>
       </div>
     </div>
+
+    ${artworkTypes.length > 0 ? `<div class="artwork-types">${artworkTypes.map(type => `<span class="artwork-type-badge">${escapeHtml(type)}</span>`).join('')}</div>` : ''}
 
     ${caption ? `<div class="caption">${escapeHtml(caption)}</div>` : ''}
 
@@ -249,15 +278,20 @@ router.get('/p/:postId', async (req, res) => {
       <div class="store-buttons">
         <a href="${escapeHtml(deepLink)}" class="open-app-btn">Open in App</a>
         <a href="https://play.google.com/store/apps/details?id=com.artnepalaya.mobile" class="store-btn store-btn-play">Get on Google Play</a>
+        <!-- TODO: Replace id000000000 with the real App Store ID before production launch -->
         <a href="https://apps.apple.com/app/art-nepalaya/id000000000" class="store-btn store-btn-apple">Download on App Store</a>
       </div>
     </div>
   </div>
 
   <script>
-    // Attempt deep link redirect for users who have the app installed
+    // Attempt deep link redirect for users who have the app installed.
+    // Strategy: Try custom scheme first, then fall back to Android App Links
+    // universal link (https://app.artnepalaya.com/p/{postId}) which Android
+    // intercepts if the app is installed and verified via assetlinks.json.
     (function() {
       var deepLink = ${JSON.stringify(deepLink)};
+      var universalLink = ${JSON.stringify(universalLink)};
       var timeout;
 
       // Try to open the app via custom scheme
@@ -266,10 +300,19 @@ router.get('/p/:postId', async (req, res) => {
       iframe.src = deepLink;
       document.body.appendChild(iframe);
 
-      // Clean up iframe after attempt
+      // After a short delay, try the universal link as a fallback for Android App Links
       timeout = setTimeout(function() {
         document.body.removeChild(iframe);
-      }, 2000);
+        // Navigate to the universal link which Android can intercept via App Links
+        window.location.href = universalLink;
+      }, 1500);
+
+      // If the page loses visibility (app opened), cancel the fallback
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+          clearTimeout(timeout);
+        }
+      });
     })();
   </script>
 </body>
