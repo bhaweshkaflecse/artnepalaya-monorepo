@@ -98,11 +98,20 @@ export const ExploreScreen = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const userSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (overrideCursor?: string | null) => {
     try {
-      const response = await postService.getFeed(null, 30);
-      setPosts(response.data);
+      const params: { cursor?: string | null; limit?: number; artworkType?: string; search?: string } = { limit: 20 };
+      if (activeCategory !== 'All') params.artworkType = activeCategory;
+      if (searchQuery.length >= 2) params.search = searchQuery;
+      if (overrideCursor) params.cursor = overrideCursor;
+      const response = await postService.getExplore(params);
+      if (overrideCursor) {
+        setPosts((prev) => [...prev, ...response.data]);
+      } else {
+        setPosts(response.data);
+      }
       setCursor(response.meta.nextCursor);
       setHasMore(response.meta.hasNextPage);
     } catch (error: any) {
@@ -111,13 +120,16 @@ export const ExploreScreen = () => {
       setIsLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [activeCategory, searchQuery]);
 
   const loadMore = useCallback(async () => {
     if (!hasMore || isLoadingMore || !cursor) return;
     setIsLoadingMore(true);
     try {
-      const response = await postService.getFeed(cursor, 30);
+      const params: { cursor?: string | null; limit?: number; artworkType?: string; search?: string } = { cursor, limit: 20 };
+      if (activeCategory !== 'All') params.artworkType = activeCategory;
+      if (searchQuery.length >= 2) params.search = searchQuery;
+      const response = await postService.getExplore(params);
       setPosts((prev) => [...prev, ...response.data]);
       setCursor(response.meta.nextCursor);
       setHasMore(response.meta.hasNextPage);
@@ -126,11 +138,38 @@ export const ExploreScreen = () => {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [cursor, hasMore, isLoadingMore]);
+  }, [cursor, hasMore, isLoadingMore, activeCategory, searchQuery]);
 
+  // Initial fetch
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, []);
+
+  // Re-fetch when activeCategory changes (immediate)
+  useEffect(() => {
+    setIsLoading(true);
+    setCursor(null);
+    setHasMore(true);
+    fetchData();
+  }, [activeCategory]);
+
+  // Re-fetch when searchQuery changes (debounced 500ms)
+  useEffect(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+    searchDebounceRef.current = setTimeout(() => {
+      setIsLoading(true);
+      setCursor(null);
+      setHasMore(true);
+      fetchData();
+    }, 500);
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, [searchQuery]);
 
   // Fetch dynamic artwork types for category pills
   useEffect(() => {
@@ -209,22 +248,6 @@ export const ExploreScreen = () => {
     setHasMore(true);
     fetchData();
   }, [fetchData]);
-
-  const filteredPosts = posts.filter((post) => {
-    const matchesCategory =
-      activeCategory === 'All' ||
-      post.artworkType?.some((type: string) => {
-        return type?.toLowerCase().includes(activeCategory.toLowerCase());
-      });
-    const matchesSearch =
-      !searchQuery ||
-      post.caption?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.tags?.some((tag: string) => {
-        return tag?.toLowerCase().includes(searchQuery.toLowerCase());
-      }) ||
-      post.authorId?.username?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
 
   const renderItem = ({ item, index }: { item: Post; index: number }) => {
     const firstMedia = item.media?.[0];
@@ -358,7 +381,7 @@ export const ExploreScreen = () => {
       {searchQuery.length > 0 && !isLoading && (
         <View style={styles.searchFeedback}>
           <Text style={styles.searchFeedbackText}>
-            Showing results for '{searchQuery}' - {filteredPosts.length} artwork{filteredPosts.length !== 1 ? 's' : ''} found
+            Showing results for '{searchQuery}' - {posts.length} artwork{posts.length !== 1 ? 's' : ''} found
           </Text>
         </View>
       )}
@@ -394,14 +417,14 @@ export const ExploreScreen = () => {
       {/* Content */}
       {isLoading ? (
         <ExploreSkeleton />
-      ) : filteredPosts.length === 0 ? (
+      ) : posts.length === 0 ? (
         <View style={styles.emptyState}>
           <Feather name="inbox" size={48} color={darkColors.textSecondary} />
           <Text style={styles.emptyStateText}>No posts found</Text>
         </View>
       ) : (
         <FlatList
-          data={filteredPosts}
+          data={posts}
           keyExtractor={(item) => item._id}
           numColumns={2}
           contentContainerStyle={styles.gridContainer}

@@ -107,3 +107,12 @@ export const feedPaginationSchema = z.object({
     limit: z.string().regex(/^\d+$/).transform(Number).default("15")
   })
 });
+
+export const exploreSchema = z.object({
+  query: z.object({
+    cursor: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid cursor").optional(),
+    limit: z.string().regex(/^\d+$/).transform(Number).default("20"),
+    artworkType: z.string().max(100).optional(),
+    search: z.string().max(100).optional()
+  })
+});

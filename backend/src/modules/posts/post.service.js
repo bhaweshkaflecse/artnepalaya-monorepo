@@ -242,6 +242,78 @@ export const getFeed = async (userId, cursor, limit, showMatureContent) => {
   return baseFeed;
 };
 
+export const getExplore = async (userId, cursor, limit, artworkType, search, showMatureContent) => {
+  limit = limit || 20;
+  const query = {};
+
+  // Cursor-based pagination
+  if (cursor) {
+    query._id = { $lt: cursor };
+  }
+
+  // Exclude soft-deleted
+  query.deletedAt = null;
+
+  // Exclude banned/suspended users
+  const inactiveIds = await getInactiveUserIds();
+  if (inactiveIds.length > 0) {
+    query.authorId = { $nin: inactiveIds };
+  }
+
+  // NSFW filter
+  if (!userId || !showMatureContent) {
+    query.isNsfw = { $ne: true };
+  }
+
+  // Artwork type filter (case-insensitive)
+  if (artworkType) {
+    query.artworkType = { $regex: new RegExp(`^${artworkType}$`, 'i') };
+  }
+
+  // Text search on caption, tags
+  if (search) {
+    const searchRegex = new RegExp(search, 'i');
+    query.$or = [
+      { caption: searchRegex },
+      { tags: searchRegex }
+    ];
+  }
+
+  const posts = await Post.find(query)
+    .sort({ _id: -1 })
+    .limit(limit + 1)
+    .populate('authorId', 'username avatarUrl role isVerified verifiedType')
+    .lean();
+
+  const hasNextPage = posts.length > limit;
+  const paginatedPosts = hasNextPage ? posts.slice(0, limit) : posts;
+  const nextCursor = hasNextPage && paginatedPosts.length > 0
+    ? paginatedPosts[paginatedPosts.length - 1]._id.toString()
+    : null;
+
+  // Per-user hydration
+  if (userId && paginatedPosts.length > 0) {
+    const postIds = paginatedPosts.map(p => p._id);
+    const [likes, saves] = await Promise.all([
+      Like.find({ userId, postId: { $in: postIds } }).select('postId').lean(),
+      Save.find({ userId, postId: { $in: postIds } }).select('postId').lean(),
+    ]);
+    const likedSet = new Set(likes.map(l => l.postId.toString()));
+    const savedSet = new Set(saves.map(s => s.postId.toString()));
+    paginatedPosts.forEach(post => {
+      post.isLikedByMe = likedSet.has(post._id.toString());
+      post.isSavedByMe = savedSet.has(post._id.toString());
+    });
+  } else {
+    paginatedPosts.forEach(post => {
+      post.isLikedByMe = false;
+      post.isSavedByMe = false;
+    });
+  }
+
+  return { data: paginatedPosts, meta: { nextCursor, hasNextPage } };
+};
+
 // === QUERIES ===
 export const getPostLikes = async (postId) => {
   const likes = await Like.find({ postId })

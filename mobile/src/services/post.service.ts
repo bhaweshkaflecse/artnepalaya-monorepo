@@ -113,4 +113,16 @@ export const postService = {
     const response = await api.get(`/posts/${postId}/likes`);
     return response.data.data;
   },
+
+  getExplore: async (params: { cursor?: string | null; limit?: number; artworkType?: string; search?: string }): Promise<FeedResponse> => {
+    const queryParams: any = { limit: params.limit || 20 };
+    if (params.cursor) queryParams.cursor = params.cursor;
+    if (params.artworkType) queryParams.artworkType = params.artworkType;
+    if (params.search) queryParams.search = params.search;
+    const response = await api.get('/posts/explore', { params: queryParams });
+    return {
+      data: response.data.data,
+      meta: response.data.meta || { nextCursor: null, hasNextPage: false },
+    };
+  },
 };

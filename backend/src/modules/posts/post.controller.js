@@ -98,6 +98,15 @@ export const getFeed = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+export const getExplore = async (req, res, next) => {
+  try {
+    const { cursor, limit, artworkType, search } = req.query;
+    const showMatureContent = req.user?.showMatureContent ?? true;
+    const result = await postService.getExplore(req.user?.id || null, cursor, limit, artworkType, search, showMatureContent);
+    res.status(200).json({ success: true, data: result.data, meta: result.meta });
+  } catch (err) { next(err); }
+};
+
 export const likePost = async (req, res, next) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
