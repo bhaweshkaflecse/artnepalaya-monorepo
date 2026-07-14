@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { Post } from '../posts/post.model.js';
 
 const router = Router();
@@ -12,6 +13,15 @@ const router = Router();
 router.get('/p/:postId', async (req, res) => {
   try {
     const { postId } = req.params;
+
+    // Validate ObjectId format to prevent Mongoose CastError / stack trace leaks
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(404).send(buildGenericPage(
+        'Artwork Not Found',
+        'This artwork may have been removed or is no longer available.',
+        null
+      ));
+    }
 
     const post = await Post.findById(postId)
       .populate('authorId', 'username avatarUrl fullName')

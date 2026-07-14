@@ -265,14 +265,16 @@ export const getExplore = async (userId, cursor, limit, artworkType, search, sho
     query.isNsfw = { $ne: true };
   }
 
-  // Artwork type filter (case-insensitive)
+  // Artwork type filter (case-insensitive exact match, escape regex metacharacters)
   if (artworkType) {
-    query.artworkType = { $regex: new RegExp(`^${artworkType}$`, 'i') };
+    const escapedType = artworkType.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    query.artworkType = { $regex: new RegExp(`^${escapedType}$`, 'i') };
   }
 
-  // Text search on caption, tags
+  // Text search on caption, tags (escape regex metacharacters to prevent injection)
   if (search) {
-    const searchRegex = new RegExp(search, 'i');
+    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const searchRegex = new RegExp(escapedSearch, 'i');
     query.$or = [
       { caption: searchRegex },
       { tags: searchRegex }

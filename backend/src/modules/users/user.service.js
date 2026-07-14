@@ -30,6 +30,24 @@ export const getUserProfile = async (userId, isPublic = false) => {
   return user;
 };
 
+// === Fetch Profile by Username ===
+export const getUserProfileByUsername = async (username, isPublic = false) => {
+  const user = await User.findOne({ username: { $regex: new RegExp(`^${username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } }).lean();
+
+  if (!user) {
+    throw Object.assign(new Error('User not found'), { status: 404 });
+  }
+
+  if (isPublic) {
+    delete user.email;
+    delete user.phoneNumber;
+    delete user.dob;
+    delete user.googleId;
+  }
+
+  return user;
+};
+
 // === Update Profile ===
 export const updateUserProfile = async (userId, updateData) => {
   // We use findById + save() instead of findByIdAndUpdate so your pre('save') hook runs!

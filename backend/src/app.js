@@ -39,10 +39,28 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// 4. Share Landing Pages (mounted at root level for public-facing URLs)
+// 4. Android App Links verification placeholder (Digital Asset Links)
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).json([
+    {
+      relation: ['delegate_permission/common.handle_all_urls'],
+      target: {
+        namespace: 'android_app',
+        package_name: 'com.artnepalaya.mobile',
+        sha256_cert_fingerprints: [
+          // TODO: Replace with actual signing certificate fingerprint
+          'TODO:ADD_YOUR_APP_SIGNING_CERTIFICATE_SHA256_FINGERPRINT_HERE'
+        ]
+      }
+    }
+  ]);
+});
+
+// 5. Share Landing Pages (mounted at root level for public-facing URLs)
 app.use('/', shareRoutes);
 
-// 5. Mount API Routes
+// 6. Mount API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/posts', postRoutes);
@@ -53,7 +71,7 @@ app.use('/api/v1/tags', tagRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/community', communityRoutes);
 
-// 6. Global Error Handler (MUST BE DEFINED AFTER ROUTES)
+// 7. Global Error Handler (MUST BE DEFINED AFTER ROUTES)
 app.use(globalErrorHandler);
 
 export default app;

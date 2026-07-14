@@ -140,12 +140,7 @@ export const ExploreScreen = () => {
     }
   }, [cursor, hasMore, isLoadingMore, activeCategory, searchQuery]);
 
-  // Initial fetch
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Re-fetch when activeCategory changes (immediate)
+  // Re-fetch when activeCategory changes (immediate, also covers initial mount)
   useEffect(() => {
     setIsLoading(true);
     setCursor(null);
@@ -153,8 +148,13 @@ export const ExploreScreen = () => {
     fetchData();
   }, [activeCategory]);
 
-  // Re-fetch when searchQuery changes (debounced 500ms)
+  // Re-fetch when searchQuery changes (debounced 500ms, skip initial mount)
+  const isInitialMount = useRef(true);
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     if (searchDebounceRef.current) {
       clearTimeout(searchDebounceRef.current);
     }

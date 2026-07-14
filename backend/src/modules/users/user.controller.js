@@ -49,8 +49,17 @@ export const updateMe = async (req, res, next) => {
 
 export const getPublicProfile = async (req, res, next) => {
   try {
-    if (!isValidId(req.params.userId)) return invalidIdResponse(res);
-    const user = await userService.getUserProfile(req.params.userId, true);
+    const { userId } = req.params;
+    let user;
+
+    if (isValidId(userId)) {
+      // Lookup by ObjectId
+      user = await userService.getUserProfile(userId, true);
+    } else {
+      // Fallback: treat as username (supports deep links that pass username)
+      user = await userService.getUserProfileByUsername(userId, true);
+    }
+
     res.status(200).json({ success: true, data: user });
   } catch (err) {
     if (err.status === 404) {
