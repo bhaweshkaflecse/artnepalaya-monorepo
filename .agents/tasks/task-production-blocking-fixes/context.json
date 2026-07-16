@@ -1,0 +1,31 @@
+{
+  "project_type": "Full-stack monorepo: Node.js/Express backend + React Native (Expo) mobile app",
+  "language": "JavaScript (backend), TypeScript (mobile)",
+  "build_system": "npm for both packages; no Makefile; no Docker in this environment",
+  "test_framework": "No test files found in repository - validation is code-review based",
+  "build_command": "N/A - INTEGRATIONS_ONLY network, cannot npm install",
+  "test_command": "N/A - INTEGRATIONS_ONLY network, cannot run tests",
+  "verification_instructions": "Code reviewed, runtime not tested (INTEGRATIONS_ONLY network mode)",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "N/A - cannot install dependencies due to network restrictions",
+  "environment_constraints": "INTEGRATIONS_ONLY network mode - no npm install, no package registry access, no Docker daemon, no browser testing. All verification is AST/code-review based.",
+  "contribution_requirements": "Single commit message format: fix: <description>. Do NOT push.",
+  "key_patterns": {
+    "backend_services": "Service files export async functions, imported by controllers. Use mongoose models, Redis cache via shared/utils/cache.js",
+    "form_data_parsing": "createPost has explicit JSON.parse for tags string from form-data, but artworkType is missing the same treatment",
+    "cache_pattern": "getOrSetCache(key, ttlSeconds, fetchCallback) with invalidateCache(pattern)",
+    "share_page": "Single large HTML template in share.routes.js with embedded CSS/JS, CSP headers, platform detection",
+    "mobile_navigation": "React Navigation with bottom tabs (MainTabs.tsx), stack navigator (AppStack.tsx), homeTabRefresh custom event"
+  },
+  "relevant_files": [
+    "backend/src/modules/posts/post.service.js",
+    "backend/src/modules/posts/recommendation.service.js",
+    "backend/src/modules/posts/post.model.js",
+    "backend/src/shared/utils/cache.js",
+    "backend/src/modules/share/share.routes.js",
+    "mobile/src/screens/home/HomeScreen.tsx",
+    "mobile/src/navigation/MainTabs.tsx",
+    "mobile/app.json"
+  ],
+  "directory_structure": "backend/src/modules/{posts,share,notifications,...} - feature modules. mobile/src/{screens,navigation,components,store,services} - RN app structure."
+}

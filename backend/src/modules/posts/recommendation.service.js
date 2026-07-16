@@ -91,10 +91,7 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
     baseQuery._id = { $lt: cursor };
   }
 
-  // Step 5: Calculate slot distribution (80% preference, 20% discovery)
-  const preferenceSlots = Math.ceil(limit * weights.preferenceWeight);
-  const discoverySlots = limit - preferenceSlots;
-
+  // Step 5: Fetch candidate posts.
   // Step 6: Use a single unified query with $or to fetch all candidate posts,
   // then split into preference/discovery pools in JavaScript.
   // This eliminates cursor drift because one query = one cursor boundary.
@@ -111,13 +108,25 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
   const preferencePosts = [];
   const discoveryPosts = [];
 
+  // Identify recent posts (within last 24 hours) - these always appear in the feed
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const recentBoostPosts = [];
+
   for (const post of candidatePosts) {
-    const postTypes = Array.isArray(post.artworkType) ? post.artworkType : [];
-    const matchesPreference = postTypes.some(type => interestSet.has(type));
-    if (matchesPreference) {
-      preferencePosts.push(post);
+    const postCreatedAt = new Date(post.createdAt);
+    const isRecent = postCreatedAt >= twentyFourHoursAgo;
+
+    if (isRecent) {
+      // Always include posts from the last 24 hours
+      recentBoostPosts.push(post);
     } else {
-      discoveryPosts.push(post);
+      const postTypes = Array.isArray(post.artworkType) ? post.artworkType : [];
+      const matchesPreference = postTypes.some(type => interestSet.has(type));
+      if (matchesPreference) {
+        preferencePosts.push(post);
+      } else {
+        discoveryPosts.push(post);
+      }
     }
   }
 
@@ -159,15 +168,35 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
            (discoveryScoreMap.get(a._id.toString()) || 0);
   });
 
-  // Step 8: Take the top posts from each category
-  const selectedPreference = preferencePosts.slice(0, preferenceSlots);
-  const selectedDiscovery = discoveryPosts.slice(0, discoverySlots);
+  // Step 8: Score recent posts and sort by popularity (not just creation time)
+  const recentScoreMap = new Map();
+  for (const post of recentBoostPosts) {
+    recentScoreMap.set(post._id.toString(), scorePost(post));
+  }
+  recentBoostPosts.sort((a, b) => {
+    return (recentScoreMap.get(b._id.toString()) || 0) -
+           (recentScoreMap.get(a._id.toString()) || 0);
+  });
 
-  // Step 9: Combine and interleave (preference posts first, then discovery)
-  const combined = [...selectedPreference, ...selectedDiscovery];
+  // Cap recent posts to the page limit so they cannot overflow
+  const cappedRecentPosts = recentBoostPosts.slice(0, limit);
 
-  // Step 10: Determine pagination cursor
-  const hasNextPage = preferencePosts.length > preferenceSlots || discoveryPosts.length > discoverySlots;
+  // Calculate remaining slots after recent posts
+  const remainingSlots = Math.max(0, limit - cappedRecentPosts.length);
+  const remainingPreferenceSlots = Math.ceil(remainingSlots * weights.preferenceWeight);
+  const remainingDiscoverySlots = remainingSlots - remainingPreferenceSlots;
+
+  const selectedPreference = preferencePosts.slice(0, remainingPreferenceSlots);
+  const selectedDiscovery = discoveryPosts.slice(0, remainingDiscoverySlots);
+
+  // Step 9: Combine: recent posts first, then preference, then discovery (capped to limit)
+  const combined = [...cappedRecentPosts, ...selectedPreference, ...selectedDiscovery].slice(0, limit);
+
+  // Step 10: Determine pagination cursor using actual slot sizes
+  const hasNextPage = candidatePosts.length >= totalFetchLimit ||
+    preferencePosts.length > remainingPreferenceSlots ||
+    discoveryPosts.length > remainingDiscoverySlots ||
+    recentBoostPosts.length > limit;
 
   let nextCursor = null;
   if (hasNextPage && combined.length > 0) {

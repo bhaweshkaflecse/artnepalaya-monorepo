@@ -87,6 +87,7 @@ router.get('/p/:postId', async (req, res) => {
     const ogImage = isVideo ? videoPosterUrl : firstMediaUrl;
     const ogUrl = `https://app.artnepalaya.com/p/${postId}`;
     const deepLink = `artnepalaya://p/${postId}`;
+    const intentUri = `intent://p/${postId}#Intent;scheme=artnepalaya;package=com.artnepalaya.mobile;end`;
     const playStoreUrl = `https://play.google.com/store/apps/details?id=com.artnepalaya.mobile&referrer=utm_source%3Dshare%26utm_content%3D${postId}`;
     const likesCount = post.likesCount || 0;
 
@@ -165,6 +166,42 @@ router.get('/p/:postId', async (req, res) => {
       object-fit: cover;
       background: #000;
     }
+    .gallery-container {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #1A1A1A;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .gallery-scroll {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .gallery-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .gallery-item {
+      min-width: 100%;
+      aspect-ratio: 4/5;
+      scroll-snap-align: start;
+      flex-shrink: 0;
+    }
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .gallery-item video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+    }
     .gallery-badge {
       position: absolute;
       top: 12px;
@@ -177,6 +214,22 @@ router.get('/p/:postId', async (req, res) => {
       border-radius: 12px;
       backdrop-filter: blur(4px);
       z-index: 2;
+    }
+    .gallery-dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 0;
+    }
+    .gallery-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #444;
+      transition: background 0.3s;
+    }
+    .gallery-dot.active {
+      background: #FF3B30;
     }
     .artwork-placeholder {
       width: 100%;
@@ -325,14 +378,33 @@ router.get('/p/:postId', async (req, res) => {
   <div class="container">
     <div class="logo">Art Nepalaya</div>
 
+    ${isGallery ? `
+    <div class="gallery-container">
+      <span class="gallery-badge"><span id="gallery-current">1</span> / ${mediaCount}</span>
+      <div class="gallery-scroll" id="gallery-scroll">
+        ${mediaItems.map((item, index) => {
+          const itemUrl = item.url || '';
+          const itemType = item.type || 'image';
+          if (itemType === 'video') {
+            const posterUrl = getVideoThumbnailUrl(itemUrl);
+            return `<div class="gallery-item"><video src="${escapeHtml(itemUrl)}" poster="${escapeHtml(posterUrl)}" muted playsinline preload="metadata" controls></video></div>`;
+          }
+          return `<div class="gallery-item"><img src="${escapeHtml(itemUrl)}" alt="Artwork ${index + 1} by ${escapeHtml(authorName)}"></div>`;
+        }).join('')}
+      </div>
+      <div class="gallery-dots">
+        ${mediaItems.map((_, index) => `<span class="gallery-dot${index === 0 ? ' active' : ''}" data-index="${index}"></span>`).join('')}
+      </div>
+    </div>
+    ` : `
     <div class="artwork-preview">
-      ${isGallery ? `<span class="gallery-badge">1 / ${mediaCount}</span>` : ''}
       ${firstMediaUrl
         ? (isVideo
           ? `<video src="${escapeHtml(firstMediaUrl)}" poster="${escapeHtml(videoPosterUrl)}" muted playsinline preload="metadata" controls></video>`
           : `<img src="${escapeHtml(firstMediaUrl)}" alt="Artwork by ${escapeHtml(authorName)}">`)
         : '<div class="artwork-placeholder">&#x1F3A8;</div>'}
     </div>
+    `}
 
     <div class="author-row">
       <div class="author-avatar">
@@ -357,7 +429,7 @@ router.get('/p/:postId', async (req, res) => {
 
       <!-- Android CTA -->
       <div class="store-buttons platform-section" id="cta-android">
-        <a href="${escapeHtml(deepLink)}" class="open-app-btn">Open in App</a>
+        <a href="${escapeHtml(intentUri)}" class="open-app-btn">Open in App</a>
         <a href="${escapeHtml(playStoreUrl)}" class="store-btn store-btn-play">Get on Google Play</a>
       </div>
 
@@ -378,11 +450,13 @@ router.get('/p/:postId', async (req, res) => {
 
   <script>
     // Platform detection and smart deep link handling.
-    // Android: attempt deep link, auto-redirect to Play Store if app not installed.
-    // iOS: attempt deep link, show Coming Soon note (App Store link ready for future).
+    // Android: use intent:// URI which triggers the Android intent system directly.
+    //          If app is installed, it opens. If not, falls back to Play Store.
+    // iOS: attempt deep link via iframe, show Coming Soon note (App Store link ready for future).
     // Desktop: show both store buttons, no auto-redirect.
     (function() {
       var deepLink = ${JSON.stringify(deepLink)};
+      var intentUri = ${JSON.stringify(intentUri)};
       var playStoreUrl = ${JSON.stringify(playStoreUrl)};
       var ua = navigator.userAgent || '';
       var isAndroid = /android/i.test(ua);
@@ -394,30 +468,33 @@ router.get('/p/:postId', async (req, res) => {
       var section = document.getElementById(sectionId);
       if (section) section.classList.add('active');
 
-      // On mobile platforms, attempt to open the app via custom scheme
-      if (isAndroid || isIOS) {
+      if (isAndroid) {
+        // Use intent:// URI which handles app-installed vs not-installed natively
+        window.location.href = intentUri;
+      } else if (isIOS) {
+        // iOS: use iframe-based deep link approach
         var iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         iframe.src = deepLink;
         document.body.appendChild(iframe);
+        // Just clean up the iframe; no auto-redirect (app not on App Store yet)
+        setTimeout(function() { document.body.removeChild(iframe); }, 2000);
+      }
 
-        if (isAndroid) {
-          // On Android, redirect to Play Store if the app did not intercept
-          var timeout = setTimeout(function() {
-            document.body.removeChild(iframe);
-            window.location.href = playStoreUrl;
-          }, 1500);
-
-          // If the page loses visibility (app opened), cancel the fallback
-          document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-              clearTimeout(timeout);
-            }
+      // Gallery scroll indicator
+      var galleryScroll = document.getElementById('gallery-scroll');
+      if (galleryScroll) {
+        var dots = document.querySelectorAll('.gallery-dot');
+        var badge = document.getElementById('gallery-current');
+        galleryScroll.addEventListener('scroll', function() {
+          var scrollLeft = galleryScroll.scrollLeft;
+          var itemWidth = galleryScroll.offsetWidth;
+          var currentIndex = Math.round(scrollLeft / itemWidth);
+          if (badge) badge.textContent = (currentIndex + 1);
+          dots.forEach(function(dot, i) {
+            dot.classList.toggle('active', i === currentIndex);
           });
-        } else {
-          // iOS: just clean up the iframe; no auto-redirect (app not on App Store yet)
-          setTimeout(function() { document.body.removeChild(iframe); }, 2000);
-        }
+        });
       }
     })();
   </script>

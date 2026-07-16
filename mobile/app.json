@@ -26,6 +26,10 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
+      },
+      "notifications": {
+        "icon": "./assets/notification-icon.png",
+        "color": "#FF3B30"
       }
     },
     "web": {

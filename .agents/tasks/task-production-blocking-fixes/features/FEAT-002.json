@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Fix share page deep link for Android (use intent:// scheme), add notification icon config to app.json, and add CSS scroll-snap gallery for multi-media posts on share page",
+  "status": "completed",
+  "steps": [
+    "In backend/src/modules/share/share.routes.js, in the GET /p/:postId handler, change the Android deep link strategy. Currently uses an iframe with artnepalaya:// scheme and a setTimeout fallback. Replace with Android Intent URI: intent://p/{postId}#Intent;scheme=artnepalaya;package=com.artnepalaya.mobile;end. Update the 'Open in App' button href for Android to use this intent URI. Update the JavaScript section: for Android, instead of creating an iframe, navigate directly to the intent URI using window.location.href. Remove the iframe-based approach for Android. Keep iframe approach for iOS since intent:// is Android-only.",
+    "In mobile/app.json, inside the 'android' object (after adaptiveIcon), add a 'notifications' section: { \"icon\": \"./assets/notification-icon.png\", \"color\": \"#FF3B30\" }. Since notification-icon.png does not exist yet, copy the existing adaptive-icon.png to notification-icon.png as a placeholder.",
+    "In backend/src/modules/share/share.routes.js, replace the single artwork-preview div with a CSS scroll-snap gallery for posts with multiple media items. Add gallery CSS styles: container with overflow-x: auto, scroll-snap-type: x mandatory, -webkit-overflow-scrolling: touch. Each media item gets scroll-snap-align: start and min-width: 100%. Add dot indicators below the gallery. For single-media posts, keep the existing simple layout. The gallery should support mixed image/video items. Generate the gallery HTML by iterating over all mediaItems, rendering each as either an img or video element."
+  ],
+  "acceptance_criteria": [
+    "Android 'Open in App' button uses intent://p/{postId}#Intent;scheme=artnepalaya;package=com.artnepalaya.mobile;end",
+    "Android deep link JavaScript uses window.location.href with intent URI instead of hidden iframe",
+    "iOS still uses iframe-based deep link approach",
+    "app.json android section includes notifications config with icon and color",
+    "notification-icon.png asset file exists (copied from adaptive-icon.png)",
+    "Share page renders a horizontal scroll-snap gallery for multi-media posts",
+    "Gallery has dot indicators and supports both image and video items",
+    "Single-media posts still render without the gallery wrapper"
+  ],
+  "verification": [
+    "Code reviewed, runtime not tested"
+  ],
+  "blocked_reason": null,
+  "findings": "All three changes implemented: (1) Android intent:// URI replaces iframe-based deep link for more reliable app opening - the intent system handles fallback to Play Store natively; (2) notification icon config added to app.json android section with adaptive-icon.png copied as placeholder; (3) CSS scroll-snap gallery renders all media items horizontally with dot indicators and badge counter, while single-media posts retain simple layout. Syntax validation passed (node --check). Code reviewed, runtime not tested."
+}

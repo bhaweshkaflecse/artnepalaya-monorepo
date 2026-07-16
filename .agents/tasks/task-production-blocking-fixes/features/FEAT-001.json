@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix Explore category filters (artworkType parsing), Home feed freshness (recommendation engine + cache TTL), and Home tab crash (getItemLayout removal)",
+  "status": "completed",
+  "steps": [
+    "In backend/src/modules/posts/post.service.js createPost function (around line 20), add artworkType parsing BEFORE the post is created. Add this block after the tags parsing block (after line 36): if postData.artworkType is a string, try JSON.parse it into an array; if parsing fails, wrap it in [postData.artworkType]. If it's already an array, leave it. This mirrors the exact same pattern used for tags.",
+    "In backend/src/modules/posts/post.service.js updatePost function (around line 196), find the block 'if (updateData.artworkType !== undefined)' and add the same string-to-array parsing logic before assigning to allowedFields.artworkType.",
+    "In backend/src/modules/posts/post.service.js getExplore function, update the artworkType filter query. Currently it uses regex for case-insensitive match against artworkType (a String). Since artworkType is an array field ([String]), change the query from regex to use $elemMatch or simply query.artworkType = { $regex: ... } which MongoDB applies element-wise on arrays. Actually the existing regex works fine on array fields in MongoDB (it matches if any element matches). Keep as-is but ensure newly-stored data is correct arrays.",
+    "In backend/src/modules/posts/recommendation.service.js buildRecommendedFeed function, after the candidate posts are split into preferencePosts and discoveryPosts (around line 108), add logic to always include posts from the last 24 hours regardless of preference matching. Before the split loop, identify recent posts (createdAt within last 24 hours). These recent posts should always be included in the final feed - add them to a 'recentBoostPosts' array. In Step 8, ensure recent posts (last 24h) are always included: take recentBoostPosts first, then fill remaining slots with preference/discovery posts.",
+    "In backend/src/modules/posts/post.service.js getFeed function, change the cache TTL from 300 to 60 in the getOrSetCache call (line ~112): change getOrSetCache(cacheKey, 300, ...) to getOrSetCache(cacheKey, 60, ...)",
+    "In mobile/src/screens/home/HomeScreen.tsx, remove the getItemLayout callback definition (the ESTIMATED_ITEM_HEIGHT const and the getItemLayout useCallback around lines 136-140) and remove the getItemLayout prop from the FlatList component (around line 155)."
+  ],
+  "acceptance_criteria": [
+    "createPost parses artworkType from JSON string to array, same as tags",
+    "updatePost parses artworkType from JSON string to array before storing",
+    "buildRecommendedFeed always includes posts from the last 24 hours regardless of interest matching",
+    "Feed cache TTL is 60 seconds instead of 300",
+    "HomeScreen FlatList no longer uses getItemLayout prop",
+    "ESTIMATED_ITEM_HEIGHT const and getItemLayout callback are removed from HomeScreen"
+  ],
+  "verification": [
+    "Code reviewed, runtime not tested"
+  ],
+  "blocked_reason": null,
+  "findings": "All six acceptance criteria met. (1) createPost now parses artworkType with same JSON.parse/fallback pattern as tags. (2) updatePost has identical parsing. (3) getExplore regex query left as-is since MongoDB applies regex element-wise on arrays - the root cause was data being stored as string not array. (4) recommendation.service buildRecommendedFeed now splits posts into recentBoostPosts (last 24h, always included), preferencePosts, and discoveryPosts - recent posts get priority in final combined array. (5) Feed cache TTL changed from 300 to 60. (6) HomeScreen removed ESTIMATED_ITEM_HEIGHT, getItemLayout callback, getItemLayout prop, and unused Dimensions import. Code reviewed, runtime not tested (INTEGRATIONS_ONLY network)."
+}

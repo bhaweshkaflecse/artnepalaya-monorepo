@@ -35,6 +35,30 @@ export const createPost = async (userId, postData) => {
     postData.tags = tagsArray.map(t => t.toLowerCase().trim());
   }
 
+  // BULLETPROOF ARTWORKTYPE FIX: Handle both Strings (from form-data) and Arrays
+  if (postData.artworkType) {
+    let artworkTypeArray = [];
+
+    if (typeof postData.artworkType === 'string') {
+      try {
+        // Try to parse the string '["Digital Art"]' into a real array
+        artworkTypeArray = JSON.parse(postData.artworkType);
+      } catch (e) {
+        // Fallback: if it's just "Digital Art", wrap it in an array
+        artworkTypeArray = [postData.artworkType];
+      }
+    } else if (Array.isArray(postData.artworkType)) {
+      artworkTypeArray = postData.artworkType;
+    }
+
+    // Ensure it's always an array
+    if (!Array.isArray(artworkTypeArray)) {
+      artworkTypeArray = [artworkTypeArray];
+    }
+
+    postData.artworkType = artworkTypeArray;
+  }
+
   // Automatic AI tag enforcement: if post is AI-generated, ensure "ai" tag exists and set backward compat
   if (postData.isAIGenerated === true || postData.isAIGenerated === 'true') {
     if (!postData.tags) {
@@ -160,7 +184,7 @@ export const getFeed = async (userId, cursor, limit, showMatureContent) => {
   const nsfwKey = filterNsfw ? 'safe' : 'all';
   const cacheKey = `feed:ranked:${nsfwKey}:${cursor || 'start'}:${limit}`;
 
-  const baseFeed = await getOrSetCache(cacheKey, 300, async () => {
+  const baseFeed = await getOrSetCache(cacheKey, 60, async () => {
     const query = cursor ? { _id: { $lt: cursor } } : {};
 
     // Exclude soft-deleted posts
@@ -435,7 +459,24 @@ export const updatePost = async (postId, userId, userRole, updateData) => {
   }
 
   if (updateData.artworkType !== undefined) {
-    allowedFields.artworkType = updateData.artworkType;
+    let artworkTypeArray = [];
+
+    if (typeof updateData.artworkType === 'string') {
+      try {
+        artworkTypeArray = JSON.parse(updateData.artworkType);
+      } catch (e) {
+        artworkTypeArray = [updateData.artworkType];
+      }
+    } else if (Array.isArray(updateData.artworkType)) {
+      artworkTypeArray = updateData.artworkType;
+    }
+
+    // Ensure it's always an array
+    if (!Array.isArray(artworkTypeArray)) {
+      artworkTypeArray = [artworkTypeArray];
+    }
+
+    allowedFields.artworkType = artworkTypeArray;
   }
 
   const updatedPost = await Post.findByIdAndUpdate(postId, { $set: allowedFields }, { new: true });
