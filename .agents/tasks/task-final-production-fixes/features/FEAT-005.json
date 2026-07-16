@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-005",
+  "type": "fix",
+  "description": "Mobile onboarding responsive audit and fixes. The OnboardingScreen.tsx already uses Math.min() patterns for responsive sizing. Verify and fix any remaining issues: ensure no horizontal scrolling (FlatList pagingEnabled with width: SCREEN_WIDTH should prevent this), no vertical overflow on small devices, safe area respected on screen 3 (has SafeAreaView), Nepal flag scales correctly (already uses Math.min(140, SCREEN_WIDTH * 0.35)), and dots are positioned safely above bottom safe area.",
+  "status": "completed",
+  "steps": [
+    "1. In mobile/src/screens/onboarding/OnboardingScreen.tsx, verify that the FlatList uses getItemLayout to optimize rendering and prevent scrolling jitter on low-end devices",
+    "2. Verify screen 3 (Get Started) benefits list doesn't overflow on small screens (320px width Android devices). The benefitsContainer may need a maxHeight or ScrollView wrapper for very small screens.",
+    "3. Ensure the dots container (position: absolute, bottom) doesn't overlap with home indicator on newer devices - add SafeAreaView or extra bottom padding. Current bottom: Math.min(40, SCREEN_HEIGHT * 0.05) should be adequate for most devices.",
+    "4. Add getItemLayout to FlatList for better scroll performance: getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}",
+    "5. Wrap screens 1 and 2 in SafeAreaView like screen 3 to ensure status bar area is respected on all slides",
+    "6. Verify landscape handling - since AndroidManifest has screenOrientation='portrait', landscape is locked out. No landscape fixes needed."
+  ],
+  "acceptance_criteria": [
+    "FlatList has getItemLayout for optimized scroll performance",
+    "All three slides use SafeAreaView to respect safe areas",
+    "No overflow on 320px width devices (benefits list wraps properly)",
+    "Dot indicators don't overlap home indicator area",
+    "No horizontal scrolling issues (pagingEnabled with exact SCREEN_WIDTH)",
+    "Nepal flag renders proportionally with Math.min pattern"
+  ],
+  "verification": [
+    "Read mobile/src/screens/onboarding/OnboardingScreen.tsx and verify SafeAreaView usage on all slides",
+    "Verify getItemLayout is added to FlatList",
+    "Verify responsive Math.min patterns throughout"
+  ],
+  "blocked_reason": null,
+  "findings": "All changes verified via AST-level code inspection (INTEGRATIONS_ONLY network mode prevents actual builds). Added getItemLayout to FlatList for scroll perf. Wrapped slides 1 and 2 in SafeAreaView with new slideSafeArea style. Increased dots bottom from 40/5% to 52/6.5% to clear home indicator on modern devices. Added flexShrink:1 and overflow:hidden to benefitsContainer for small screen safety. All Math.min() responsive patterns preserved. Landscape is locked via AndroidManifest screenOrientation=portrait."
+}
