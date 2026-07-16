@@ -121,37 +121,39 @@ export const OnboardingScreen = () => {
           <View style={styles.decorativeCircle} />
           <View style={styles.decorativeCircle2} />
 
-          <Animated.View
-            style={[
-              styles.slideContent,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            {/* Logo */}
-            <View style={styles.logoContainer}>
-              <Image
-                source={require('../../../assets/icon.png')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            </View>
+          <SafeAreaView style={styles.slideSafeArea}>
+            <Animated.View
+              style={[
+                styles.slideContent,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              {/* Logo */}
+              <View style={styles.logoContainer}>
+                <Image
+                  source={require('../../../assets/icon.png')}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+              </View>
 
-            {/* Title */}
-            <Text style={styles.heroTitle}>
-              Made for Artists,{'\n'}Art Lovers & Creatives
-            </Text>
+              {/* Title */}
+              <Text style={styles.heroTitle}>
+                Made for Artists,{'\n'}Art Lovers & Creatives
+              </Text>
 
-            {/* Description */}
-            <Text style={styles.heroDescription}>
-              A digital platform for Nepalese arts and culture, connecting artists, art lovers, creative professionals, and businesses.
-            </Text>
+              {/* Description */}
+              <Text style={styles.heroDescription}>
+                A digital platform for Nepalese arts and culture, connecting artists, art lovers, creative professionals, and businesses.
+              </Text>
 
-            {/* Decorative divider */}
-            <View style={styles.dividerLine} />
-          </Animated.View>
+              {/* Decorative divider */}
+              <View style={styles.dividerLine} />
+            </Animated.View>
+          </SafeAreaView>
         </View>
       );
     }
@@ -162,37 +164,39 @@ export const OnboardingScreen = () => {
           {/* Decorative background */}
           <View style={styles.decorativeCircleOrigin} />
 
-          <Animated.View
-            style={[
-              styles.slideContent,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            {/* Title */}
-            <Text style={styles.originTitle}>
-              Made in Nepal.{'\n'}Built for the World.
-            </Text>
+          <SafeAreaView style={styles.slideSafeArea}>
+            <Animated.View
+              style={[
+                styles.slideContent,
+                {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }],
+                },
+              ]}
+            >
+              {/* Title */}
+              <Text style={styles.originTitle}>
+                Made in Nepal.{'\n'}Built for the World.
+              </Text>
 
-            {/* Nepal Flag */}
-            <View style={styles.artworkPlaceholder}>
-              <View style={styles.artworkInner}>
-                <NepalFlag />
+              {/* Nepal Flag */}
+              <View style={styles.artworkPlaceholder}>
+                <View style={styles.artworkInner}>
+                  <NepalFlag />
+                </View>
               </View>
-            </View>
 
-            {/* Subtitle */}
-            <Text style={styles.originMiddleText}>
-              Celebrating Nepal's Creative Heritage
-            </Text>
+              {/* Subtitle */}
+              <Text style={styles.originMiddleText}>
+                Celebrating Nepal's Creative Heritage
+              </Text>
 
-            {/* Main Description */}
-            <Text style={styles.originSubtitle}>
-              Bringing Nepal's arts and culture to the digital world, creating opportunities for artists, galleries, businesses, and art lovers to connect beyond borders.
-            </Text>
-          </Animated.View>
+              {/* Main Description */}
+              <Text style={styles.originSubtitle}>
+                Bringing Nepal's arts and culture to the digital world, creating opportunities for artists, galleries, businesses, and art lovers to connect beyond borders.
+              </Text>
+            </Animated.View>
+          </SafeAreaView>
         </View>
       );
     }
@@ -287,6 +291,11 @@ export const OnboardingScreen = () => {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         bounces={false}
+        getItemLayout={(_, index) => ({
+          length: SCREEN_WIDTH,
+          offset: SCREEN_WIDTH * index,
+          index,
+        })}
       />
 
       {/* Dot indicators */}
@@ -325,6 +334,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Math.min(36, SCREEN_WIDTH * 0.08),
+    width: '100%',
+  },
+  slideSafeArea: {
+    flex: 1,
     width: '100%',
   },
 
@@ -466,6 +479,8 @@ const styles = StyleSheet.create({
   // ---- Benefits ----
   benefitsContainer: {
     marginBottom: Math.min(28, SCREEN_HEIGHT * 0.03),
+    flexShrink: 1,
+    overflow: 'hidden',
   },
   benefitItem: {
     flexDirection: 'row',
@@ -524,7 +539,7 @@ const styles = StyleSheet.create({
   // ---- Dots ----
   dotsContainer: {
     position: 'absolute',
-    bottom: Math.min(40, SCREEN_HEIGHT * 0.05),
+    bottom: Math.min(52, SCREEN_HEIGHT * 0.065),
     left: 0,
     right: 0,
     flexDirection: 'row',
