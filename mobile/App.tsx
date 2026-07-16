@@ -15,6 +15,32 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 injectStore(store);
 
 // Deep linking configuration
+//
+// Navigation hierarchy:
+//   NavigationContainer
+//     -> RootNavigator (plain component, NOT a navigator)
+//       -> AppStack (Stack.Navigator) when authenticated or guest
+//         -> MainTabs, PostDetail, UserProfile, etc.
+//       -> AuthStack when unauthenticated (non-guest)
+//
+// Since RootNavigator is not a navigator, the linking config maps directly
+// to the screens inside AppStack's Stack.Navigator. There is no intermediate
+// navigator name to reference.
+//
+// For guest users: RootNavigator renders AppStack, so deep links to PostDetail
+// and UserProfile work immediately. Guest users can view posts and profiles
+// without authentication.
+//
+// For unauthenticated (non-guest) users: RootNavigator renders AuthStack.
+// Deep links are queued by React Navigation and will resolve once the user
+// signs in or continues as guest (which triggers AppStack to mount).
+//
+// Path patterns match AndroidManifest.xml intent-filter pathPrefixes:
+//   /p/* -> PostDetail (postId param)
+//   /u/* -> UserProfile (userId param)
+//
+// Future paths (/c/*, /e/*, /m/*) can be added here once their corresponding
+// screens are implemented in AppStack.
 const linking = {
   prefixes: [
     Linking.createURL('/'),
@@ -23,11 +49,12 @@ const linking = {
   ],
   config: {
     screens: {
-      App: {
-        screens: {
-          PostDetail: 'p/:postId',
-          UserProfile: 'u/:userId',
-        },
+      // Screens inside AppStack's Stack.Navigator
+      PostDetail: {
+        path: 'p/:postId',
+      },
+      UserProfile: {
+        path: 'u/:userId',
       },
     },
   },
