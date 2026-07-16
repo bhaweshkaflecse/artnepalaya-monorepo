@@ -1,0 +1,37 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Complete overhaul of the share page rendering in backend/src/modules/share/share.routes.js to support all media types. Currently only renders first media item as an <img> regardless of type. Need to: detect media type from post.media[].type field (enum: 'image' | 'video'), render video posts with proper <video> element (poster, muted, playsinline, preload=metadata, controls), support gallery/multiple media posts by showing first item with media count indicator, add proper og:video and twitter:player meta tags for video posts, and handle mixed media posts (image+video). Also improve the smart deep link platform detection logic with iOS-aware CTA.",
+  "status": "in_progress",
+  "steps": [
+    "1. In the GET /p/:postId handler in backend/src/modules/share/share.routes.js, detect the type of the first media item using post.media[0].type (which is 'image' or 'video' per post.model.js mediaSchema)",
+    "2. For video posts (first media is type='video'): render a <video> element instead of <img> with attributes: poster (use a Cloudinary video thumbnail transform or empty), muted, playsinline, preload='metadata', controls, and proper width/height styling within the artwork-preview container",
+    "3. For gallery posts (media.length > 1): show first media item (image or video appropriately) with an overlay indicator showing '1/N' media count badge",
+    "4. Add og:video meta tag when first media is video: <meta property='og:video' content='URL'> and <meta property='og:video:type' content='video/mp4'>",
+    "5. Add twitter:player meta tags for video: <meta name='twitter:card' content='player'> (override summary_large_image), <meta name='twitter:player' content='URL'>, <meta name='twitter:player:width'>, <meta name='twitter:player:height'>",
+    "6. Ensure og:image still works for video posts by using a poster/thumbnail URL (Cloudinary video URLs with .jpg extension or /so_0/ transform for poster frame)",
+    "7. Enhance platform detection in the inline script: detect iOS (iPhone/iPad), Android, and Desktop. Show appropriate CTAs: iOS gets 'Coming Soon to App Store' prominently, Android gets auto-redirect to Play Store after timeout, Desktop shows both store buttons without auto-redirect",
+    "8. Add deferred deep link support by passing the postId as a referrer parameter to the Play Store URL: add &referrer=utm_source%3Dshare%26utm_content%3D{postId} to the Play Store link",
+    "9. Ensure all existing URL patterns continue to work: old Cloudinary URLs, transformed URLs, non-transformed URLs, Google avatar URLs"
+  ],
+  "acceptance_criteria": [
+    "Video posts render with <video> element including muted, playsinline, preload=metadata, controls attributes",
+    "Image posts continue to render with <img> element (no regression)",
+    "Gallery posts show media count overlay badge",
+    "og:video meta tag present for video posts",
+    "twitter:player meta tags present for video posts",
+    "og:image still present for video posts (poster frame)",
+    "Platform detection identifies iOS, Android, and Desktop",
+    "Play Store URL includes referrer parameter with postId",
+    "CSP media-src allows Cloudinary video streaming",
+    "No regression for single image posts"
+  ],
+  "verification": [
+    "Read backend/src/modules/share/share.routes.js and verify video rendering logic",
+    "Verify og:video and twitter:player meta tags in HTML output for video media type",
+    "Verify gallery count badge renders when media.length > 1",
+    "Verify platform detection script handles iOS, Android, Desktop"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

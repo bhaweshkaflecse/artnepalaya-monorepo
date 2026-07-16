@@ -66,12 +66,28 @@ router.get('/p/:postId', async (req, res) => {
     const ogDescription = caption
       ? `${caption.substring(0, 200)}${caption.length > 200 ? '...' : ''}`
       : `Check out this artwork by ${authorFullName} on Art Nepalaya`;
-    // Use the raw media URL for og:image - do not add optimization transforms
-    // because old Cloudinary URLs may already have transforms embedded,
-    // and double-stacking produces invalid URLs.
-    const ogImage = post.media && post.media.length > 0 ? post.media[0].url : '';
+
+    // Media type detection
+    const mediaItems = Array.isArray(post.media) ? post.media : [];
+    const mediaCount = mediaItems.length;
+    const firstMedia = mediaCount > 0 ? mediaItems[0] : null;
+    const firstMediaType = firstMedia?.type || 'image'; // default to 'image' for old posts without type
+    const firstMediaUrl = firstMedia?.url || '';
+    const isVideo = firstMediaType === 'video';
+    const isGallery = mediaCount > 1;
+
+    // For video posts, generate a poster/thumbnail URL from Cloudinary.
+    // Strategy: replace video extension with .jpg or insert /so_0/ transform.
+    // This handles both old and new Cloudinary URL formats safely.
+    const videoPosterUrl = isVideo ? getVideoThumbnailUrl(firstMediaUrl) : '';
+
+    // og:image - for video posts use the poster thumbnail, for image posts use the raw URL.
+    // Do not add optimization transforms to raw URLs because old Cloudinary URLs
+    // may already have transforms embedded, and double-stacking produces invalid URLs.
+    const ogImage = isVideo ? videoPosterUrl : firstMediaUrl;
     const ogUrl = `https://app.artnepalaya.com/p/${postId}`;
     const deepLink = `artnepalaya://p/${postId}`;
+    const playStoreUrl = `https://play.google.com/store/apps/details?id=com.artnepalaya.mobile&referrer=utm_source%3Dshare%26utm_content%3D${postId}`;
     const likesCount = post.likesCount || 0;
 
     const html = `<!DOCTYPE html>
@@ -88,12 +104,22 @@ router.get('/p/:postId', async (req, res) => {
   <meta property="og:image" content="${escapeHtml(ogImage)}">
   <meta property="og:url" content="${escapeHtml(ogUrl)}">
   <meta property="og:site_name" content="Art Nepalaya">
+  ${isVideo ? `<meta property="og:video" content="${escapeHtml(firstMediaUrl)}">
+  <meta property="og:video:type" content="video/mp4">
+  <meta property="og:video:width" content="720">
+  <meta property="og:video:height" content="900">` : ''}
 
   <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
+  ${isVideo ? `<meta name="twitter:card" content="player">
   <meta name="twitter:title" content="${escapeHtml(ogTitle)}">
   <meta name="twitter:description" content="${escapeHtml(ogDescription)}">
   <meta name="twitter:image" content="${escapeHtml(ogImage)}">
+  <meta name="twitter:player" content="${escapeHtml(firstMediaUrl)}">
+  <meta name="twitter:player:width" content="720">
+  <meta name="twitter:player:height" content="900">` : `<meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtml(ogTitle)}">
+  <meta name="twitter:description" content="${escapeHtml(ogDescription)}">
+  <meta name="twitter:image" content="${escapeHtml(ogImage)}">`}
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -128,11 +154,31 @@ router.get('/p/:postId', async (req, res) => {
       overflow: hidden;
       background: #1A1A1A;
       margin-bottom: 16px;
+      position: relative;
     }
     .artwork-preview img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+    .artwork-preview video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+    }
+    .gallery-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+      backdrop-filter: blur(4px);
+      z-index: 2;
     }
     .artwork-placeholder {
       width: 100%;
@@ -267,6 +313,14 @@ router.get('/p/:postId', async (req, res) => {
       transition: opacity 0.2s;
     }
     .open-app-btn:hover { opacity: 0.85; }
+    .platform-ios-note {
+      font-size: 13px;
+      color: #9CA3AF;
+      margin-top: 8px;
+      font-style: italic;
+    }
+    .platform-section { display: none; }
+    .platform-section.active { display: block; }
   </style>
 </head>
 <body>
@@ -274,8 +328,11 @@ router.get('/p/:postId', async (req, res) => {
     <div class="logo">Art Nepalaya</div>
 
     <div class="artwork-preview">
-      ${ogImage
-        ? `<img src="${escapeHtml(ogImage)}" alt="Artwork by ${escapeHtml(authorName)}">`
+      ${isGallery ? `<span class="gallery-badge">1 / ${mediaCount}</span>` : ''}
+      ${firstMediaUrl
+        ? (isVideo
+          ? `<video src="${escapeHtml(firstMediaUrl)}" poster="${escapeHtml(videoPosterUrl)}" muted playsinline preload="metadata" controls></video>`
+          : `<img src="${escapeHtml(firstMediaUrl)}" alt="Artwork by ${escapeHtml(authorName)}">`)
         : '<div class="artwork-placeholder">&#x1F3A8;</div>'}
     </div>
 
@@ -300,46 +357,69 @@ router.get('/p/:postId', async (req, res) => {
       <div class="cta-title">View in Art Nepalaya</div>
       <div class="cta-subtitle">Discover and share artwork from Nepali artists</div>
 
-      <div class="store-buttons">
+      <!-- Android CTA -->
+      <div class="store-buttons platform-section" id="cta-android">
         <a href="${escapeHtml(deepLink)}" class="open-app-btn">Open in App</a>
-        <a href="https://play.google.com/store/apps/details?id=com.artnepalaya.mobile" class="store-btn store-btn-play">Get on Google Play</a>
-        <span class="store-btn store-btn-apple store-btn-disabled">Coming Soon to iOS</span>
+        <a href="${escapeHtml(playStoreUrl)}" class="store-btn store-btn-play">Get on Google Play</a>
+      </div>
+
+      <!-- iOS CTA -->
+      <div class="store-buttons platform-section" id="cta-ios">
+        <a href="${escapeHtml(deepLink)}" class="open-app-btn">Open in App</a>
+        <span class="store-btn store-btn-apple store-btn-disabled">Coming Soon to App Store</span>
+        <p class="platform-ios-note">Art Nepalaya for iOS is coming soon!</p>
+      </div>
+
+      <!-- Desktop CTA -->
+      <div class="store-buttons platform-section" id="cta-desktop">
+        <a href="${escapeHtml(playStoreUrl)}" class="store-btn store-btn-play">Get on Google Play</a>
+        <span class="store-btn store-btn-apple store-btn-disabled">Coming Soon to App Store</span>
       </div>
     </div>
   </div>
 
   <script>
-    // Attempt deep link redirect for users who have the app installed.
-    // Strategy: Try custom scheme via hidden iframe on all platforms.
-    // On Android only: if the app doesn't open, redirect to Play Store after 1.5s.
-    // On desktop/iOS: do nothing after iframe attempt (user clicks buttons manually).
+    // Platform detection and smart deep link handling.
+    // Android: attempt deep link, auto-redirect to Play Store if app not installed.
+    // iOS: attempt deep link, show Coming Soon note (App Store link ready for future).
+    // Desktop: show both store buttons, no auto-redirect.
     (function() {
       var deepLink = ${JSON.stringify(deepLink)};
-      var isAndroid = /android/i.test(navigator.userAgent);
-      var timeout;
+      var playStoreUrl = ${JSON.stringify(playStoreUrl)};
+      var ua = navigator.userAgent || '';
+      var isAndroid = /android/i.test(ua);
+      var isIOS = /iphone|ipad|ipod/i.test(ua);
+      var isDesktop = !isAndroid && !isIOS;
 
-      // Try to open the app via custom scheme
-      var iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = deepLink;
-      document.body.appendChild(iframe);
+      // Show the correct CTA section
+      var sectionId = isAndroid ? 'cta-android' : (isIOS ? 'cta-ios' : 'cta-desktop');
+      var section = document.getElementById(sectionId);
+      if (section) section.classList.add('active');
 
-      // On Android, redirect to Play Store if the app didn't intercept
-      if (isAndroid) {
-        timeout = setTimeout(function() {
-          document.body.removeChild(iframe);
-          window.location.href = 'https://play.google.com/store/apps/details?id=com.artnepalaya.mobile';
-        }, 1500);
+      // On mobile platforms, attempt to open the app via custom scheme
+      if (isAndroid || isIOS) {
+        var iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = deepLink;
+        document.body.appendChild(iframe);
 
-        // If the page loses visibility (app opened), cancel the fallback
-        document.addEventListener('visibilitychange', function() {
-          if (document.hidden) {
-            clearTimeout(timeout);
-          }
-        });
-      } else {
-        // Non-Android: just clean up the iframe after a short delay
-        setTimeout(function() { document.body.removeChild(iframe); }, 2000);
+        if (isAndroid) {
+          // On Android, redirect to Play Store if the app did not intercept
+          var timeout = setTimeout(function() {
+            document.body.removeChild(iframe);
+            window.location.href = playStoreUrl;
+          }, 1500);
+
+          // If the page loses visibility (app opened), cancel the fallback
+          document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+              clearTimeout(timeout);
+            }
+          });
+        } else {
+          // iOS: just clean up the iframe; no auto-redirect (app not on App Store yet)
+          setTimeout(function() { document.body.removeChild(iframe); }, 2000);
+        }
       }
     })();
   </script>
@@ -675,6 +755,40 @@ function buildGenericPage(title, description, deepLink) {
   </script>` : ''}
 </body>
 </html>`;
+}
+
+/**
+ * Generate a poster/thumbnail URL for a Cloudinary video.
+ * Handles multiple URL patterns:
+ * - Standard Cloudinary video: .../video/upload/v123/file.mp4 -> .../video/upload/so_0/v123/file.jpg
+ * - Already-transformed URLs: insert so_0 after existing transforms
+ * - Non-Cloudinary URLs: append .jpg extension as fallback
+ *
+ * The /so_0/ transform tells Cloudinary to extract the first frame (second offset 0).
+ * Changing the extension from .mp4 to .jpg returns it as an image.
+ */
+function getVideoThumbnailUrl(videoUrl) {
+  if (!videoUrl) return '';
+
+  // Cloudinary URL pattern: https://res.cloudinary.com/{cloud}/video/upload/{transforms}/v{version}/{path}.{ext}
+  const cloudinaryVideoRegex = /^(https?:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/)(.*?)(\.[^.]+)$/;
+  const match = videoUrl.match(cloudinaryVideoRegex);
+
+  if (match) {
+    // Insert so_0 transform and change extension to .jpg
+    const base = match[1]; // up to /upload/
+    const pathPart = match[2]; // everything between /upload/ and the final extension
+    // Insert so_0 at the start of the path (after /upload/)
+    return `${base}so_0/${pathPart}.jpg`;
+  }
+
+  // Fallback for non-Cloudinary video URLs: just replace the extension with .jpg
+  const lastDotIndex = videoUrl.lastIndexOf('.');
+  if (lastDotIndex > 0) {
+    return videoUrl.substring(0, lastDotIndex) + '.jpg';
+  }
+
+  return videoUrl;
 }
 
 /**
