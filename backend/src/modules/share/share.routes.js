@@ -4,6 +4,26 @@ import { Post } from '../posts/post.model.js';
 
 const router = Router();
 
+// Relaxed CSP for public share landing pages.
+// These pages render Cloudinary images, Google avatars, and inline deep-link scripts.
+// API endpoints retain strict defaults from Helmet.
+const SHARE_PAGE_IMG_SRC = (process.env.CSP_IMG_SRC || "'self' data: blob: https: https://res.cloudinary.com https://lh3.googleusercontent.com").trim();
+const SHARE_PAGE_CSP = [
+  "default-src 'self'",
+  `img-src ${SHARE_PAGE_IMG_SRC}`,
+  "style-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "frame-src 'none'",
+  "object-src 'none'",
+].join('; ');
+
+router.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy', SHARE_PAGE_CSP);
+  next();
+});
+
 /**
  * GET /p/:postId
  * Share landing page for posts/artworks.
