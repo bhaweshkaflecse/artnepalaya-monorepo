@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Deep link and store flow audit and fixes. Verify and fix: Android App Links (assetlinks.json), intent filters in AndroidManifest.xml, Expo Linking configuration in App.tsx, and the smart redirect flow. The deep link config must route correctly for both app-installed and app-not-installed scenarios. Also verify no redirect loops and no browser dead ends.",
+  "status": "completed",
+  "steps": [
+    "1. In backend/src/app.js, update the assetlinks.json endpoint to include a clear instruction comment about how to obtain the SHA256 fingerprint (keytool -list -v -keystore <keystore> -alias <alias>) and note that the TODO must be replaced before Android App Links verification will work in production",
+    "2. Verify AndroidManifest.xml intent-filters have android:autoVerify='true' on the https scheme filter (already present - confirm no issues)",
+    "3. In mobile/App.tsx linking config, verify that the deep link path patterns match the intent filter pathPrefixes. Current config has 'p/:postId' and 'u/:userId' which matches /p/* and /u/* pathPrefixes. Verify the screen names (PostDetail, UserProfile) exist in AppStack navigation",
+    "4. Fix a potential issue: the linking config references screen 'App > PostDetail' and 'App > UserProfile' but AppStack screen names are 'PostDetail' and 'UserProfile'. Verify the NavigationContainer linking config nesting matches the actual navigator hierarchy (Stack within Stack). The current nesting config.screens.App.screens should work because AppStack is rendered when authenticated/guest.",
+    "5. Add handling for the case where a user is NOT authenticated and receives a deep link - currently RootNavigator shows AuthStack for unauthenticated users, but deep links should still work for guest-accessible content. Verify that guest users can access PostDetail and UserProfile screens via deep links.",
+    "6. Ensure the share page redirect script (in share.routes.js) does NOT create redirect loops - it should try the custom scheme once via iframe, and only redirect to Play Store on Android if visibility doesn't change within 1.5s timeout"
+  ],
+  "acceptance_criteria": [
+    "assetlinks.json endpoint has clear documentation about SHA256 fingerprint requirement",
+    "AndroidManifest.xml intent-filters correctly configured with autoVerify=true for https scheme",
+    "App.tsx linking config paths match AndroidManifest.xml pathPrefixes",
+    "Navigation screen names in linking config match actual AppStack screen names",
+    "Deep link flow: app installed opens directly to PostDetail/UserProfile screen",
+    "Deep link flow: app not installed redirects to Play Store (Android) or shows store buttons",
+    "No redirect loops in the share page JavaScript",
+    "Guest users can still receive and navigate to deep link targets"
+  ],
+  "verification": [
+    "Read mobile/App.tsx and verify linking config screen names match AppStack",
+    "Read AndroidManifest.xml and verify intent-filters have autoVerify=true",
+    "Read backend/src/app.js and verify assetlinks.json endpoint documentation",
+    "Read share.routes.js redirect script and verify no loop conditions"
+  ],
+  "blocked_reason": null,
+  "findings": "1. CRITICAL FIX: The linking config in App.tsx had screens nested under 'App' key (config.screens.App.screens.PostDetail) but there is no navigator named 'App' in the hierarchy. RootNavigator is a plain React component that conditionally renders AppStack (the actual Stack.Navigator). Fixed by removing the 'App' wrapper and mapping screens directly in config.screens. 2. AndroidManifest.xml is correctly configured with autoVerify=true on the HTTPS intent-filter, singleTask launchMode, and matching pathPrefixes (/p/, /u/, /c/, /e/, /m/). No changes needed. 3. assetlinks.json endpoint updated with comprehensive documentation covering 3 methods to get SHA256 fingerprint (Play Console recommended, local keytool, EAS credentials). Added Cache-Control header. 4. Share page redirect script verified: no redirect loops possible - uses one-shot setTimeout with visibilitychange cancellation on Android, no auto-redirect on iOS/Desktop. 5. Guest users CAN receive deep links since RootNavigator renders AppStack when isGuest=true. For fully unauthenticated users (not even guest), React Navigation queues the deep link URL and resolves it once the matching screen mounts (after user signs in or continues as guest). 6. The /c/, /e/, /m/ paths have intent-filters and backend share routes but no corresponding screens in AppStack yet. These are documented as future additions in the linking config comments. 7. Pre-existing TS errors throughout the mobile codebase due to missing node_modules (INTEGRATIONS_ONLY mode) - not caused by our changes."
+}
