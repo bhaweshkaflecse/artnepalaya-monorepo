@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-004",
+  "type": "fix",
+  "description": "Post publish UX improvement in CreateScreen.tsx. After successful publish, navigate to Profile tab (not HomeFeed which doesn't exist as a navigation target). Show a brief success alert, then navigate to the Profile tab where the user can immediately see their new post. Also fix the double-tap prevention issue and improve the post-publish state refresh flow.",
+  "status": "in_progress",
+  "steps": [
+    "1. In mobile/src/screens/create/CreateScreen.tsx, change the post-publish success navigation from navigating to 'HomeFeed' (which is not a valid screen name - MainTabs has 'Home', 'Profile', etc.) to navigating to the Profile tab: navigation.navigate('MainTabs', { screen: 'Profile' })",
+    "2. Add proper double-tap prevention: set isPublishing=true at the START of handlePublish (before any async work) so the button becomes disabled immediately. Currently it's set correctly but verify the disabled state on the TouchableOpacity checks !canPublish which depends on isPublishing",
+    "3. After successful publish, show a brief success toast/alert with 'Artwork Published!' message, then auto-navigate to Profile after a short delay (500ms) so the user sees the confirmation",
+    "4. Ensure the dispatch(prependFeedPost(newPost)) and dispatch(prependMyPost(newPost)) calls happen BEFORE navigation so both the home feed and profile data are updated before the user arrives at the destination screen",
+    "5. In the success handler, call resetForm() AFTER dispatching and navigating, not before (or move it to finally block), to prevent flash of empty form before navigation completes"
+  ],
+  "acceptance_criteria": [
+    "After publish success, user is navigated to Profile tab (not HomeFeed)",
+    "Navigation target 'MainTabs' with screen 'Profile' is valid per AppStack > MainTabs structure",
+    "Double-tap on Publish button does not trigger multiple uploads (isPublishing guards this)",
+    "New post appears in both feed and profile via prependPost dispatches before navigation",
+    "Success alert shows before navigation",
+    "Form is reset after successful publish flow completes"
+  ],
+  "verification": [
+    "Read mobile/src/screens/create/CreateScreen.tsx and verify navigation target is Profile tab",
+    "Verify dispatch calls happen before navigation",
+    "Verify isPublishing prevents double-tap"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

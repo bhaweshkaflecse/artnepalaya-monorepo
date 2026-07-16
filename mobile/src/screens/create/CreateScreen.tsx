@@ -334,15 +334,23 @@ export const CreateScreen = () => {
         },
       });
 
-      Alert.alert('Success', 'Artwork published successfully!', [
-        { text: 'OK', onPress: () => (navigation as any).navigate('HomeFeed') }
-      ]);
-      resetForm();
+      // Dispatch new post to stores BEFORE navigation so data is ready
       const newPost = response.data.data;
       if (newPost) {
         dispatch(prependFeedPost(newPost));
         dispatch(prependMyPost(newPost));
       }
+
+      // Show success alert, then navigate to Profile where new post is visible
+      Alert.alert('Success', 'Artwork Published! 🎉', [
+        {
+          text: 'View Profile',
+          onPress: () => {
+            (navigation as any).navigate('MainTabs', { screen: 'Profile' });
+            resetForm();
+          },
+        },
+      ]);
     } catch (e: any) {
       if (__DEV__) {
         console.log('[PUBLISH] ERROR STATUS:', e?.response?.status);
