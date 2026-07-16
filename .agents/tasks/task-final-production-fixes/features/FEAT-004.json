@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "fix",
   "description": "Post publish UX improvement in CreateScreen.tsx. After successful publish, navigate to Profile tab (not HomeFeed which doesn't exist as a navigation target). Show a brief success alert, then navigate to the Profile tab where the user can immediately see their new post. Also fix the double-tap prevention issue and improve the post-publish state refresh flow.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. In mobile/src/screens/create/CreateScreen.tsx, change the post-publish success navigation from navigating to 'HomeFeed' (which is not a valid screen name - MainTabs has 'Home', 'Profile', etc.) to navigating to the Profile tab: navigation.navigate('MainTabs', { screen: 'Profile' })",
     "2. Add proper double-tap prevention: set isPublishing=true at the START of handlePublish (before any async work) so the button becomes disabled immediately. Currently it's set correctly but verify the disabled state on the TouchableOpacity checks !canPublish which depends on isPublishing",
@@ -24,5 +24,5 @@
     "Verify isPublishing prevents double-tap"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Fixed post-publish flow: (1) Changed invalid 'HomeFeed' navigation to 'MainTabs' > 'Profile'. (2) Reordered logic so dispatch(prependFeedPost) and dispatch(prependMyPost) happen before the alert/navigation, ensuring post data is available when user arrives at Profile. (3) resetForm() now called inside alert onPress callback after navigation, preventing flash of empty form. (4) Double-tap prevention confirmed solid: setIsPublishing(true) is called before any async work, canPublish depends on !isPublishing, button uses disabled={!canPublish}. (5) No other references to 'HomeFeed' found in codebase. Could not run TypeScript compiler due to INTEGRATIONS_ONLY network mode but changes are syntactically correct (only reordering of existing statements and updated string literals)."
 }
