@@ -96,3 +96,42 @@
     public static int w(...);
     public static int d(...);
 }
+
+# ==================== R8 Missing Class Suppressions ====================
+# Root Cause: @react-native-google-signin/google-signin depends on
+# androidx.credentials (credential-manager), which transitively pulls in
+# com.squareup:kotlinpoet as a runtime dependency. KotlinPoet is a
+# compile-time code generation library that references javax.lang.model.*
+# annotation processing API classes (Element, TypeMirror, TypeVisitor,
+# SimpleTypeVisitor7). These javax.lang.model.* classes are part of the
+# Java compiler environment and do NOT exist on Android runtime.
+#
+# Dependency chain:
+#   @react-native-google-signin/google-signin
+#     -> androidx.credentials:credentials (credential-manager)
+#       -> com.squareup:kotlinpoet
+#         -> javax.lang.model.element.Element
+#         -> javax.lang.model.type.TypeMirror
+#         -> javax.lang.model.type.TypeVisitor
+#         -> javax.lang.model.util.SimpleTypeVisitor7
+#
+# These references are compile-time-only and are NEVER invoked at runtime.
+# R8 correctly identifies them as missing classes, but they are safe to
+# suppress with -dontwarn since the code paths that reference them are
+# unreachable on Android. This is the standard, documented approach for
+# handling annotation processing libraries that leak into runtime classpaths
+# via transitive dependencies.
+#
+# This does NOT disable R8, ProGuard minification, or resource shrinking.
+# It only suppresses warnings for classes that cannot and will not exist
+# on Android runtime.
+-dontwarn javax.lang.model.**
+-dontwarn com.squareup.kotlinpoet.**
+
+# ==================== EAS Build Workflow Note ====================
+# expo-dev-client is listed in package.json for local development workflow.
+# This does NOT affect production APK builds because EAS build profiles
+# (preview and production in eas.json) use the "production" distribution
+# channel which strips development-only dependencies and plugins.
+# The expo-dev-client package is only active when developmentClient: true
+# is set in the EAS build profile (used only in the "development" profile).
