@@ -32,16 +32,20 @@ const slides: SlideData[] = [
 
 /**
  * Nepal Flag Image Component
- * Renders the official Flag_of_Nepal.png asset.
+ * Renders the official Flag_of_Nepal.png asset with responsive dimensions.
  * To update the flag, replace the PNG at mobile/assets/icons/Flag_of_Nepal.png.
  */
-const NepalFlag = () => (
-  <Image
-    source={require('../../../assets/icons/Flag_of_Nepal.png')}
-    style={{ width: 180, height: 220 }}
-    resizeMode="contain"
-  />
-);
+const NepalFlag = () => {
+  const flagWidth = Math.min(140, SCREEN_WIDTH * 0.35);
+  const flagHeight = flagWidth * 1.2; // Maintain proportional aspect ratio
+  return (
+    <Image
+      source={require('../../../assets/icons/Flag_of_Nepal.png')}
+      style={{ width: flagWidth, height: flagHeight }}
+      resizeMode="contain"
+    />
+  );
+};
 
 export const OnboardingScreen = () => {
   const dispatch = useAppDispatch();
@@ -172,7 +176,7 @@ export const OnboardingScreen = () => {
               Made in Nepal.{'\n'}Built for the World.
             </Text>
 
-            {/* Nepal Flag SVG */}
+            {/* Nepal Flag */}
             <View style={styles.artworkPlaceholder}>
               <View style={styles.artworkInner}>
                 <NepalFlag />
@@ -308,9 +312,10 @@ const styles = StyleSheet.create({
   },
   slide: {
     width: SCREEN_WIDTH,
-    flex: 1,
+    height: SCREEN_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   darkBackground: {
     backgroundColor: '#0A0A0A',
@@ -319,7 +324,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 36,
+    paddingHorizontal: Math.min(36, SCREEN_WIDTH * 0.08),
+    width: '100%',
   },
 
   // ---- Decorative backgrounds ----
@@ -353,31 +359,31 @@ const styles = StyleSheet.create({
 
   // ---- Logo ----
   logoContainer: {
-    marginBottom: 32,
+    marginBottom: Math.min(28, SCREEN_HEIGHT * 0.03),
     alignItems: 'center',
   },
   logo: {
-    width: 110,
-    height: 110,
-    borderRadius: 28,
+    width: Math.min(90, SCREEN_WIDTH * 0.22),
+    height: Math.min(90, SCREEN_WIDTH * 0.22),
+    borderRadius: Math.min(22, SCREEN_WIDTH * 0.055),
   },
 
   // ---- Screen 1: Welcome ----
   heroTitle: {
-    fontSize: 34,
+    fontSize: Math.min(30, SCREEN_WIDTH * 0.078),
     fontWeight: '800',
     color: '#FFFFFF',
     textAlign: 'center',
     letterSpacing: -0.5,
-    lineHeight: 42,
-    marginBottom: 20,
+    lineHeight: Math.min(38, SCREEN_WIDTH * 0.098),
+    marginBottom: Math.min(18, SCREEN_HEIGHT * 0.02),
   },
   heroDescription: {
-    fontSize: 16,
+    fontSize: Math.min(15, SCREEN_WIDTH * 0.039),
     color: 'rgba(255,255,255,0.65)',
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 28,
+    lineHeight: Math.min(22, SCREEN_WIDTH * 0.057),
+    marginBottom: Math.min(24, SCREEN_HEIGHT * 0.028),
     paddingHorizontal: 8,
   },
   dividerLine: {
@@ -390,49 +396,49 @@ const styles = StyleSheet.create({
 
   // ---- Screen 2: Origin Story ----
   originTitle: {
-    fontSize: 32,
+    fontSize: Math.min(28, SCREEN_WIDTH * 0.072),
     fontWeight: '800',
     color: '#FFFFFF',
     textAlign: 'center',
     letterSpacing: -0.5,
-    lineHeight: 40,
-    marginBottom: 32,
+    lineHeight: Math.min(36, SCREEN_WIDTH * 0.092),
+    marginBottom: Math.min(24, SCREEN_HEIGHT * 0.025),
   },
   artworkPlaceholder: {
-    width: SCREEN_WIDTH * 0.7,
-    height: SCREEN_WIDTH * 0.85,
-    borderRadius: 20,
+    width: Math.min(SCREEN_WIDTH * 0.6, 240),
+    height: Math.min(SCREEN_WIDTH * 0.7, SCREEN_HEIGHT * 0.3),
+    borderRadius: 16,
     backgroundColor: '#2D1B4E',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: Math.min(20, SCREEN_HEIGHT * 0.022),
     overflow: 'hidden',
   },
   artworkInner: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: 16,
   },
   artworkPlaceholderText: {
-    fontSize: 15,
+    fontSize: 14,
     color: 'rgba(255,255,255,0.5)',
     textAlign: 'center',
-    marginTop: 16,
-    lineHeight: 22,
+    marginTop: 12,
+    lineHeight: 20,
   },
   originSubtitle: {
-    fontSize: 15,
+    fontSize: Math.min(14, SCREEN_WIDTH * 0.036),
     color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: Math.min(20, SCREEN_WIDTH * 0.052),
     paddingHorizontal: 12,
   },
   originMiddleText: {
-    fontSize: 18,
+    fontSize: Math.min(16, SCREEN_WIDTH * 0.042),
     fontWeight: '700',
     color: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: Math.min(12, SCREEN_HEIGHT * 0.014),
     letterSpacing: 0.3,
   },
 
@@ -443,62 +449,62 @@ const styles = StyleSheet.create({
   },
   screen3Content: {
     flex: 1,
-    paddingHorizontal: 28,
-    paddingTop: SCREEN_HEIGHT * 0.08,
-    paddingBottom: 24,
-    justifyContent: 'flex-start',
+    paddingHorizontal: Math.min(28, SCREEN_WIDTH * 0.065),
+    paddingTop: Math.min(SCREEN_HEIGHT * 0.07, 56),
+    paddingBottom: Math.min(24, SCREEN_HEIGHT * 0.03),
+    justifyContent: 'center',
   },
   screen3Title: {
-    fontSize: 30,
+    fontSize: Math.min(26, SCREEN_WIDTH * 0.068),
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: -0.5,
-    lineHeight: 38,
-    marginBottom: 32,
+    lineHeight: Math.min(34, SCREEN_WIDTH * 0.088),
+    marginBottom: Math.min(24, SCREEN_HEIGHT * 0.025),
   },
 
   // ---- Benefits ----
   benefitsContainer: {
-    marginBottom: 36,
+    marginBottom: Math.min(28, SCREEN_HEIGHT * 0.03),
   },
   benefitItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: Math.min(12, SCREEN_HEIGHT * 0.013),
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   benefitIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: Math.min(40, SCREEN_WIDTH * 0.1),
+    height: Math.min(40, SCREEN_WIDTH * 0.1),
+    borderRadius: 10,
     backgroundColor: 'rgba(255,59,48,0.12)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: Math.min(12, SCREEN_WIDTH * 0.03),
   },
   benefitEmoji: {
-    fontSize: 22,
+    fontSize: Math.min(20, SCREEN_WIDTH * 0.05),
   },
   benefitTextContainer: {
     flex: 1,
   },
   benefitTitle: {
-    fontSize: 16,
+    fontSize: Math.min(15, SCREEN_WIDTH * 0.039),
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 2,
   },
   benefitSubtitle: {
-    fontSize: 13,
+    fontSize: Math.min(12, SCREEN_WIDTH * 0.031),
     color: 'rgba(255,255,255,0.55)',
-    lineHeight: 18,
+    lineHeight: Math.min(16, SCREEN_WIDTH * 0.042),
   },
 
   // ---- CTA Button ----
   ctaButton: {
     backgroundColor: '#FF3B30',
-    paddingVertical: 16,
+    paddingVertical: Math.min(16, SCREEN_HEIGHT * 0.02),
     borderRadius: 14,
     alignItems: 'center',
     marginBottom: 14,
@@ -510,7 +516,7 @@ const styles = StyleSheet.create({
   },
   ctaButtonText: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: Math.min(16, SCREEN_WIDTH * 0.042),
     fontWeight: '700',
     letterSpacing: 0.3,
   },
@@ -518,7 +524,7 @@ const styles = StyleSheet.create({
   // ---- Dots ----
   dotsContainer: {
     position: 'absolute',
-    bottom: 40,
+    bottom: Math.min(40, SCREEN_HEIGHT * 0.05),
     left: 0,
     right: 0,
     flexDirection: 'row',

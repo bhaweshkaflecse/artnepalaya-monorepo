@@ -11,6 +11,7 @@ const SHARE_PAGE_IMG_SRC = (process.env.CSP_IMG_SRC || "'self' data: blob: https
 const SHARE_PAGE_CSP = [
   "default-src 'self'",
   `img-src ${SHARE_PAGE_IMG_SRC}`,
+  "media-src 'self' https: https://res.cloudinary.com",
   "style-src 'self' 'unsafe-inline'",
   "script-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",

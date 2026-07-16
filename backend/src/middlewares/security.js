@@ -33,9 +33,21 @@ const xssSanitize = (req, res, next) => {
 };
 
 export const applySecurityMiddlewares = (app) => {
-  app.use(helmet());
+  // Disable Helmet's built-in CSP so route-level CSP headers are not overridden.
+  // Share pages set their own relaxed CSP; API routes get a strict CSP below.
+  app.use(helmet({
+    contentSecurityPolicy: false,
+  }));
+
   app.use(cors(corsOptions));
   app.use(mongoSanitize());
   app.use(xssSanitize);
+
+  // Strict CSP for API routes only (no HTML rendered, block everything)
+  app.use('/api/', (req, res, next) => {
+    res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+    next();
+  });
+
   app.use('/api/', globalRateLimiter);
 };
