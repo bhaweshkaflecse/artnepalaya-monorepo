@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-006",
+  "type": "fix",
+  "description": "Address semantic review findings: (1) Fix twitter:card to use summary_large_image for all posts including video since we lack a dedicated player embed page, (2) Fix getVideoThumbnailUrl fallback for non-Cloudinary URLs to return empty string instead of broken extension-swap URL, (3) Fix post-publish flow to auto-navigate to Profile after a brief delay instead of requiring user to tap a button.",
+  "status": "in_progress",
+  "steps": [
+    "1. In share.routes.js, change twitter:card for video posts from 'player' to 'summary_large_image' and remove twitter:player, twitter:player:width, twitter:player:height meta tags",
+    "2. In share.routes.js, fix getVideoThumbnailUrl() to return empty string for non-Cloudinary URLs instead of doing extension swap",
+    "3. In CreateScreen.tsx, replace Alert-button-based navigation with auto-navigation after a delay using setTimeout"
+  ],
+  "acceptance_criteria": [
+    "All posts (including video) use twitter:card = summary_large_image",
+    "No twitter:player meta tag is emitted for any post type",
+    "getVideoThumbnailUrl returns empty string for non-Cloudinary video URLs",
+    "After successful publish, user is auto-navigated to Profile tab after ~1500ms delay",
+    "resetForm() is called appropriately after navigation"
+  ],
+  "verification": [
+    "Read share.routes.js and confirm twitter:card is always summary_large_image",
+    "Read share.routes.js and confirm getVideoThumbnailUrl fallback returns empty string",
+    "Read CreateScreen.tsx and confirm setTimeout-based auto-navigation",
+    "Run node --check on share.routes.js to validate syntax"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}

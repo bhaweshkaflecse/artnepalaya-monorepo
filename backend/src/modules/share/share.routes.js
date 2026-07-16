@@ -110,16 +110,14 @@ router.get('/p/:postId', async (req, res) => {
   <meta property="og:video:height" content="900">` : ''}
 
   <!-- Twitter Card -->
-  ${isVideo ? `<meta name="twitter:card" content="player">
+  <!-- Always use summary_large_image for all posts (including video).
+       twitter:player requires a dedicated embeddable HTML player page URL,
+       not a raw .mp4 file. Since we don't have a player embed endpoint,
+       we use the poster/thumbnail as twitter:image for video posts. -->
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(ogTitle)}">
   <meta name="twitter:description" content="${escapeHtml(ogDescription)}">
   <meta name="twitter:image" content="${escapeHtml(ogImage)}">
-  <meta name="twitter:player" content="${escapeHtml(firstMediaUrl)}">
-  <meta name="twitter:player:width" content="720">
-  <meta name="twitter:player:height" content="900">` : `<meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${escapeHtml(ogTitle)}">
-  <meta name="twitter:description" content="${escapeHtml(ogDescription)}">
-  <meta name="twitter:image" content="${escapeHtml(ogImage)}">`}
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -762,7 +760,7 @@ function buildGenericPage(title, description, deepLink) {
  * Handles multiple URL patterns:
  * - Standard Cloudinary video: .../video/upload/v123/file.mp4 -> .../video/upload/so_0/v123/file.jpg
  * - Already-transformed URLs: insert so_0 after existing transforms
- * - Non-Cloudinary URLs: append .jpg extension as fallback
+ * - Non-Cloudinary URLs: returns empty string (no reliable thumbnail generation possible)
  *
  * The /so_0/ transform tells Cloudinary to extract the first frame (second offset 0).
  * Changing the extension from .mp4 to .jpg returns it as an image.
@@ -782,13 +780,10 @@ function getVideoThumbnailUrl(videoUrl) {
     return `${base}so_0/${pathPart}.jpg`;
   }
 
-  // Fallback for non-Cloudinary video URLs: just replace the extension with .jpg
-  const lastDotIndex = videoUrl.lastIndexOf('.');
-  if (lastDotIndex > 0) {
-    return videoUrl.substring(0, lastDotIndex) + '.jpg';
-  }
-
-  return videoUrl;
+  // For non-Cloudinary video URLs, we cannot reliably generate a thumbnail.
+  // Returning an empty string allows og:image to gracefully omit rather than
+  // pointing to a broken URL (extension swap would likely produce a 404).
+  return '';
 }
 
 /**

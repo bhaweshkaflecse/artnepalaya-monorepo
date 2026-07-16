@@ -341,16 +341,21 @@ export const CreateScreen = () => {
         dispatch(prependMyPost(newPost));
       }
 
-      // Show success alert, then navigate to Profile where new post is visible
-      Alert.alert('Success', 'Artwork Published! 🎉', [
-        {
-          text: 'View Profile',
-          onPress: () => {
-            (navigation as any).navigate('MainTabs', { screen: 'Profile' });
-            resetForm();
-          },
-        },
-      ]);
+      // Reset form immediately after successful publish
+      resetForm();
+
+      // Show success feedback (non-blocking alert with cancelable: false)
+      Alert.alert(
+        'Artwork Published!',
+        'Navigating to your profile...',
+        [{ text: 'OK', style: 'default' }],
+        { cancelable: false }
+      );
+
+      // Auto-navigate to Profile tab after a brief delay so the user sees the success feedback
+      setTimeout(() => {
+        (navigation as any).navigate('MainTabs', { screen: 'Profile' });
+      }, 1500);
     } catch (e: any) {
       if (__DEV__) {
         console.log('[PUBLISH] ERROR STATUS:', e?.response?.status);
