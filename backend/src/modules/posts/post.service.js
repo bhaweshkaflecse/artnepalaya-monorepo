@@ -147,9 +147,11 @@ export const getFeed = async (userId, cursor, limit, showMatureContent) => {
 
   // Recommendation engine: attempt personalized feed for authenticated users with interests
   if (userId) {
+    console.log('[getFeed] Authenticated user:', userId, '- attempting recommendation engine');
     try {
       const recommendedFeed = await buildRecommendedFeed(userId, cursor, limit, showMatureContent);
       if (recommendedFeed !== null) {
+        console.log('[getFeed] Recommendation engine returned', recommendedFeed.data.length, 'posts');
         // Per-user like/save hydration for recommended feed
         if (recommendedFeed.data.length > 0) {
           const postIds = recommendedFeed.data.map(p => p._id);
@@ -176,6 +178,9 @@ export const getFeed = async (userId, cursor, limit, showMatureContent) => {
       // Graceful fallback: if recommendation engine fails, continue to existing algorithm
       console.error('Recommendation engine error, falling back to default feed:', err.message);
     }
+    console.log('[getFeed] Recommendation returned null (user has no interests) - using LEGACY fallback');
+  } else {
+    console.log('[getFeed] Guest/unauthenticated - using LEGACY fallback');
   }
 
   // Determine if NSFW content should be filtered

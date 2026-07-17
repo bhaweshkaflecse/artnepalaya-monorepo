@@ -138,7 +138,7 @@ router.get('/p/:postId', async (req, res) => {
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-bottom: 80px; /* space for sticky CTA */
+      padding-bottom: 0;
     }
     .container {
       max-width: 480px;
@@ -428,49 +428,9 @@ router.get('/p/:postId', async (req, res) => {
     }
     .platform-section { display: none; }
     .platform-section.active { display: block; }
-    /* Sticky bottom CTA bar - mobile only */
-    .sticky-cta {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      background: rgba(10, 10, 10, 0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 12px 16px;
-      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    .sticky-cta .sticky-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      color: #FFFFFF;
-      background: linear-gradient(135deg, #FF3B30, #FF6B5A);
-      box-shadow: 0 4px 14px rgba(255, 59, 48, 0.35);
-      flex: 1;
-      max-width: 200px;
-      transition: transform 0.2s;
-    }
-    .sticky-cta .sticky-btn:hover { transform: scale(1.02); }
-    .sticky-cta .sticky-label {
-      font-size: 13px;
-      font-weight: 500;
-      color: #D1D5DB;
-    }
+
     /* Tablet breakpoint */
     @media (min-width: 768px) {
-      body { padding-bottom: 0; }
       .container { max-width: 560px; padding: 32px 24px; }
       .logo { font-size: 22px; margin-bottom: 20px; }
       .artwork-preview { max-height: 55vh; border-radius: 16px; }
@@ -482,7 +442,6 @@ router.get('/p/:postId', async (req, res) => {
       .author-fullname { font-size: 17px; }
       .caption { font-size: 15px; }
       .cta-title { font-size: 20px; }
-      .sticky-cta { display: none; }
     }
     /* Desktop breakpoint */
     @media (min-width: 1024px) {
@@ -498,7 +457,6 @@ router.get('/p/:postId', async (req, res) => {
       .author-fullname { font-size: 18px; }
       .caption { font-size: 16px; }
       .store-btn, .open-app-btn { max-width: 300px; padding: 14px 28px; font-size: 15px; }
-      .sticky-cta { display: none; }
     }
   </style>
 </head>
@@ -572,11 +530,6 @@ router.get('/p/:postId', async (req, res) => {
     </div>
   </div>
 
-  <!-- Sticky bottom CTA bar for mobile -->
-  <div class="sticky-cta" id="sticky-cta">
-    <span class="sticky-label">Art Nepalaya</span>
-    <a href="#" class="sticky-btn" id="sticky-open-btn">Open in App</a>
-  </div>
 
   <script>
     // Platform detection and smart deep link handling.
@@ -597,25 +550,6 @@ router.get('/p/:postId', async (req, res) => {
       var sectionId = isAndroid ? 'cta-android' : (isIOS ? 'cta-ios' : 'cta-desktop');
       var section = document.getElementById(sectionId);
       if (section) section.classList.add('active');
-
-      // Configure sticky CTA button
-      var stickyBtn = document.getElementById('sticky-open-btn');
-      if (stickyBtn) {
-        if (isAndroid) {
-          stickyBtn.href = intentUri;
-        } else if (isIOS) {
-          stickyBtn.href = deepLink;
-        } else {
-          stickyBtn.href = playStoreUrl;
-          stickyBtn.textContent = 'Get the App';
-        }
-      }
-
-      // Hide sticky bar on desktop/tablet
-      if (isDesktop) {
-        var stickyBar = document.getElementById('sticky-cta');
-        if (stickyBar) stickyBar.style.display = 'none';
-      }
 
       // No auto-redirect on page load. The landing page content should remain
       // visible and the user taps "Open in App" manually. The intent:// URI in
@@ -671,22 +605,6 @@ router.get('/p/:postId', async (req, res) => {
         }
       }
 
-      // Smart sticky CTA visibility: only show the sticky bar when the main
-      // CTA section scrolls out of view (using IntersectionObserver).
-      var ctaSection = document.querySelector('.cta-section');
-      var stickyBar = document.getElementById('sticky-cta');
-      if (ctaSection && stickyBar && !isDesktop && 'IntersectionObserver' in window) {
-        var observer = new IntersectionObserver(function(entries) {
-          entries.forEach(function(entry) {
-            if (entry.isIntersecting) {
-              stickyBar.style.display = 'none';
-            } else {
-              stickyBar.style.display = 'flex';
-            }
-          });
-        }, { threshold: 0 });
-        observer.observe(ctaSection);
-      }
     })();
   </script>
 </body>
