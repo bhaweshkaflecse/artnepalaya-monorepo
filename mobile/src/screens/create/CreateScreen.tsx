@@ -190,10 +190,18 @@ export const CreateScreen = () => {
     });
   };
 
+  const MAX_ARTWORK_TYPES = 5;
+
   const toggleArtworkType = (type: string) => {
-    setArtworkType((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
-    );
+    setArtworkType((prev) => {
+      if (prev.includes(type)) {
+        return prev.filter((t) => t !== type);
+      }
+      if (prev.length >= MAX_ARTWORK_TYPES) {
+        return prev;
+      }
+      return [...prev, type];
+    });
   };
 
   const resetForm = () => {

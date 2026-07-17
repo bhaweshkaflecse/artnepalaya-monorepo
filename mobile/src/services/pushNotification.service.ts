@@ -17,6 +17,15 @@ Notifications.setNotificationHandler({
   }),
 });
 
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync('default', {
+    name: 'Default',
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#FF3B30',
+  });
+}
+
 /**
  * Sets up the Android notification channel.
  * Must be called before notifications are displayed on Android.

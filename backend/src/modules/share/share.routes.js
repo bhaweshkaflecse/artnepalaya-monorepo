@@ -441,7 +441,7 @@ router.get('/p/:postId', async (req, res) => {
       border-top: 1px solid rgba(255, 255, 255, 0.08);
       padding: 12px 16px;
       padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
       gap: 10px;
@@ -669,6 +669,23 @@ router.get('/p/:postId', async (req, res) => {
           // Caption fits within 4 lines - no toggle needed
           captionEl.classList.remove('clamped');
         }
+      }
+
+      // Smart sticky CTA visibility: only show the sticky bar when the main
+      // CTA section scrolls out of view (using IntersectionObserver).
+      var ctaSection = document.querySelector('.cta-section');
+      var stickyBar = document.getElementById('sticky-cta');
+      if (ctaSection && stickyBar && !isDesktop && 'IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              stickyBar.style.display = 'none';
+            } else {
+              stickyBar.style.display = 'flex';
+            }
+          });
+        }, { threshold: 0 });
+        observer.observe(ctaSection);
       }
     })();
   </script>
