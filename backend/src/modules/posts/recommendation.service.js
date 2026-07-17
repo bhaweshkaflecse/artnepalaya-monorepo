@@ -66,35 +66,90 @@ const DEFAULT_WEIGHTS = {
 };
 
 // ---------------------------------------------------------------------------
+// Normalization Utilities
+// ---------------------------------------------------------------------------
+// Why log2? Engagement counts (likes, saves, views) follow a power-law
+// distribution: a few posts receive thousands of interactions while most receive
+// single digits. Raw counts would let viral posts dominate the score, drowning
+// out newer or niche content. Log2 compresses the range (e.g., 1->1, 8->3,
+// 1024->10) so that the *relative* difference between 10 and 100 likes
+// contributes roughly the same score gap as 100 vs 1000. This keeps the feed
+// balanced without entirely ignoring popularity.
+//
+// Alternative normalizers are provided for experimentation:
+//   - normalizeSqrt: gentler compression (good for low-count metrics)
+//   - normalizeLinear: no compression (passthrough)
+//   - normalizeLog10: stronger compression than log2
+
+/**
+ * Logarithmic (base 2) normalization. Compresses power-law distributions.
+ * @param {number} value - Raw count (non-negative)
+ * @returns {number} Normalized value (0 when value is 0)
+ */
+export const normalizeLog = (value) => {
+  if (value <= 0) return 0;
+  return Math.log2(1 + value);
+};
+
+/**
+ * Square root normalization. Gentler compression than log2.
+ * @param {number} value - Raw count (non-negative)
+ * @returns {number} Normalized value
+ */
+export const normalizeSqrt = (value) => {
+  if (value <= 0) return 0;
+  return Math.sqrt(value);
+};
+
+/**
+ * Linear normalization (identity/passthrough). No compression applied.
+ * @param {number} value - Raw count
+ * @returns {number} Same value unchanged
+ */
+export const normalizeLinear = (value) => {
+  return value;
+};
+
+/**
+ * Logarithmic (base 10) normalization. Stronger compression than log2.
+ * @param {number} value - Raw count (non-negative)
+ * @returns {number} Normalized value
+ */
+export const normalizeLog10 = (value) => {
+  if (value <= 0) return 0;
+  return Math.log10(1 + value);
+};
+
+// ---------------------------------------------------------------------------
 // Built-in Signal Implementations
 // ---------------------------------------------------------------------------
 
-// Likes signal: raw like count
+// Likes signal: log2-normalized like count
 registerSignal('likes', (post) => {
-  return post.likesCount || 0;
+  return normalizeLog(post.likesCount || 0);
 }, 3);
 
-// Saves signal: raw save count (highest engagement weight)
+// Saves signal: log2-normalized save count (highest engagement weight)
 registerSignal('saves', (post) => {
-  return post.savesCount || 0;
+  return normalizeLog(post.savesCount || 0);
 }, 7);
 
 // Comments signal: DORMANT - commentsCount field does not yet exist on Post schema.
 // Will always return 0 until schema is extended. Registered for forward compatibility.
 registerSignal('comments', (post) => {
-  return post.commentsCount || 0;
+  return normalizeLog(post.commentsCount || 0);
 }, 4);
 
 // Shares signal: DORMANT - sharesCount field does not yet exist on Post schema.
 // Will always return 0 until schema is extended. Registered for forward compatibility.
 registerSignal('shares', (post) => {
-  return post.sharesCount || 0;
+  return normalizeLog(post.sharesCount || 0);
 }, 5);
 
 // Views signal: DORMANT - viewsCount field does not yet exist on Post schema.
 // Will always return 0 until schema is extended. Registered for forward compatibility.
 registerSignal('views', (post) => {
-  return post.viewsCount || 0;
+  return normalizeLog(post.viewsCount || 0);
 }, 1);
 
 // Creator Followers signal: author's follower count
@@ -523,25 +578,24 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
 
   const explorationPosts = explorationCandidates.slice(0, explorationSlotCount);
 
-  // Step 11: Apply diversity to main candidates
-  const diverseMainPosts = applyDiversity(mainCandidates).slice(0, mainSlotCount);
+  // Step 11: Combine main + exploration candidates (NO diversity yet)
+  const mainPosts = mainCandidates.slice(0, mainSlotCount);
+  const combined = [...mainPosts, ...explorationPosts].slice(0, limit);
 
-  // Step 12: Combine main + exploration, apply final diversity pass
-  const combined = [...diverseMainPosts, ...explorationPosts].slice(0, limit);
-  const diverseFeed = applyDiversity(combined).slice(0, limit);
-
-  // Step 13: Fresh content guarantee - ensure at least 30% of returned posts
+  // Step 12: Fresh content guarantee - ensure at least 30% of returned posts
   // are from the last 48 hours (if enough fresh posts exist in the pool).
   // This prevents established/high-engagement content from completely dominating.
+  // Fresh injection runs BEFORE diversity so that injected posts also respect
+  // the diversity constraint (no consecutive same-creator posts).
   const fortyEightHoursAgo = context.currentTime - (48 * 60 * 60 * 1000);
   const freshThreshold = Math.ceil(limit * 0.3);
 
-  const freshInFeed = diverseFeed.filter(p => new Date(p.createdAt).getTime() >= fortyEightHoursAgo);
-  let finalFeed = diverseFeed;
+  const freshInFeed = combined.filter(p => new Date(p.createdAt).getTime() >= fortyEightHoursAgo);
+  let injectedFeed = combined;
 
   if (freshInFeed.length < freshThreshold) {
     // Find fresh posts from the candidate pool that are not already in the feed
-    const feedIds = new Set(diverseFeed.map(p => p._id.toString()));
+    const feedIds = new Set(combined.map(p => p._id.toString()));
     const freshCandidates = scoredPosts
       .filter(s => {
         const postTime = new Date(s.post.createdAt).getTime();
@@ -555,8 +609,8 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
     if (freshToInject.length > 0) {
       // Interleave fresh posts at positions 2, 5, 8, ... (0-indexed: 1, 4, 7, ...)
       // Remove the lowest-scored non-fresh posts from the tail to make room
-      const nonFreshInFeed = diverseFeed.filter(p => new Date(p.createdAt).getTime() < fortyEightHoursAgo);
-      const feedCopy = [...diverseFeed];
+      const nonFreshInFeed = combined.filter(p => new Date(p.createdAt).getTime() < fortyEightHoursAgo);
+      const feedCopy = [...combined];
 
       // Remove tail items to make room (keep feed length constant)
       const toRemove = Math.min(freshToInject.length, nonFreshInFeed.length);
@@ -572,9 +626,14 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
         feedCopy.splice(insertPos, 0, freshToInject[i]);
       }
 
-      finalFeed = feedCopy.slice(0, limit);
+      injectedFeed = feedCopy.slice(0, limit);
     }
   }
+
+  // Step 13: Apply ONE final diversity pass on the combined+injected result.
+  // This ensures no consecutive posts from the same creator in the final output,
+  // including any freshly injected posts.
+  const finalFeed = applyDiversity(injectedFeed).slice(0, limit);
 
   // Step 14: Determine pagination
   // KNOWN TRADEOFF: Pagination drift under score reordering.
