@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Redesign the share page (backend/src/modules/share/share.routes.js) as a premium mobile-first responsive landing page. Fix all mobile issues: horizontal scrolling, oversized video/images, hidden CTA, layout overflow. Ensure it works on iPhone Safari, Android Chrome, Tablet, and Desktop.",
+  "status": "in_progress",
+  "steps": [
+    "Rewrite the CSS in the GET /p/:postId route HTML template in backend/src/modules/share/share.routes.js to be mobile-first responsive with these fixes: (1) Add max-width:100vw and overflow-x:hidden on html,body to prevent horizontal scroll. (2) Constrain artwork-preview/video to max-height:50vh on mobile so the CTA is always visible below. (3) Use width:100% with object-fit:cover/contain and proper aspect-ratio constraints for images/video. (4) Ensure the CTA section (Open App button, store buttons) is always visible without scrolling past the fold on mobile - consider using a sticky/fixed bottom CTA bar on small screens. (5) Make gallery items responsive with max-height constraints. (6) Add responsive breakpoints: mobile-first default, then tablet (min-width: 768px), desktop (min-width: 1024px). (7) Improve the overall visual design: subtle gradients, better spacing, glass-morphism effects for a premium feel. (8) Ensure the Coming Soon section is visible without excessive scrolling.",
+    "Also update the user profile share page (/u/:username) and the buildGenericPage() function with the same mobile-first responsive approach and premium styling.",
+    "Ensure all viewport meta tags are present (width=device-width, initial-scale=1.0, viewport-fit=cover) and add -webkit-text-size-adjust:100% to prevent text scaling issues on iOS.",
+    "Validate the file parses correctly with node --check"
+  ],
+  "acceptance_criteria": [
+    "No horizontal scroll on any viewport width (overflow-x: hidden on body/html)",
+    "Video/image content constrained to max 50vh on mobile so CTA is visible below",
+    "CTA (Open App) button is always visible without scrolling or via sticky bottom bar on mobile",
+    "Responsive layout works at 375px (iPhone), 414px (larger phones), 768px (tablet), 1024px+ (desktop)",
+    "Premium modern visual design with gradients, proper spacing, and typography",
+    "File passes node --check syntax validation"
+  ],
+  "verification": [
+    "Run: node --check backend/src/modules/share/share.routes.js",
+    "Visual inspection of the HTML/CSS structure confirms mobile-first design patterns"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

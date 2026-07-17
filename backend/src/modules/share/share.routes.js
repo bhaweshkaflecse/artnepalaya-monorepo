@@ -95,7 +95,7 @@ router.get('/p/:postId', async (req, res) => {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>${escapeHtml(ogTitle)}</title>
 
   <!-- Open Graph Meta Tags -->
@@ -122,56 +122,73 @@ router.get('/p/:postId', async (req, res) => {
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      max-width: 100vw;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+      -moz-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #0A0A0A;
       color: #FFFFFF;
       min-height: 100vh;
+      min-height: -webkit-fill-available;
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding-bottom: 80px; /* space for sticky CTA */
     }
     .container {
       max-width: 480px;
       width: 100%;
-      padding: 24px 16px;
+      padding: 16px 16px 24px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
+    /* Header / Logo */
     .logo {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 700;
       color: #FF3B30;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
       letter-spacing: -0.5px;
     }
+    /* Artwork Preview - constrained for mobile */
     .artwork-preview {
       width: 100%;
-      aspect-ratio: 4/5;
+      max-height: 45vh;
       border-radius: 12px;
       overflow: hidden;
       background: #1A1A1A;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       position: relative;
     }
     .artwork-preview img {
       width: 100%;
       height: 100%;
+      max-height: 45vh;
       object-fit: cover;
+      display: block;
     }
     .artwork-preview video {
       width: 100%;
       height: 100%;
+      max-height: 45vh;
       object-fit: cover;
       background: #000;
+      display: block;
     }
+    /* Gallery */
     .gallery-container {
       width: 100%;
+      max-height: 50vh;
       border-radius: 12px;
       overflow: hidden;
       background: #1A1A1A;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       position: relative;
     }
     .gallery-scroll {
@@ -181,49 +198,55 @@ router.get('/p/:postId', async (req, res) => {
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
       -ms-overflow-style: none;
+      max-height: 45vh;
     }
     .gallery-scroll::-webkit-scrollbar {
       display: none;
     }
     .gallery-item {
       min-width: 100%;
-      aspect-ratio: 4/5;
+      max-height: 45vh;
       scroll-snap-align: start;
       flex-shrink: 0;
     }
     .gallery-item img {
       width: 100%;
       height: 100%;
+      max-height: 45vh;
       object-fit: cover;
+      display: block;
     }
     .gallery-item video {
       width: 100%;
       height: 100%;
+      max-height: 45vh;
       object-fit: cover;
       background: #000;
+      display: block;
     }
     .gallery-badge {
       position: absolute;
-      top: 12px;
-      right: 12px;
-      background: rgba(0, 0, 0, 0.7);
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.65);
       color: #FFFFFF;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 12px;
+      padding: 4px 9px;
+      border-radius: 10px;
       backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       z-index: 2;
     }
     .gallery-dots {
       display: flex;
       justify-content: center;
-      gap: 6px;
-      padding: 10px 0;
+      gap: 5px;
+      padding: 8px 0;
     }
     .gallery-dot {
-      width: 7px;
-      height: 7px;
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
       background: #444;
       transition: background 0.3s;
@@ -233,24 +256,25 @@ router.get('/p/:postId', async (req, res) => {
     }
     .artwork-placeholder {
       width: 100%;
-      height: 100%;
+      height: 200px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #666;
       font-size: 48px;
     }
+    /* Author Row */
     .author-row {
       display: flex;
       align-items: center;
       width: 100%;
-      margin-bottom: 12px;
-      gap: 12px;
+      margin-bottom: 10px;
+      gap: 10px;
     }
     .author-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 20px;
+      width: 38px;
+      height: 38px;
+      border-radius: 19px;
       background: #1A1A1A;
       overflow: hidden;
       flex-shrink: 0;
@@ -262,86 +286,101 @@ router.get('/p/:postId', async (req, res) => {
     }
     .author-info {
       flex: 1;
+      min-width: 0;
     }
     .author-fullname {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       color: #FFFFFF;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .author-username {
-      font-size: 13px;
+      font-size: 12px;
       color: #9CA3AF;
     }
     .likes-count {
-      font-size: 13px;
+      font-size: 12px;
       color: #9CA3AF;
-      margin-top: 2px;
+      margin-top: 1px;
     }
+    /* Artwork Type Badges */
     .artwork-types {
       width: 100%;
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
+      gap: 6px;
+      margin-bottom: 10px;
     }
     .artwork-type-badge {
       display: inline-block;
-      padding: 4px 10px;
-      border-radius: 16px;
-      font-size: 12px;
+      padding: 3px 9px;
+      border-radius: 14px;
+      font-size: 11px;
       font-weight: 500;
-      background: #1A1A2E;
+      background: rgba(167, 139, 250, 0.1);
       color: #A78BFA;
-      border: 1px solid #2D2D44;
+      border: 1px solid rgba(167, 139, 250, 0.25);
     }
+    /* Caption */
     .caption {
       width: 100%;
-      font-size: 15px;
-      line-height: 1.6;
+      font-size: 14px;
+      line-height: 1.5;
       color: #E5E5E5;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       white-space: pre-wrap;
       word-break: break-word;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
+    /* Inline CTA Section (above fold) */
     .cta-section {
       width: 100%;
       text-align: center;
-      padding: 24px 0;
-      border-top: 1px solid #1A1A1A;
+      padding: 20px 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
     }
     .cta-title {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #FFFFFF, #D1D5DB);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
     .cta-subtitle {
-      font-size: 14px;
+      font-size: 13px;
       color: #9CA3AF;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     .store-buttons {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
     }
     .store-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 14px 32px;
-      border-radius: 12px;
-      font-size: 16px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
       font-weight: 600;
       text-decoration: none;
       color: #FFFFFF;
       width: 100%;
-      max-width: 280px;
-      transition: opacity 0.2s;
+      max-width: 260px;
+      transition: transform 0.2s, opacity 0.2s;
     }
-    .store-btn:hover { opacity: 0.85; }
-    .store-btn-play { background: #1DB954; }
-    .store-btn-apple { background: #333333; }
+    .store-btn:hover { opacity: 0.9; transform: scale(1.02); }
+    .store-btn-play { background: linear-gradient(135deg, #1DB954, #17a347); }
+    .store-btn-apple { background: linear-gradient(135deg, #444, #2a2a2a); }
     .store-btn-disabled {
       opacity: 0.5;
       cursor: not-allowed;
@@ -351,27 +390,100 @@ router.get('/p/:postId', async (req, res) => {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 14px 32px;
-      border-radius: 12px;
-      font-size: 16px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
       font-weight: 600;
       text-decoration: none;
       color: #FFFFFF;
-      background: #FF3B30;
+      background: linear-gradient(135deg, #FF3B30, #FF6B5A);
       width: 100%;
-      max-width: 280px;
-      margin-bottom: 12px;
-      transition: opacity 0.2s;
+      max-width: 260px;
+      margin-bottom: 6px;
+      transition: transform 0.2s, opacity 0.2s;
+      box-shadow: 0 4px 14px rgba(255, 59, 48, 0.3);
     }
-    .open-app-btn:hover { opacity: 0.85; }
+    .open-app-btn:hover { opacity: 0.9; transform: scale(1.02); }
     .platform-ios-note {
-      font-size: 13px;
+      font-size: 12px;
       color: #9CA3AF;
-      margin-top: 8px;
+      margin-top: 6px;
       font-style: italic;
     }
     .platform-section { display: none; }
     .platform-section.active { display: block; }
+    /* Sticky bottom CTA bar - mobile only */
+    .sticky-cta {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(10, 10, 10, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 16px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .sticky-cta .sticky-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      color: #FFFFFF;
+      background: linear-gradient(135deg, #FF3B30, #FF6B5A);
+      box-shadow: 0 4px 14px rgba(255, 59, 48, 0.35);
+      flex: 1;
+      max-width: 200px;
+      transition: transform 0.2s;
+    }
+    .sticky-cta .sticky-btn:hover { transform: scale(1.02); }
+    .sticky-cta .sticky-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #D1D5DB;
+    }
+    /* Tablet breakpoint */
+    @media (min-width: 768px) {
+      body { padding-bottom: 0; }
+      .container { max-width: 560px; padding: 32px 24px; }
+      .logo { font-size: 22px; margin-bottom: 20px; }
+      .artwork-preview { max-height: 55vh; border-radius: 16px; }
+      .artwork-preview img, .artwork-preview video { max-height: 55vh; }
+      .gallery-container { max-height: 55vh; border-radius: 16px; }
+      .gallery-scroll { max-height: 55vh; }
+      .gallery-item { max-height: 55vh; }
+      .gallery-item img, .gallery-item video { max-height: 55vh; }
+      .author-fullname { font-size: 17px; }
+      .caption { font-size: 15px; -webkit-line-clamp: 6; }
+      .cta-title { font-size: 20px; }
+      .sticky-cta { display: none; }
+    }
+    /* Desktop breakpoint */
+    @media (min-width: 1024px) {
+      .container { max-width: 640px; padding: 40px 32px; }
+      .logo { font-size: 24px; margin-bottom: 24px; }
+      .artwork-preview { max-height: 60vh; border-radius: 16px; }
+      .artwork-preview img, .artwork-preview video { max-height: 60vh; }
+      .gallery-container { max-height: 60vh; border-radius: 16px; }
+      .gallery-scroll { max-height: 60vh; }
+      .gallery-item { max-height: 60vh; }
+      .gallery-item img, .gallery-item video { max-height: 60vh; }
+      .author-avatar { width: 44px; height: 44px; border-radius: 22px; }
+      .author-fullname { font-size: 18px; }
+      .caption { font-size: 16px; -webkit-line-clamp: 8; }
+      .store-btn, .open-app-btn { max-width: 300px; padding: 14px 28px; font-size: 15px; }
+      .sticky-cta { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -448,6 +560,12 @@ router.get('/p/:postId', async (req, res) => {
     </div>
   </div>
 
+  <!-- Sticky bottom CTA bar for mobile -->
+  <div class="sticky-cta" id="sticky-cta">
+    <span class="sticky-label">Art Nepalaya</span>
+    <a href="#" class="sticky-btn" id="sticky-open-btn">Open in App</a>
+  </div>
+
   <script>
     // Platform detection and smart deep link handling.
     // Android: use intent:// URI which triggers the Android intent system directly.
@@ -467,6 +585,25 @@ router.get('/p/:postId', async (req, res) => {
       var sectionId = isAndroid ? 'cta-android' : (isIOS ? 'cta-ios' : 'cta-desktop');
       var section = document.getElementById(sectionId);
       if (section) section.classList.add('active');
+
+      // Configure sticky CTA button
+      var stickyBtn = document.getElementById('sticky-open-btn');
+      if (stickyBtn) {
+        if (isAndroid) {
+          stickyBtn.href = intentUri;
+        } else if (isIOS) {
+          stickyBtn.href = deepLink;
+        } else {
+          stickyBtn.href = playStoreUrl;
+          stickyBtn.textContent = 'Get the App';
+        }
+      }
+
+      // Hide sticky bar on desktop/tablet
+      if (isDesktop) {
+        var stickyBar = document.getElementById('sticky-cta');
+        if (stickyBar) stickyBar.style.display = 'none';
+      }
 
       if (isAndroid) {
         // Use intent:// URI which handles app-installed vs not-installed natively
@@ -526,7 +663,7 @@ router.get('/u/:username', async (req, res) => {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>${escapeHtml(username)} on Art Nepalaya</title>
 
   <meta property="og:type" content="profile">
@@ -541,11 +678,19 @@ router.get('/u/:username', async (req, res) => {
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      max-width: 100vw;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+      -moz-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #0A0A0A;
       color: #FFFFFF;
       min-height: 100vh;
+      min-height: -webkit-fill-available;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -554,43 +699,49 @@ router.get('/u/:username', async (req, res) => {
     .container {
       max-width: 480px;
       width: 100%;
-      padding: 48px 16px;
+      padding: 40px 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
     }
     .logo {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 700;
       color: #FF3B30;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
     }
     .profile-icon {
-      width: 80px;
-      height: 80px;
-      border-radius: 40px;
-      background: #1A1A1A;
+      width: 72px;
+      height: 72px;
+      border-radius: 36px;
+      background: linear-gradient(135deg, #1A1A2E, #2D2D44);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 36px;
-      margin-bottom: 16px;
+      font-size: 32px;
+      margin-bottom: 14px;
+      border: 2px solid rgba(167, 139, 250, 0.3);
     }
     .username {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #FFFFFF, #D1D5DB);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
     .subtitle {
-      font-size: 14px;
+      font-size: 13px;
       color: #9CA3AF;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
+      line-height: 1.4;
     }
     .store-buttons {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
       width: 100%;
     }
@@ -598,39 +749,55 @@ router.get('/u/:username', async (req, res) => {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 14px 32px;
-      border-radius: 12px;
-      font-size: 16px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
       font-weight: 600;
       text-decoration: none;
       color: #FFFFFF;
-      background: #FF3B30;
+      background: linear-gradient(135deg, #FF3B30, #FF6B5A);
       width: 100%;
-      max-width: 280px;
-      transition: opacity 0.2s;
+      max-width: 260px;
+      transition: transform 0.2s, opacity 0.2s;
+      box-shadow: 0 4px 14px rgba(255, 59, 48, 0.3);
     }
-    .open-app-btn:hover { opacity: 0.85; }
+    .open-app-btn:hover { opacity: 0.9; transform: scale(1.02); }
     .store-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 14px 32px;
-      border-radius: 12px;
-      font-size: 16px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
       font-weight: 600;
       text-decoration: none;
       color: #FFFFFF;
       width: 100%;
-      max-width: 280px;
-      transition: opacity 0.2s;
+      max-width: 260px;
+      transition: transform 0.2s, opacity 0.2s;
     }
-    .store-btn:hover { opacity: 0.85; }
-    .store-btn-play { background: #1DB954; }
-    .store-btn-apple { background: #333333; }
+    .store-btn:hover { opacity: 0.9; transform: scale(1.02); }
+    .store-btn-play { background: linear-gradient(135deg, #1DB954, #17a347); }
+    .store-btn-apple { background: linear-gradient(135deg, #444, #2a2a2a); }
     .store-btn-disabled {
       opacity: 0.5;
       cursor: not-allowed;
       pointer-events: none;
+    }
+    @media (min-width: 768px) {
+      .container { max-width: 520px; padding: 60px 24px; }
+      .logo { font-size: 22px; }
+      .profile-icon { width: 88px; height: 88px; border-radius: 44px; font-size: 38px; }
+      .username { font-size: 24px; }
+      .subtitle { font-size: 14px; }
+      .store-btn, .open-app-btn { max-width: 280px; padding: 14px 28px; font-size: 15px; }
+    }
+    @media (min-width: 1024px) {
+      .container { max-width: 600px; padding: 80px 32px; }
+      .logo { font-size: 24px; }
+      .profile-icon { width: 96px; height: 96px; border-radius: 48px; font-size: 42px; }
+      .username { font-size: 26px; }
+      .store-btn, .open-app-btn { max-width: 300px; }
     }
   </style>
 </head>
@@ -715,18 +882,26 @@ function buildGenericPage(title, description, deepLink) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>${escapeHtml(title)}</title>
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:site_name" content="Art Nepalaya">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      max-width: 100vw;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+      -moz-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #0A0A0A;
       color: #FFFFFF;
       min-height: 100vh;
+      min-height: -webkit-fill-available;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -735,33 +910,37 @@ function buildGenericPage(title, description, deepLink) {
     .container {
       max-width: 480px;
       width: 100%;
-      padding: 48px 16px;
+      padding: 40px 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
     }
     .logo {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 700;
       color: #FF3B30;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
     }
     .title {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 600;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #FFFFFF, #D1D5DB);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
     .description {
-      font-size: 14px;
+      font-size: 13px;
       color: #9CA3AF;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
       line-height: 1.5;
     }
     .store-buttons {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
       width: 100%;
     }
@@ -769,39 +948,53 @@ function buildGenericPage(title, description, deepLink) {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 14px 32px;
-      border-radius: 12px;
-      font-size: 16px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
       font-weight: 600;
       text-decoration: none;
       color: #FFFFFF;
-      background: #FF3B30;
+      background: linear-gradient(135deg, #FF3B30, #FF6B5A);
       width: 100%;
-      max-width: 280px;
-      transition: opacity 0.2s;
+      max-width: 260px;
+      transition: transform 0.2s, opacity 0.2s;
+      box-shadow: 0 4px 14px rgba(255, 59, 48, 0.3);
     }
-    .open-app-btn:hover { opacity: 0.85; }
+    .open-app-btn:hover { opacity: 0.9; transform: scale(1.02); }
     .store-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 14px 32px;
-      border-radius: 12px;
-      font-size: 16px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
       font-weight: 600;
       text-decoration: none;
       color: #FFFFFF;
       width: 100%;
-      max-width: 280px;
-      transition: opacity 0.2s;
+      max-width: 260px;
+      transition: transform 0.2s, opacity 0.2s;
     }
-    .store-btn:hover { opacity: 0.85; }
-    .store-btn-play { background: #1DB954; }
-    .store-btn-apple { background: #333333; }
+    .store-btn:hover { opacity: 0.9; transform: scale(1.02); }
+    .store-btn-play { background: linear-gradient(135deg, #1DB954, #17a347); }
+    .store-btn-apple { background: linear-gradient(135deg, #444, #2a2a2a); }
     .store-btn-disabled {
       opacity: 0.5;
       cursor: not-allowed;
       pointer-events: none;
+    }
+    @media (min-width: 768px) {
+      .container { max-width: 520px; padding: 60px 24px; }
+      .logo { font-size: 22px; }
+      .title { font-size: 24px; }
+      .description { font-size: 14px; }
+      .store-btn, .open-app-btn { max-width: 280px; padding: 14px 28px; font-size: 15px; }
+    }
+    @media (min-width: 1024px) {
+      .container { max-width: 600px; padding: 80px 32px; }
+      .logo { font-size: 24px; }
+      .title { font-size: 26px; }
+      .store-btn, .open-app-btn { max-width: 300px; }
     }
   </style>
 </head>
