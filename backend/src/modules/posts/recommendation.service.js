@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Post } from './post.model.js';
 import { User } from '../users/user.model.js';
 import { AppConfig } from '../admin/appConfig.model.js';
@@ -310,19 +311,27 @@ const buildCreatorQualityMap = async (authorIds) => {
   if (sortedIds.length <= 5) {
     keySegment = sortedIds.join(',');
   } else {
-    // Simple string hash for larger sets
+    // Use two independent 32-bit hashes (djb2 + sdbm) to produce a longer key,
+    // reducing collision probability for large author sets from ~1/2^31 to ~1/2^53.
     const joined = sortedIds.join(',');
-    let hash = 0;
+    let hash1 = 5381; // djb2
+    let hash2 = 0;    // sdbm
     for (let i = 0; i < joined.length; i++) {
-      hash = ((hash << 5) - hash + joined.charCodeAt(i)) | 0;
+      const ch = joined.charCodeAt(i);
+      hash1 = ((hash1 << 5) + hash1 + ch) | 0;
+      hash2 = (ch + (hash2 << 6) + (hash2 << 16) - hash2) | 0;
     }
-    keySegment = `h${Math.abs(hash).toString(36)}_n${sortedIds.length}`;
+    keySegment = `h${Math.abs(hash1).toString(36)}${Math.abs(hash2).toString(36)}_n${sortedIds.length}`;
   }
   const cacheKey = `ranking:creatorQuality:${keySegment}`;
 
   const fetchQuality = async () => {
+    // Mongoose aggregate() does NOT apply schema-level casting to pipeline stages.
+    // authorId stores ObjectIds, so we must explicitly cast string IDs to ObjectId
+    // for the $in match to work correctly.
+    const objectIds = authorIds.map(id => new mongoose.Types.ObjectId(id));
     const pipeline = [
-      { $match: { authorId: { $in: authorIds.map(id => id) }, deletedAt: null } },
+      { $match: { authorId: { $in: objectIds }, deletedAt: null } },
       {
         $group: {
           _id: '$authorId',
@@ -374,8 +383,12 @@ const buildCreatorPostCountMap = async (authorIds) => {
   if (!authorIds || authorIds.length === 0) return new Map();
 
   try {
+    // Mongoose aggregate() does NOT apply schema-level casting to pipeline stages.
+    // authorId stores ObjectIds, so we must explicitly cast string IDs to ObjectId
+    // for the $in match to work correctly.
+    const objectIds = authorIds.map(id => new mongoose.Types.ObjectId(id));
     const pipeline = [
-      { $match: { authorId: { $in: authorIds.map(id => id) }, deletedAt: null } },
+      { $match: { authorId: { $in: objectIds }, deletedAt: null } },
       { $group: { _id: '$authorId', count: { $sum: 1 } } },
     ];
     const results = await Post.aggregate(pipeline);
@@ -518,6 +531,17 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
   const finalFeed = applyDiversity(combined).slice(0, limit);
 
   // Step 13: Determine pagination
+  // KNOWN TRADEOFF: Pagination drift under score reordering.
+  // The cursor advances chronologically (oldest _id from the candidate pool), but
+  // results are served in score-reordered sequence. Posts that scored below the
+  // cutoff in one window's 3x candidate pool are permanently skipped -- they will
+  // never appear in subsequent pages because the cursor has already advanced past
+  // them. This means up to (fetchLimit - limit) posts per page are silently
+  // discarded. On active platforms, new creator content depends on the
+  // newCreatorBoost signal being strong enough to push posts into the top third.
+  // The alternative (anchoring cursor to lowest-scored returned post or
+  // server-side scoring state) adds significant complexity. This is an accepted
+  // tradeoff for cursor-based feeds with post-fetch scoring.
   const hasNextPage = candidatePosts.length >= fetchLimit;
   let nextCursor = null;
   if (hasNextPage && finalFeed.length > 0) {
@@ -672,6 +696,12 @@ export const buildExploreFeed = async (userId, cursor, limit, showMatureContent,
   const diverseResult = applyDiversity(result).slice(0, limit);
 
   // Determine pagination
+  // KNOWN TRADEOFF: Pagination drift under score reordering.
+  // Same tradeoff as buildRecommendedFeed: the cursor advances chronologically
+  // but results are score-reordered. Posts near the boundary that score below the
+  // cutoff in one window are permanently skipped. This is an accepted tradeoff
+  // for cursor-based feeds with post-fetch scoring -- the alternative requires
+  // server-side scoring state or offset-based pagination.
   const hasNextPage = candidatePosts.length >= fetchLimit;
   let nextCursor = null;
   if (hasNextPage && diverseResult.length > 0) {

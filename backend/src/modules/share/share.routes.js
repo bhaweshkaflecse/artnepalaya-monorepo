@@ -332,11 +332,27 @@ router.get('/p/:postId', async (req, res) => {
       margin-bottom: 20px;
       white-space: pre-wrap;
       word-break: break-word;
+    }
+    .caption.clamped {
       display: -webkit-box;
       -webkit-line-clamp: 4;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
+    .caption-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: #A78BFA;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 4px 0;
+      margin-bottom: 16px;
+      width: 100%;
+      text-align: left;
+    }
+    .caption-toggle:hover { text-decoration: underline; }
     /* Inline CTA Section (above fold) */
     .cta-section {
       width: 100%;
@@ -464,7 +480,7 @@ router.get('/p/:postId', async (req, res) => {
       .gallery-item { max-height: 55vh; }
       .gallery-item img, .gallery-item video { max-height: 55vh; }
       .author-fullname { font-size: 17px; }
-      .caption { font-size: 15px; -webkit-line-clamp: 6; }
+      .caption { font-size: 15px; }
       .cta-title { font-size: 20px; }
       .sticky-cta { display: none; }
     }
@@ -480,7 +496,7 @@ router.get('/p/:postId', async (req, res) => {
       .gallery-item img, .gallery-item video { max-height: 60vh; }
       .author-avatar { width: 44px; height: 44px; border-radius: 22px; }
       .author-fullname { font-size: 18px; }
-      .caption { font-size: 16px; -webkit-line-clamp: 8; }
+      .caption { font-size: 16px; }
       .store-btn, .open-app-btn { max-width: 300px; padding: 14px 28px; font-size: 15px; }
       .sticky-cta { display: none; }
     }
@@ -533,7 +549,7 @@ router.get('/p/:postId', async (req, res) => {
 
     ${artworkTypes.length > 0 ? `<div class="artwork-types">${artworkTypes.map(type => `<span class="artwork-type-badge">${escapeHtml(type)}</span>`).join('')}</div>` : ''}
 
-    ${caption ? `<div class="caption">${escapeHtml(caption)}</div>` : ''}
+    ${caption ? `<div class="caption" id="caption-text">${escapeHtml(caption)}</div><button class="caption-toggle" id="caption-toggle">Show more</button>` : ''}
 
     <div class="cta-section">
       <div class="cta-title">View in Art Nepalaya</div>
@@ -632,6 +648,38 @@ router.get('/p/:postId', async (req, res) => {
             dot.classList.toggle('active', i === currentIndex);
           });
         });
+      }
+
+      // Caption "read more" toggle for long captions.
+      // On the share page, web-only viewers need to see the full caption (artwork
+      // descriptions, materials, cultural significance), so we start expanded but
+      // clamp only if the text overflows 4 lines, then allow toggling.
+      var captionEl = document.getElementById('caption-text');
+      var toggleBtn = document.getElementById('caption-toggle');
+      if (captionEl && toggleBtn) {
+        // Temporarily apply clamp to measure if it overflows
+        captionEl.classList.add('clamped');
+        var isClamped = captionEl.scrollHeight > captionEl.clientHeight;
+        if (isClamped) {
+          // Caption is long enough to need a toggle - start expanded (no clamp)
+          captionEl.classList.remove('clamped');
+          toggleBtn.style.display = 'block';
+          toggleBtn.textContent = 'Show less';
+          var expanded = true;
+          toggleBtn.addEventListener('click', function() {
+            expanded = !expanded;
+            if (expanded) {
+              captionEl.classList.remove('clamped');
+              toggleBtn.textContent = 'Show less';
+            } else {
+              captionEl.classList.add('clamped');
+              toggleBtn.textContent = 'Show more';
+            }
+          });
+        } else {
+          // Caption fits within 4 lines - no toggle needed
+          captionEl.classList.remove('clamped');
+        }
       }
     })();
   </script>
