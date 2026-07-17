@@ -58,13 +58,6 @@ export const HomeScreen = () => {
     fetchUnreadCount();
   }, [dispatch, fetchUnreadCount]);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('homeTabRefresh' as any, () => {
-      handleRefresh();
-    });
-    return unsubscribe;
-  }, [navigation]);
-
   useFocusEffect(
     useCallback(() => {
       fetchUnreadCount();

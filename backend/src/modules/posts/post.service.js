@@ -305,8 +305,10 @@ export const getExplore = async (userId, cursor, limit, artworkType, search, sho
   // Artwork type filter (case-insensitive exact match, escape regex metacharacters)
   if (artworkType) {
     const escapedType = artworkType.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    query.artworkType = { $regex: new RegExp(`^${escapedType}$`, 'i') };
+    query.artworkType = { $regex: `^${escapedType}$`, $options: 'i' };
   }
+
+  console.log('[getExplore] Query:', JSON.stringify(query));
 
   // Text search on caption, tags (escape regex metacharacters to prevent injection)
   if (search) {

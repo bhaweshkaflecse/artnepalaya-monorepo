@@ -23,6 +23,7 @@ import { lightColors } from '../../theme/colors';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const TOTAL_STEPS = 4;
 const MAX_INTERESTS = 5;
+const MAX_SUBROLES = 5;
 const VISIBLE_INTEREST_LIMIT = 7;
 
 // Role definitions (3 options only)
@@ -127,11 +128,15 @@ export const UserPreferenceSetup = () => {
   };
 
   const handleToggleSubRole = (subRole: string) => {
-    setSelectedSubRoles((prev) =>
-      prev.includes(subRole)
-        ? prev.filter((s) => s !== subRole)
-        : [...prev, subRole]
-    );
+    setSelectedSubRoles((prev) => {
+      if (prev.includes(subRole)) {
+        return prev.filter((s) => s !== subRole);
+      }
+      if (prev.length >= MAX_SUBROLES) {
+        return prev;
+      }
+      return [...prev, subRole];
+    });
   };
 
   const handleToggleInterest = (interestName: string) => {
@@ -257,23 +262,35 @@ export const UserPreferenceSetup = () => {
       <View style={styles.stepContent}>
         <Text style={styles.stepTitle}>About You</Text>
         <Text style={styles.stepSubtitle}>
-          Select categories that describe you as {roleLabel === 'Art Lover' ? 'an' : 'a'} {roleLabel}
+          Select categories that describe you as {roleLabel === 'Art Lover' ? 'an' : 'a'} {roleLabel} ({selectedSubRoles.length}/5)
         </Text>
 
         <View style={styles.chipContainer}>
           {subRoles.map((subRole) => {
             const isSelected = selectedSubRoles.includes(subRole);
+            const isDisabled = !isSelected && selectedSubRoles.length >= MAX_SUBROLES;
             return (
               <TouchableOpacity
                 key={subRole}
-                style={[styles.chip, isSelected && styles.chipSelected]}
+                style={[
+                  styles.chip,
+                  isSelected && styles.chipSelected,
+                  isDisabled && styles.chipDisabled,
+                ]}
                 onPress={() => handleToggleSubRole(subRole)}
-                activeOpacity={0.7}
+                activeOpacity={isDisabled ? 1 : 0.7}
+                disabled={isDisabled}
               >
                 {isSelected && (
                   <Feather name="check" size={14} color="#FFFFFF" style={styles.chipCheckIcon} />
                 )}
-                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                <Text
+                  style={[
+                    styles.chipText,
+                    isSelected && styles.chipTextSelected,
+                    isDisabled && styles.chipTextDisabled,
+                  ]}
+                >
                   {subRole}
                 </Text>
               </TouchableOpacity>
