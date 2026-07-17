@@ -184,7 +184,8 @@ export const getFeed = async (userId, cursor, limit, showMatureContent) => {
   const nsfwKey = filterNsfw ? 'safe' : 'all';
   const cacheKey = `feed:ranked:${nsfwKey}:${cursor || 'start'}:${limit}`;
 
-  const baseFeed = await getOrSetCache(cacheKey, 60, async () => {
+  // Feed query builder (shared between cached and uncached paths)
+  const buildFeedQuery = async () => {
     const query = cursor ? { _id: { $lt: cursor } } : {};
 
     // Exclude soft-deleted posts
@@ -240,7 +241,19 @@ export const getFeed = async (userId, cursor, limit, showMatureContent) => {
 
     paginatedPosts.forEach(p => delete p._score);
     return { data: paginatedPosts, meta: { nextCursor, hasNextPage } };
-  });
+  };
+
+  let baseFeed;
+  if (!cursor) {
+    // First page (pull-to-refresh or initial load): always query fresh from DB
+    // so newly created posts appear immediately without waiting for cache expiry
+    console.log('[getFeed] First page request - querying fresh (no cache)');
+    baseFeed = await buildFeedQuery();
+  } else {
+    // Pagination pages: use cache for performance
+    console.log('[getFeed] Pagination request - using cache, key:', cacheKey);
+    baseFeed = await getOrSetCache(cacheKey, 60, buildFeedQuery);
+  }
 
   // Per-user like/save hydration (not cached)
   if (userId && baseFeed.data.length > 0) {

@@ -98,7 +98,6 @@ export const ExploreScreen = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const userSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchData = useCallback(async (overrideCursor?: string | null) => {
     try {
@@ -140,36 +139,16 @@ export const ExploreScreen = () => {
     }
   }, [cursor, hasMore, isLoadingMore, activeCategory, searchQuery]);
 
-  // Re-fetch when activeCategory changes (immediate, also covers initial mount)
+  // Re-fetch when fetchData identity changes (covers both activeCategory and searchQuery changes)
+  // fetchData is a useCallback that depends on [activeCategory, searchQuery], so its reference
+  // updates whenever either dependency changes - fixing the stale closure bug where the old
+  // fetchData reference was captured when only [activeCategory] was in the dep array.
   useEffect(() => {
     setIsLoading(true);
     setCursor(null);
     setHasMore(true);
     fetchData();
-  }, [activeCategory]);
-
-  // Re-fetch when searchQuery changes (debounced 500ms, skip initial mount)
-  const isInitialMount = useRef(true);
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    if (searchDebounceRef.current) {
-      clearTimeout(searchDebounceRef.current);
-    }
-    searchDebounceRef.current = setTimeout(() => {
-      setIsLoading(true);
-      setCursor(null);
-      setHasMore(true);
-      fetchData();
-    }, 500);
-    return () => {
-      if (searchDebounceRef.current) {
-        clearTimeout(searchDebounceRef.current);
-      }
-    };
-  }, [searchQuery]);
+  }, [fetchData]);
 
   // Fetch dynamic artwork types for category pills
   useEffect(() => {
