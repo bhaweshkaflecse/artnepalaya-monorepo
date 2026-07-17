@@ -528,9 +528,55 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
 
   // Step 12: Combine main + exploration, apply final diversity pass
   const combined = [...diverseMainPosts, ...explorationPosts].slice(0, limit);
-  const finalFeed = applyDiversity(combined).slice(0, limit);
+  const diverseFeed = applyDiversity(combined).slice(0, limit);
 
-  // Step 13: Determine pagination
+  // Step 13: Fresh content guarantee - ensure at least 30% of returned posts
+  // are from the last 48 hours (if enough fresh posts exist in the pool).
+  // This prevents established/high-engagement content from completely dominating.
+  const fortyEightHoursAgo = context.currentTime - (48 * 60 * 60 * 1000);
+  const freshThreshold = Math.ceil(limit * 0.3);
+
+  const freshInFeed = diverseFeed.filter(p => new Date(p.createdAt).getTime() >= fortyEightHoursAgo);
+  let finalFeed = diverseFeed;
+
+  if (freshInFeed.length < freshThreshold) {
+    // Find fresh posts from the candidate pool that are not already in the feed
+    const feedIds = new Set(diverseFeed.map(p => p._id.toString()));
+    const freshCandidates = scoredPosts
+      .filter(s => {
+        const postTime = new Date(s.post.createdAt).getTime();
+        return postTime >= fortyEightHoursAgo && !feedIds.has(s.post._id.toString());
+      })
+      .map(s => s.post);
+
+    const needed = freshThreshold - freshInFeed.length;
+    const freshToInject = freshCandidates.slice(0, needed);
+
+    if (freshToInject.length > 0) {
+      // Interleave fresh posts at positions 2, 5, 8, ... (0-indexed: 1, 4, 7, ...)
+      // Remove the lowest-scored non-fresh posts from the tail to make room
+      const nonFreshInFeed = diverseFeed.filter(p => new Date(p.createdAt).getTime() < fortyEightHoursAgo);
+      const feedCopy = [...diverseFeed];
+
+      // Remove tail items to make room (keep feed length constant)
+      const toRemove = Math.min(freshToInject.length, nonFreshInFeed.length);
+      for (let r = 0; r < toRemove; r++) {
+        const tailItem = nonFreshInFeed[nonFreshInFeed.length - 1 - r];
+        const tailIdx = feedCopy.findIndex(p => p._id.toString() === tailItem._id.toString());
+        if (tailIdx !== -1) feedCopy.splice(tailIdx, 1);
+      }
+
+      // Insert fresh posts at interleaved positions (2, 5, 8, ...)
+      for (let i = 0; i < freshToInject.length; i++) {
+        const insertPos = Math.min(1 + i * 3, feedCopy.length); // positions 1, 4, 7 (0-indexed)
+        feedCopy.splice(insertPos, 0, freshToInject[i]);
+      }
+
+      finalFeed = feedCopy.slice(0, limit);
+    }
+  }
+
+  // Step 14: Determine pagination
   // KNOWN TRADEOFF: Pagination drift under score reordering.
   // The cursor advances chronologically (oldest _id from the candidate pool), but
   // results are served in score-reordered sequence. Posts that scored below the
@@ -559,9 +605,9 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
 
 /**
  * Build a ranked Explore feed with the following composition:
- *   ~70% trending (highest scored by engagement signals)
- *   ~20% established (from verified or high-follower creators)
- *   ~10% fresh (posts < 48 hours from newer creators with < 20 posts)
+ *   ~50% engagement-ranked (highest scored by engagement signals)
+ *   ~30% fresh (posts < 48 hours to guarantee recent content visibility)
+ *   ~20% new creators (accounts < 30 days OR < 20 posts for discovery)
  *
  * @param {string|null} userId - Authenticated user's ID (nullable for guests)
  * @param {string|null} cursor - Pagination cursor
@@ -621,48 +667,40 @@ export const buildExploreFeed = async (userId, cursor, limit, showMatureContent,
   // Sort by score for trending pool
   scoredPosts.sort((a, b) => b.score - a.score);
 
-  // Calculate slot distribution
-  const trendingSlots = Math.ceil(limit * 0.7);
-  const establishedSlots = Math.ceil(limit * 0.2);
-  const freshSlots = Math.max(1, limit - trendingSlots - establishedSlots);
+  // Calculate slot distribution: 50% engagement, 30% fresh, 20% new creators
+  const engagementSlots = Math.ceil(limit * 0.5);
+  const freshSlots = Math.ceil(limit * 0.3);
+  const newCreatorSlots = Math.max(1, limit - engagementSlots - freshSlots);
 
-  // Pool 1: Trending (top scored)
-  const trendingPool = scoredPosts.slice(0, trendingSlots * 2);
+  // Pool 1: Engagement-ranked (top scored)
+  const engagementPool = scoredPosts.slice(0, engagementSlots * 2);
 
-  // Pool 2: Established creators (verified or high followers)
-  const establishedPool = scoredPosts.filter(s => {
-    const author = s.post.authorId;
-    if (!author || typeof author !== 'object') return false;
-    return author.isVerified || (author.stats?.followers || 0) >= 50;
-  });
-
-  // Pool 3: Fresh uploads (< 48 hours, from creators with < 20 posts)
+  // Pool 2: Fresh uploads (< 48 hours) - prioritize recent content visibility
   const fortyEightHoursAgo = currentTime - (48 * 60 * 60 * 1000);
   const freshPool = scoredPosts.filter(s => {
     const postTime = new Date(s.post.createdAt).getTime();
-    if (postTime < fortyEightHoursAgo) return false;
+    return postTime >= fortyEightHoursAgo;
+  });
+
+  // Pool 3: New creators (accounts < 30 days OR < 20 posts)
+  const newCreatorPool = scoredPosts.filter(s => {
+    const author = s.post.authorId;
+    if (!author || typeof author !== 'object') return false;
+    const accountAge = author.createdAt
+      ? (currentTime - new Date(author.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+      : 999;
     const authorId = getAuthorIdString(s.post);
     const postCount = creatorPostCountMap.get(authorId) || 0;
-    return postCount < 20;
+    return accountAge < 30 || postCount < 20;
   });
 
   // Select from each pool, avoiding duplicates
   const selectedIds = new Set();
   const result = [];
 
-  // Fill trending slots
-  for (const s of trendingPool) {
-    if (result.length >= trendingSlots) break;
-    const id = s.post._id.toString();
-    if (!selectedIds.has(id)) {
-      selectedIds.add(id);
-      result.push(s.post);
-    }
-  }
-
-  // Fill established slots
-  for (const s of establishedPool) {
-    if (result.length >= trendingSlots + establishedSlots) break;
+  // Fill engagement slots
+  for (const s of engagementPool) {
+    if (result.length >= engagementSlots) break;
     const id = s.post._id.toString();
     if (!selectedIds.has(id)) {
       selectedIds.add(id);
@@ -672,6 +710,16 @@ export const buildExploreFeed = async (userId, cursor, limit, showMatureContent,
 
   // Fill fresh slots
   for (const s of freshPool) {
+    if (result.length >= engagementSlots + freshSlots) break;
+    const id = s.post._id.toString();
+    if (!selectedIds.has(id)) {
+      selectedIds.add(id);
+      result.push(s.post);
+    }
+  }
+
+  // Fill new creator slots
+  for (const s of newCreatorPool) {
     if (result.length >= limit) break;
     const id = s.post._id.toString();
     if (!selectedIds.has(id)) {

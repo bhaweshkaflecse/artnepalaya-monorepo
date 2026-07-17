@@ -621,18 +621,11 @@ router.get('/p/:postId', async (req, res) => {
         if (stickyBar) stickyBar.style.display = 'none';
       }
 
-      if (isAndroid) {
-        // Use intent:// URI which handles app-installed vs not-installed natively
-        window.location.href = intentUri;
-      } else if (isIOS) {
-        // iOS: use iframe-based deep link approach
-        var iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = deepLink;
-        document.body.appendChild(iframe);
-        // Just clean up the iframe; no auto-redirect (app not on App Store yet)
-        setTimeout(function() { document.body.removeChild(iframe); }, 2000);
-      }
+      // No auto-redirect on page load. The landing page content should remain
+      // visible and the user taps "Open in App" manually. The intent:// URI in
+      // the button href naturally handles app-installed vs not-installed case
+      // on Android. Auto-redirecting bypasses the landing page content which is
+      // bad UX -- users lose context about what they are opening.
 
       // Gallery scroll indicator
       var galleryScroll = document.getElementById('gallery-scroll');
