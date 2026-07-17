@@ -326,6 +326,32 @@ export const getExplore = async (userId, cursor, limit, artworkType, search, sho
     .populate('authorId', 'username avatarUrl role isVerified verifiedType')
     .lean();
 
+  console.log('[getExplore] Results count:', posts.length);
+
+  // If no results found with filter, debug what's actually in the database
+  if (posts.length === 0 && artworkType) {
+    const samplePost = await Post.findOne({ deletedAt: null })
+      .select('caption artworkType')
+      .lean();
+    console.log('[getExplore] Sample post artworkType:', JSON.stringify(samplePost?.artworkType));
+    console.log('[getExplore] Sample typeof:', typeof samplePost?.artworkType);
+    console.log('[getExplore] Sample isArray:', Array.isArray(samplePost?.artworkType));
+    
+    // Try a simple equality match to compare
+    const equalityCount = await Post.countDocuments({ 
+      deletedAt: null, 
+      artworkType: artworkType 
+    });
+    console.log('[getExplore] Direct equality match count:', equalityCount);
+    
+    // Try case-insensitive with $in without anchors
+    const regexCount = await Post.countDocuments({ 
+      deletedAt: null, 
+      artworkType: { $regex: artworkType, $options: 'i' } 
+    });
+    console.log('[getExplore] Regex match (no anchors) count:', regexCount);
+  }
+
   const hasNextPage = posts.length > limit;
   const paginatedPosts = hasNextPage ? posts.slice(0, limit) : posts;
   const nextCursor = hasNextPage && paginatedPosts.length > 0
