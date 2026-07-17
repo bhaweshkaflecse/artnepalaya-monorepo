@@ -8,7 +8,7 @@ import * as tagService from '../tags/tag.service.js';
 import * as notificationService from '../notifications/notification.service.js';
 import { emitToFeed } from '../../realtime/emitter.js';
 import { EVENTS } from '../../realtime/events.js';
-import { buildRecommendedFeed } from './recommendation.service.js';
+import { buildRecommendedFeed, buildExploreFeed } from './recommendation.service.js';
 
 // THE FIX: Using our new functional cache imports!
 import { getOrSetCache, invalidateCache } from '../../shared/utils/cache.js';
@@ -282,6 +282,39 @@ export const getFeed = async (userId, cursor, limit, showMatureContent) => {
 
 export const getExplore = async (userId, cursor, limit, artworkType, search, showMatureContent) => {
   limit = limit || 20;
+
+  // When no search query and no artworkType filter is active, use the ranked explore feed
+  if (!search && !artworkType) {
+    try {
+      const rankedFeed = await buildExploreFeed(userId, cursor, limit, !!showMatureContent, null);
+      if (rankedFeed && rankedFeed.data.length > 0) {
+        // Per-user hydration for ranked feed
+        if (userId && rankedFeed.data.length > 0) {
+          const postIds = rankedFeed.data.map(p => p._id);
+          const [likes, saves] = await Promise.all([
+            Like.find({ userId, postId: { $in: postIds } }).select('postId').lean(),
+            Save.find({ userId, postId: { $in: postIds } }).select('postId').lean(),
+          ]);
+          const likedSet = new Set(likes.map(l => l.postId.toString()));
+          const savedSet = new Set(saves.map(s => s.postId.toString()));
+          rankedFeed.data.forEach(post => {
+            post.isLikedByMe = likedSet.has(post._id.toString());
+            post.isSavedByMe = savedSet.has(post._id.toString());
+          });
+        } else {
+          rankedFeed.data.forEach(post => {
+            post.isLikedByMe = false;
+            post.isSavedByMe = false;
+          });
+        }
+        return rankedFeed;
+      }
+    } catch (err) {
+      console.error('[getExplore] Ranked explore feed error, falling back to latest-first:', err.message);
+    }
+  }
+
+  // Fallback: existing latest-first logic for search/filter queries or when ranked feed is empty
   const query = {};
 
   // Cursor-based pagination

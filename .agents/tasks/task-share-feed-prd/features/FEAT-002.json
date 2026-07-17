@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Design and implement a proper multi-signal ranking engine in backend/src/modules/posts/recommendation.service.js and integrate it into post.service.js for both Home Feed and Explore. Replace the current simplistic latest-first approach with a configurable, extensible scoring system.",
+  "status": "in_progress",
+  "steps": [
+    "Rewrite backend/src/modules/posts/recommendation.service.js with a new ranking engine architecture: (1) Define a SIGNAL_WEIGHTS config object (admin-configurable via AppConfig) with weights for: likes, saves (highest), shares, comments, views, creatorFollowers, creatorQuality, verification, freshness, diversity, exploration, randomness, newCreatorBoost. (2) Implement a scorePost() function that computes a composite score from all available signals. (3) Implement freshness decay: use a time-decay function (e.g., gravity/exponential decay) where score decreases as post ages. (4) Implement diversity logic: track seen creator IDs and penalize consecutive posts from the same creator. (5) Implement exploration: reserve a percentage of slots for random/new content the user has not interacted with. (6) Implement new creator boost: creators with fewer than N posts or accounts younger than M days get a score multiplier. (7) Implement creator quality signal: based on average engagement rate across their posts. (8) Make the engine pluggable: use a signal registry pattern where new signals can be added without modifying core scoring logic.",
+    "Update buildRecommendedFeed() in recommendation.service.js to use the new scoring engine for Home Feed: priorities are engagement > saves > recent > creator quality > exploration. Ensure no consecutive posts from the same creator. Apply the 70/20/10 split concept but for home feed: ~70% engagement-weighted, ~20% preference-matched, ~10% exploration/fresh.",
+    "Create a new buildExploreFeed() function in recommendation.service.js specifically for Explore: ~70% engagement-weighted (trending), ~20% established/verified creators, ~10% fresh uploads from new creators. Include diversity and randomness to prevent repetition.",
+    "Update getExplore() in backend/src/modules/posts/post.service.js to call the new buildExploreFeed() for ranked explore (when no search/filter is active), falling back to the existing latest-first for search queries.",
+    "Update DEFAULT_WEIGHTS to include all new signal weights with sensible defaults. Ensure backward compatibility with existing AppConfig entries.",
+    "Validate both files parse correctly with node --check"
+  ],
+  "acceptance_criteria": [
+    "Scoring engine uses multiple signals: likes, saves, comments, freshness decay, creator quality, verification, new creator boost, diversity, exploration, randomness",
+    "Saves have the highest weight among engagement signals",
+    "No consecutive posts from the same creator in the feed output",
+    "New creators (few posts or young accounts) get a boost",
+    "Explore feed follows approximately 70/20/10 split (trending/established/fresh)",
+    "Engine is pluggable: new signals can be added by registering a function without modifying core scoring",
+    "Falls back gracefully if signals are unavailable (e.g., no views count yet)",
+    "Both files pass node --check syntax validation",
+    "Existing feed API contract (data + meta with cursor pagination) is preserved"
+  ],
+  "verification": [
+    "Run: node --check backend/src/modules/posts/recommendation.service.js",
+    "Run: node --check backend/src/modules/posts/post.service.js",
+    "Review code confirms signal registry pattern and configurable weights"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
