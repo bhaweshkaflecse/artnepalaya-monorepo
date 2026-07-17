@@ -342,7 +342,9 @@ export const getRecommendationWeights = async () => {
  * @returns {Object} { interestSignals, hasPreferences }
  */
 export const getUserFeedSignals = async (userId) => {
-  const user = await User.findById(userId).select('interests').lean();
+  const user = await User.findById(userId).select('interests username').lean();
+
+  console.log('[getUserFeedSignals] userId:', userId, '| found:', !!user, '| username:', user?.username, '| interests:', JSON.stringify(user?.interests), '| count:', user?.interests?.length);
 
   if (!user) {
     return { interestSignals: [], hasPreferences: false };
