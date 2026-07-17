@@ -327,15 +327,21 @@ export const getExplore = async (userId, cursor, limit, artworkType, search, sho
     .lean();
 
   console.log('[getExplore] Results count:', posts.length);
+  if (posts.length > 0) {
+    console.log('[getExplore] Returned IDs:', posts.slice(0, 5).map(p => p._id));
+  }
 
   // If no results found with filter, debug what's actually in the database
   if (posts.length === 0 && artworkType) {
-    const samplePost = await Post.findOne({ deletedAt: null })
-      .select('caption artworkType')
+    const samples = await Post.find({ deletedAt: null })
+      .select('_id caption artworkType')
+      .sort({ _id: -1 })
+      .limit(5)
       .lean();
-    console.log('[getExplore] Sample post artworkType:', JSON.stringify(samplePost?.artworkType));
-    console.log('[getExplore] Sample typeof:', typeof samplePost?.artworkType);
-    console.log('[getExplore] Sample isArray:', Array.isArray(samplePost?.artworkType));
+    console.log('[getExplore] Sample documents (latest 5):');
+    samples.forEach((s, i) => {
+      console.log(`  [${i}] _id=${s._id}, artworkType=${JSON.stringify(s.artworkType)}, typeof=${typeof s.artworkType}, isArray=${Array.isArray(s.artworkType)}`);
+    });
     
     // Try a simple equality match to compare
     const equalityCount = await Post.countDocuments({ 
