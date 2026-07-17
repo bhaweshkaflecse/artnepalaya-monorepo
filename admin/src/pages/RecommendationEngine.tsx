@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Cpu, Play, ChevronDown, ChevronUp, Clock, Sparkles, Shuffle, Target, BarChart3, Zap } from 'lucide-react';
+import { Cpu, Play, ChevronDown, ChevronUp, Clock, Sparkles, Shuffle, Target, BarChart3, Zap, Timer, AlertTriangle } from 'lucide-react';
 import { api } from '../services/api';
 
 interface SignalDetail {
@@ -19,6 +19,18 @@ interface ScoreBreakdown {
   selectionReasons: string[];
 }
 
+interface PipelineStage {
+  stage: string;
+  durationMs: number;
+}
+
+interface ExcludedPost {
+  postId: string;
+  caption: string;
+  score: number;
+  reason: string;
+}
+
 interface DebugInfo {
   candidatesEvaluated: number;
   executionTimeMs: number;
@@ -26,6 +38,8 @@ interface DebugInfo {
   freshPostCount: number;
   explorationPostCount: number;
   diversitySwaps: number;
+  pipelineTimeline?: PipelineStage[];
+  excludedPosts?: ExcludedPost[];
   scoreBreakdowns: ScoreBreakdown[];
   fallbackReason?: string;
 }
@@ -44,6 +58,7 @@ export const RecommendationEngine = () => {
   const [error, setError] = useState('');
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
+  const [excludedExpanded, setExcludedExpanded] = useState(false);
 
   const handleSimulate = async () => {
     setError('');
@@ -187,6 +202,75 @@ export const RecommendationEngine = () => {
             label="Execution Time"
             value={`${debug.executionTimeMs}ms`}
           />
+        </div>
+      )}
+
+      {/* Pipeline Timeline */}
+      {debug?.pipelineTimeline && debug.pipelineTimeline.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2 mb-4">
+            <Timer size={16} className="text-indigo-500" />
+            Pipeline Timeline
+          </h4>
+          <div className="flex items-center gap-1">
+            {debug.pipelineTimeline.map((stage, idx) => {
+              const totalMs = debug.pipelineTimeline!.reduce((sum, s) => sum + s.durationMs, 0);
+              const pct = totalMs > 0 ? Math.max(8, (stage.durationMs / totalMs) * 100) : 25;
+              const colors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500', 'bg-orange-500'];
+              const color = colors[idx % colors.length];
+              return (
+                <div key={stage.stage} className="flex flex-col items-center" style={{ flex: pct }}>
+                  <div className={`w-full h-6 ${color} rounded ${idx === 0 ? 'rounded-l-lg' : ''} ${idx === debug.pipelineTimeline!.length - 1 ? 'rounded-r-lg' : ''} flex items-center justify-center`}>
+                    <span className="text-[10px] font-medium text-white truncate px-1">
+                      {stage.durationMs}ms
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-gray-600 mt-1 truncate max-w-full">
+                    {stage.stage}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Excluded Posts */}
+      {debug?.excludedPosts && debug.excludedPosts.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <button
+            onClick={() => setExcludedExpanded(!excludedExpanded)}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
+            <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+              <AlertTriangle size={16} className="text-amber-500" />
+              Excluded Posts ({debug.excludedPosts.length})
+            </h4>
+            <div className="text-gray-400">
+              {excludedExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </div>
+          </button>
+          {excludedExpanded && (
+            <div className="border-t border-gray-100 divide-y divide-gray-100">
+              {debug.excludedPosts.map((ep) => (
+                <div key={ep.postId} className="px-6 py-3 flex items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-gray-700 truncate block">
+                      {ep.caption || '(no caption)'}
+                    </span>
+                    <span className="text-[11px] text-gray-400 font-mono">{ep.postId}</span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-bold text-gray-900">{ep.score.toFixed(2)}</div>
+                    <div className="text-[11px] text-gray-400">score</div>
+                  </div>
+                  <span className="inline-block px-2 py-0.5 text-[11px] font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                    {ep.reason}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

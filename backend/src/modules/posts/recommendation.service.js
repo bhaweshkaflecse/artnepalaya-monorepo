@@ -489,6 +489,59 @@ const buildBaseQuery = async (showMatureContent, cursor) => {
 };
 
 // ---------------------------------------------------------------------------
+// Excluded Posts Helper - Categorize candidates that didn't make the final feed
+// ---------------------------------------------------------------------------
+
+/**
+ * Compare scored candidates against the final feed and return exclusion reasons.
+ * Limited to max 10 entries to avoid oversized debug responses.
+ * @param {Array} scoredPosts - All scored candidates sorted by score desc
+ * @param {Array} finalFeed - Final feed posts after all filtering
+ * @param {number} limit - Feed limit used for cutoff calculation
+ * @returns {Array} Excluded posts with reasons (max 10)
+ */
+const buildExcludedPosts = (scoredPosts, finalFeed, limit) => {
+  const finalFeedIds = new Set(finalFeed.map(p => p._id.toString()));
+  const excluded = [];
+
+  // The score cutoff is the lowest score in the final feed
+  const finalScores = scoredPosts
+    .filter(s => finalFeedIds.has(s.post._id.toString()))
+    .map(s => s.score);
+  const scoreCutoff = finalScores.length > 0 ? Math.min(...finalScores) : 0;
+
+  for (const s of scoredPosts) {
+    if (excluded.length >= 10) break;
+    const postId = s.post._id.toString();
+    if (finalFeedIds.has(postId)) continue;
+
+    let reason;
+    if (s.score < scoreCutoff) {
+      reason = 'Below score cutoff';
+    } else if (s.score >= scoreCutoff) {
+      // Post scored high enough but was removed by diversity or overflow
+      // Check if it shares an author with adjacent posts in the feed
+      const authorId = getAuthorIdString(s.post);
+      const authorInFeed = finalFeed.some(p => getAuthorIdString(p) === authorId);
+      if (authorInFeed) {
+        reason = 'Diversity filter';
+      } else {
+        reason = 'Candidate window overflow';
+      }
+    }
+
+    excluded.push({
+      postId,
+      caption: (s.post.caption || '').substring(0, 60),
+      score: Math.round(s.score * 100) / 100,
+      reason,
+    });
+  }
+
+  return excluded;
+};
+
+// ---------------------------------------------------------------------------
 // Main Feed Builder - Home Feed (Personalized)
 // ---------------------------------------------------------------------------
 
@@ -507,6 +560,10 @@ const buildBaseQuery = async (showMatureContent, cursor) => {
  * @returns {Object|null} Feed result { data, meta, debug? } or null for fallback
  */
 export const buildRecommendedFeed = async (userId, cursor, limit, showMatureContent, options = {}) => {
+  const debugMode = options.debug === true;
+  const pipelineTimeline = debugMode ? [] : null;
+  let stageStart = debugMode ? Date.now() : 0;
+
   // Step 1: Get user signals
   const signals = await getUserFeedSignals(userId);
 
@@ -530,6 +587,11 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
     .populate('authorId', 'username avatarUrl role isVerified verifiedType stats createdAt')
     .lean();
 
+  if (debugMode) {
+    pipelineTimeline.push({ stage: 'fetchCandidates', durationMs: Date.now() - stageStart });
+    stageStart = Date.now();
+  }
+
   if (candidatePosts.length === 0) {
     return { data: [], meta: { nextCursor: null, hasNextPage: false } };
   }
@@ -551,7 +613,6 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
   };
 
   // Step 7: Score all candidate posts
-  const debugMode = options.debug === true;
   const startTime = debugMode ? Date.now() : 0;
 
   const scoredPosts = candidatePosts.map(post => {
@@ -590,6 +651,11 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
 
   // Sort by score descending
   scoredPosts.sort((a, b) => b.score - a.score);
+
+  if (debugMode) {
+    pipelineTimeline.push({ stage: 'scoring', durationMs: Date.now() - stageStart });
+    stageStart = Date.now();
+  }
 
   // Step 8: Calculate exploration slots (10% of feed)
   const explorationSlotCount = Math.max(1, Math.floor(limit * 0.1));
@@ -674,11 +740,20 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
     }
   }
 
+  if (debugMode) {
+    pipelineTimeline.push({ stage: 'freshInjection', durationMs: Date.now() - stageStart });
+    stageStart = Date.now();
+  }
+
   // Step 13: Apply ONE final diversity pass on the combined+injected result.
   // This ensures no consecutive posts from the same creator in the final output,
   // including any freshly injected posts.
   const diversityStats = debugMode ? { diversitySwaps: 0 } : null;
   const finalFeed = applyDiversity(injectedFeed, diversityStats).slice(0, limit);
+
+  if (debugMode) {
+    pipelineTimeline.push({ stage: 'diversity', durationMs: Date.now() - stageStart });
+  }
 
   // Step 14: Determine pagination
   // KNOWN TRADEOFF: Pagination drift under score reordering.
@@ -774,6 +849,8 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
       freshPostCount,
       explorationPostCount,
       diversitySwaps: diversityStats ? diversityStats.diversitySwaps : 0,
+      pipelineTimeline,
+      excludedPosts: buildExcludedPosts(scoredPosts, finalFeed, limit),
       scoreBreakdowns,
     };
   }
@@ -799,6 +876,10 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
  * @returns {Object} { data, meta: { nextCursor, hasNextPage } }
  */
 export const buildExploreFeed = async (userId, cursor, limit, showMatureContent, artworkType, options = {}) => {
+  const debugMode = options.debug === true;
+  const pipelineTimeline = debugMode ? [] : null;
+  let stageStart = debugMode ? Date.now() : 0;
+
   // Build base query
   const baseQuery = await buildBaseQuery(showMatureContent, cursor);
 
@@ -817,6 +898,11 @@ export const buildExploreFeed = async (userId, cursor, limit, showMatureContent,
     .populate('authorId', 'username avatarUrl role isVerified verifiedType stats createdAt')
     .lean();
 
+  if (debugMode) {
+    pipelineTimeline.push({ stage: 'fetchCandidates', durationMs: Date.now() - stageStart });
+    stageStart = Date.now();
+  }
+
   if (candidatePosts.length === 0) {
     return { data: [], meta: { nextCursor: null, hasNextPage: false } };
   }
@@ -830,7 +916,6 @@ export const buildExploreFeed = async (userId, cursor, limit, showMatureContent,
 
   const weights = await getRecommendationWeights();
   const currentTime = Date.now();
-  const debugMode = options.debug === true;
   const startTime = debugMode ? Date.now() : 0;
 
   const context = {
@@ -879,6 +964,11 @@ export const buildExploreFeed = async (userId, cursor, limit, showMatureContent,
 
   // Sort by score for trending pool
   scoredPosts.sort((a, b) => b.score - a.score);
+
+  if (debugMode) {
+    pipelineTimeline.push({ stage: 'scoring', durationMs: Date.now() - stageStart });
+    stageStart = Date.now();
+  }
 
   // Calculate slot distribution: 50% engagement, 30% fresh, 20% new creators
   const engagementSlots = Math.ceil(limit * 0.5);
@@ -957,6 +1047,10 @@ export const buildExploreFeed = async (userId, cursor, limit, showMatureContent,
   const diversityStats = debugMode ? { diversitySwaps: 0 } : null;
   const diverseResult = applyDiversity(result, diversityStats).slice(0, limit);
 
+  if (debugMode) {
+    pipelineTimeline.push({ stage: 'diversity', durationMs: Date.now() - stageStart });
+  }
+
   // Determine pagination
   // KNOWN TRADEOFF: Pagination drift under score reordering.
   // Same tradeoff as buildRecommendedFeed: the cursor advances chronologically
@@ -1031,6 +1125,8 @@ export const buildExploreFeed = async (userId, cursor, limit, showMatureContent,
       freshPostCount,
       explorationPostCount: 0,
       diversitySwaps: diversityStats ? diversityStats.diversitySwaps : 0,
+      pipelineTimeline,
+      excludedPosts: buildExcludedPosts(scoredPosts, diverseResult, limit),
       scoreBreakdowns,
     };
   }
