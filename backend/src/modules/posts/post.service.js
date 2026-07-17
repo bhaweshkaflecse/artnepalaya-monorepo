@@ -369,13 +369,14 @@ export const getExplore = async (userId, cursor, limit, artworkType, search, sho
   // If no results found with filter, debug what's actually in the database
   if (posts.length === 0 && artworkType) {
     const samples = await Post.find({ deletedAt: null })
-      .select('_id caption artworkType')
+      .select('_id caption artworkType createdAt')
+      .populate('authorId', 'username')
       .sort({ _id: -1 })
       .limit(5)
       .lean();
     console.log('[getExplore] Sample documents (latest 5):');
     samples.forEach((s, i) => {
-      console.log(`  [${i}] _id=${s._id}, artworkType=${JSON.stringify(s.artworkType)}, typeof=${typeof s.artworkType}, isArray=${Array.isArray(s.artworkType)}`);
+      console.log(`  [${i}] _id=${s._id}, createdAt=${s.createdAt}, author=${s.authorId?.username || 'unknown'}, artworkType=${JSON.stringify(s.artworkType)}, isArray=${Array.isArray(s.artworkType)}`);
     });
     
     // Try a simple equality match to compare
