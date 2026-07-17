@@ -283,10 +283,10 @@ export const getFeed = async (userId, cursor, limit, showMatureContent) => {
 export const getExplore = async (userId, cursor, limit, artworkType, search, showMatureContent) => {
   limit = limit || 20;
 
-  // When no search query and no artworkType filter is active, use the ranked explore feed
-  if (!search && !artworkType) {
+  // When no search query is active, use the ranked explore feed (supports artworkType filter)
+  if (!search) {
     try {
-      const rankedFeed = await buildExploreFeed(userId, cursor, limit, !!showMatureContent, null);
+      const rankedFeed = await buildExploreFeed(userId, cursor, limit, !!showMatureContent, artworkType || null);
       if (rankedFeed && rankedFeed.data.length > 0) {
         // Per-user hydration for ranked feed
         if (userId && rankedFeed.data.length > 0) {

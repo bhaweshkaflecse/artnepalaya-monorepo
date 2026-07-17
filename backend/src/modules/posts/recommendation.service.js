@@ -43,6 +43,10 @@ export const getRegisteredSignals = () => [...signalRegistry.keys()];
 const DEFAULT_WEIGHTS = {
   likes: 3,
   saves: 7,
+  // NOTE: comments, shares, views signals are registered but dormant.
+  // The Post schema currently only has likesCount and savesCount fields.
+  // These signals will activate once the schema is extended with
+  // commentsCount, sharesCount, and viewsCount fields.
   comments: 4,
   shares: 5,
   views: 1,
@@ -50,8 +54,6 @@ const DEFAULT_WEIGHTS = {
   creatorQuality: 3,
   verification: 2,
   freshness: 8,
-  diversity: 5,
-  exploration: 3,
   randomness: 1,
   newCreatorBoost: 4,
   // Legacy keys preserved for backward compatibility
@@ -76,17 +78,20 @@ registerSignal('saves', (post) => {
   return post.savesCount || 0;
 }, 7);
 
-// Comments signal: raw comment count (graceful if field missing)
+// Comments signal: DORMANT - commentsCount field does not yet exist on Post schema.
+// Will always return 0 until schema is extended. Registered for forward compatibility.
 registerSignal('comments', (post) => {
   return post.commentsCount || 0;
 }, 4);
 
-// Shares signal: raw share count (graceful if field missing)
+// Shares signal: DORMANT - sharesCount field does not yet exist on Post schema.
+// Will always return 0 until schema is extended. Registered for forward compatibility.
 registerSignal('shares', (post) => {
   return post.sharesCount || 0;
 }, 5);
 
-// Views signal: raw view count (graceful if field missing)
+// Views signal: DORMANT - viewsCount field does not yet exist on Post schema.
+// Will always return 0 until schema is extended. Registered for forward compatibility.
 registerSignal('views', (post) => {
   return post.viewsCount || 0;
 }, 1);
@@ -290,13 +295,31 @@ export const getUserFeedSignals = async (userId) => {
 
 /**
  * Build creator quality map: average (likes + saves) per post for each author.
+ * Uses a cache key derived from the sorted authorIds to prevent cross-request
+ * cache collisions (each unique set of authors gets its own cache entry).
  * @param {string[]} authorIds - Unique author IDs to compute quality for
  * @returns {Map<string, number>} authorId -> average engagement
  */
 const buildCreatorQualityMap = async (authorIds) => {
   if (!authorIds || authorIds.length === 0) return new Map();
 
-  const cacheKey = 'ranking:creatorQuality';
+  // Build a deterministic cache key from the sorted author set.
+  // For large sets, use a simple hash to keep key length manageable.
+  const sortedIds = [...authorIds].sort();
+  let keySegment;
+  if (sortedIds.length <= 5) {
+    keySegment = sortedIds.join(',');
+  } else {
+    // Simple string hash for larger sets
+    const joined = sortedIds.join(',');
+    let hash = 0;
+    for (let i = 0; i < joined.length; i++) {
+      hash = ((hash << 5) - hash + joined.charCodeAt(i)) | 0;
+    }
+    keySegment = `h${Math.abs(hash).toString(36)}_n${sortedIds.length}`;
+  }
+  const cacheKey = `ranking:creatorQuality:${keySegment}`;
+
   const fetchQuality = async () => {
     const pipeline = [
       { $match: { authorId: { $in: authorIds.map(id => id) }, deletedAt: null } },

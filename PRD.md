@@ -1910,21 +1910,21 @@ New signals are registered with:
 
 ### 13.3 Registered Signals (13 Total)
 
+> **Note:** The `comments`, `shares`, and `views` signals are registered but currently **dormant**. The Post schema only defines `likesCount` and `savesCount` fields. These three signals will always return 0 until the schema is extended with `commentsCount`, `sharesCount`, and `viewsCount` fields and the corresponding service functions implement increment logic.
+
 | Signal | Default Weight | Description |
 |--------|---------------|-------------|
 | `likes` | 3 | Raw like count of the post |
 | `saves` | 7 | Raw save count (highest engagement signal) |
-| `comments` | 4 | Raw comment count (graceful if field missing) |
-| `shares` | 5 | Raw share count (graceful if field missing) |
-| `views` | 1 | Raw view count (graceful if field missing) |
+| `comments` | 4 | **Dormant** - awaits `commentsCount` schema field |
+| `shares` | 5 | **Dormant** - awaits `sharesCount` schema field |
+| `views` | 1 | **Dormant** - awaits `viewsCount` schema field |
 | `creatorFollowers` | 2 | `log2(1 + author.stats.followers)` |
 | `creatorQuality` | 3 | `log2(1 + avgEngagementPerPost)` for the author |
 | `verification` | 2 | +5 bonus if author is verified |
 | `freshness` | 8 | Time decay: `1 / (1 + (hours/24)^1.5)` scaled to 0-10 |
 | `newCreatorBoost` | 4 | +1.5 if account < 30 days OR < 10 total posts |
 | `randomness` | 1 | Deterministic pseudo-random (0-2 range, seeded by post ID) |
-| `diversity` | 5 | Applied post-scoring (see Section 13.5) |
-| `exploration` | 3 | 10% of feed slots reserved for discovery |
 
 ### 13.4 Scoring Engine
 
@@ -2061,11 +2061,13 @@ The explore feed allocates posts across three pools:
 ### 14.3 Scoring
 
 Uses the same signal registry and weights as the Home feed:
-- All 13 signals are computed
+- All 13 signals are computed (though `comments`, `shares`, and `views` are dormant; see Section 13.3 note)
 - Posts are scored identically
 - Sorted by composite score descending
 
 The difference is in post selection (pool-based) rather than signal computation.
+
+> **Note:** Because the three dormant signals (`comments`, `shares`, `views`) always return 0, only 10 of the 13 registered signals actively contribute to explore scoring. The effective weight budget is 33 out of a theoretical 43 until the Post schema is extended.
 
 ### 14.4 Pool Definitions
 
