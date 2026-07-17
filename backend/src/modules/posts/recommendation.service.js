@@ -264,9 +264,10 @@ export const scorePost = (post, context, weights) => {
  * Apply diversity re-ordering to prevent consecutive posts from the same creator.
  * If an author appeared in the last 2 positions, apply a heavy penalty.
  * @param {Array} posts - Scored posts array sorted by score descending
+ * @param {Object} [stats] - Optional stats object; if provided, stats.diversitySwaps is incremented
  * @returns {Array} Re-ordered posts with diversity applied
  */
-const applyDiversity = (posts) => {
+const applyDiversity = (posts, stats) => {
   if (posts.length <= 2) return posts;
 
   const result = [];
@@ -284,6 +285,10 @@ const applyDiversity = (posts) => {
       const isConsecutive = recentAuthors.includes(candidateAuthorId);
 
       if (!isConsecutive) {
+        // If i > 0, a swap occurred (skipped earlier candidates)
+        if (i > 0 && stats) {
+          stats.diversitySwaps = (stats.diversitySwaps || 0) + 1;
+        }
         result.push(candidate);
         remaining.splice(i, 1);
         placed = true;
@@ -497,9 +502,11 @@ const buildBaseQuery = async (showMatureContent, cursor) => {
  * @param {string|null} cursor - Pagination cursor (post _id)
  * @param {number} limit - Number of posts to return
  * @param {boolean} showMatureContent - Whether to include NSFW posts
- * @returns {Object|null} Feed result { data, meta } or null for fallback
+ * @param {Object} [options] - Additional options
+ * @param {boolean} [options.debug] - When true, returns debug info with score breakdowns
+ * @returns {Object|null} Feed result { data, meta, debug? } or null for fallback
  */
-export const buildRecommendedFeed = async (userId, cursor, limit, showMatureContent) => {
+export const buildRecommendedFeed = async (userId, cursor, limit, showMatureContent, options = {}) => {
   // Step 1: Get user signals
   const signals = await getUserFeedSignals(userId);
 
@@ -544,10 +551,42 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
   };
 
   // Step 7: Score all candidate posts
-  const scoredPosts = candidatePosts.map(post => ({
-    post,
-    score: scorePost(post, context, weights),
-  }));
+  const debugMode = options.debug === true;
+  const startTime = debugMode ? Date.now() : 0;
+
+  const scoredPosts = candidatePosts.map(post => {
+    const signalDetails = {};
+    let totalScore = 0;
+
+    for (const [name, { fn }] of signalRegistry) {
+      const weight = weights[name] !== undefined ? weights[name] : 0;
+      if (weight === 0) {
+        if (debugMode) {
+          signalDetails[name] = { raw: 0, weight, contribution: 0 };
+        }
+        continue;
+      }
+      try {
+        const raw = fn(post, context);
+        const contribution = raw * weight;
+        totalScore += contribution;
+        if (debugMode) {
+          signalDetails[name] = { raw, weight, contribution };
+        }
+      } catch (err) {
+        console.error(`[Ranking] Signal "${name}" error:`, err.message);
+        if (debugMode) {
+          signalDetails[name] = { raw: 0, weight, contribution: 0, error: err.message };
+        }
+      }
+    }
+
+    return {
+      post,
+      score: totalScore,
+      ...(debugMode ? { signalDetails } : {}),
+    };
+  });
 
   // Sort by score descending
   scoredPosts.sort((a, b) => b.score - a.score);
@@ -577,6 +616,11 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
   }
 
   const explorationPosts = explorationCandidates.slice(0, explorationSlotCount);
+
+  // Track exploration post IDs for debug
+  const explorationPostIds = debugMode
+    ? new Set(explorationPosts.map(p => p._id.toString()))
+    : null;
 
   // Step 11: Combine main + exploration candidates (NO diversity yet)
   const mainPosts = mainCandidates.slice(0, mainSlotCount);
@@ -633,7 +677,8 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
   // Step 13: Apply ONE final diversity pass on the combined+injected result.
   // This ensures no consecutive posts from the same creator in the final output,
   // including any freshly injected posts.
-  const finalFeed = applyDiversity(injectedFeed).slice(0, limit);
+  const diversityStats = debugMode ? { diversitySwaps: 0 } : null;
+  const finalFeed = applyDiversity(injectedFeed, diversityStats).slice(0, limit);
 
   // Step 14: Determine pagination
   // KNOWN TRADEOFF: Pagination drift under score reordering.
@@ -655,7 +700,85 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
     nextCursor = oldestCandidate._id.toString();
   }
 
-  return { data: finalFeed, meta: { nextCursor, hasNextPage } };
+  const result = { data: finalFeed, meta: { nextCursor, hasNextPage } };
+
+  // Step 15: Build debug info if requested
+  if (debugMode) {
+    const executionTimeMs = Date.now() - startTime;
+    const fortyEightHoursAgoDebug = context.currentTime - (48 * 60 * 60 * 1000);
+
+    const allScores = scoredPosts.map(s => s.score);
+    const averageScore = allScores.length > 0
+      ? allScores.reduce((sum, s) => sum + s, 0) / allScores.length
+      : 0;
+
+    const freshPostCount = finalFeed.filter(
+      p => new Date(p.createdAt).getTime() >= fortyEightHoursAgoDebug
+    ).length;
+
+    const explorationPostCount = explorationPostIds
+      ? finalFeed.filter(p => explorationPostIds.has(p._id.toString())).length
+      : 0;
+
+    // Build score breakdowns for each post in the final feed
+    const scoreBreakdowns = finalFeed.map(post => {
+      const postId = post._id.toString();
+      const scored = scoredPosts.find(s => s.post._id.toString() === postId);
+      const author = post.authorId;
+      const authorUsername = (author && typeof author === 'object') ? author.username : '';
+
+      // Determine selection reasons
+      const selectionReasons = [];
+      if (new Date(post.createdAt).getTime() >= fortyEightHoursAgoDebug) {
+        selectionReasons.push('Fresh Candidate');
+      }
+      if (explorationPostIds && explorationPostIds.has(postId)) {
+        selectionReasons.push('Exploration Slot');
+      }
+      // Check if interest match
+      const postTypes = Array.isArray(post.artworkType) ? post.artworkType : [];
+      const interestSet2 = new Set(signals.interestSignals);
+      if (postTypes.some(type => interestSet2.has(type))) {
+        selectionReasons.push('Interest Match');
+      }
+      // New creator check
+      if (author && typeof author === 'object') {
+        const accountAge = author.createdAt
+          ? (context.currentTime - new Date(author.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+          : 999;
+        const authorId = author._id?.toString() || '';
+        const postCount = creatorPostCountMap.get(authorId) || 999;
+        if (accountAge < 30 || postCount < 10) {
+          selectionReasons.push('New Creator Boost');
+        }
+      }
+      if (selectionReasons.length === 0) {
+        selectionReasons.push('Score Ranked');
+      }
+
+      return {
+        postId,
+        caption: (post.caption || '').substring(0, 60),
+        authorUsername,
+        createdAt: post.createdAt,
+        finalScore: scored ? scored.score : 0,
+        signals: scored?.signalDetails || {},
+        selectionReasons,
+      };
+    });
+
+    result.debug = {
+      candidatesEvaluated: candidatePosts.length,
+      executionTimeMs,
+      averageScore: Math.round(averageScore * 100) / 100,
+      freshPostCount,
+      explorationPostCount,
+      diversitySwaps: diversityStats ? diversityStats.diversitySwaps : 0,
+      scoreBreakdowns,
+    };
+  }
+
+  return result;
 };
 
 // ---------------------------------------------------------------------------
@@ -675,7 +798,7 @@ export const buildRecommendedFeed = async (userId, cursor, limit, showMatureCont
  * @param {string|null} artworkType - Optional artwork type filter
  * @returns {Object} { data, meta: { nextCursor, hasNextPage } }
  */
-export const buildExploreFeed = async (userId, cursor, limit, showMatureContent, artworkType) => {
+export const buildExploreFeed = async (userId, cursor, limit, showMatureContent, artworkType, options = {}) => {
   // Build base query
   const baseQuery = await buildBaseQuery(showMatureContent, cursor);
 
@@ -707,6 +830,8 @@ export const buildExploreFeed = async (userId, cursor, limit, showMatureContent,
 
   const weights = await getRecommendationWeights();
   const currentTime = Date.now();
+  const debugMode = options.debug === true;
+  const startTime = debugMode ? Date.now() : 0;
 
   const context = {
     seenCreatorIds: new Set(),
@@ -718,10 +843,39 @@ export const buildExploreFeed = async (userId, cursor, limit, showMatureContent,
   };
 
   // Score all candidates
-  const scoredPosts = candidatePosts.map(post => ({
-    post,
-    score: scorePost(post, context, weights),
-  }));
+  const scoredPosts = candidatePosts.map(post => {
+    const signalDetails = {};
+    let totalScore = 0;
+
+    for (const [name, { fn }] of signalRegistry) {
+      const weight = weights[name] !== undefined ? weights[name] : 0;
+      if (weight === 0) {
+        if (debugMode) {
+          signalDetails[name] = { raw: 0, weight, contribution: 0 };
+        }
+        continue;
+      }
+      try {
+        const raw = fn(post, context);
+        const contribution = raw * weight;
+        totalScore += contribution;
+        if (debugMode) {
+          signalDetails[name] = { raw, weight, contribution };
+        }
+      } catch (err) {
+        console.error(`[Ranking] Signal "${name}" error:`, err.message);
+        if (debugMode) {
+          signalDetails[name] = { raw: 0, weight, contribution: 0, error: err.message };
+        }
+      }
+    }
+
+    return {
+      post,
+      score: totalScore,
+      ...(debugMode ? { signalDetails } : {}),
+    };
+  });
 
   // Sort by score for trending pool
   scoredPosts.sort((a, b) => b.score - a.score);
@@ -800,7 +954,8 @@ export const buildExploreFeed = async (userId, cursor, limit, showMatureContent,
   }
 
   // Apply diversity to prevent consecutive same-creator posts
-  const diverseResult = applyDiversity(result).slice(0, limit);
+  const diversityStats = debugMode ? { diversitySwaps: 0 } : null;
+  const diverseResult = applyDiversity(result, diversityStats).slice(0, limit);
 
   // Determine pagination
   // KNOWN TRADEOFF: Pagination drift under score reordering.
@@ -816,5 +971,69 @@ export const buildExploreFeed = async (userId, cursor, limit, showMatureContent,
     nextCursor = oldestCandidate._id.toString();
   }
 
-  return { data: diverseResult, meta: { nextCursor, hasNextPage } };
+  const feedResult = { data: diverseResult, meta: { nextCursor, hasNextPage } };
+
+  // Build debug info if requested
+  if (debugMode) {
+    const executionTimeMs = Date.now() - startTime;
+    const fortyEightHoursAgoDebug = currentTime - (48 * 60 * 60 * 1000);
+
+    const allScores = scoredPosts.map(s => s.score);
+    const averageScore = allScores.length > 0
+      ? allScores.reduce((sum, s) => sum + s, 0) / allScores.length
+      : 0;
+
+    const freshPostCount = diverseResult.filter(
+      p => new Date(p.createdAt).getTime() >= fortyEightHoursAgoDebug
+    ).length;
+
+    // Build score breakdowns for each post in the final feed
+    const scoreBreakdowns = diverseResult.map(post => {
+      const postId = post._id.toString();
+      const scored = scoredPosts.find(s => s.post._id.toString() === postId);
+      const author = post.authorId;
+      const authorUsername = (author && typeof author === 'object') ? author.username : '';
+
+      const selectionReasons = [];
+      if (new Date(post.createdAt).getTime() >= fortyEightHoursAgoDebug) {
+        selectionReasons.push('Fresh Candidate');
+      }
+      // New creator check
+      if (author && typeof author === 'object') {
+        const accountAge = author.createdAt
+          ? (currentTime - new Date(author.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+          : 999;
+        const authorId = getAuthorIdString(post);
+        const postCount = creatorPostCountMap.get(authorId) || 0;
+        if (accountAge < 30 || postCount < 20) {
+          selectionReasons.push('New Creator Boost');
+        }
+      }
+      if (selectionReasons.length === 0) {
+        selectionReasons.push('Score Ranked');
+      }
+
+      return {
+        postId,
+        caption: (post.caption || '').substring(0, 60),
+        authorUsername,
+        createdAt: post.createdAt,
+        finalScore: scored ? scored.score : 0,
+        signals: scored?.signalDetails || {},
+        selectionReasons,
+      };
+    });
+
+    feedResult.debug = {
+      candidatesEvaluated: candidatePosts.length,
+      executionTimeMs,
+      averageScore: Math.round(averageScore * 100) / 100,
+      freshPostCount,
+      explorationPostCount: 0,
+      diversitySwaps: diversityStats ? diversityStats.diversitySwaps : 0,
+      scoreBreakdowns,
+    };
+  }
+
+  return feedResult;
 };

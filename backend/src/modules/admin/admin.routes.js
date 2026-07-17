@@ -78,4 +78,7 @@ router.get('/search-insights', controller.getSearchInsights);
 router.put('/users/:userId/verify', controller.verifyUser);
 router.put('/users/:userId/unverify', controller.unverifyUser);
 
+// Recommendation Engine Simulation
+router.get('/recommendation/simulate', controller.simulateRecommendation);
+
 export default router;

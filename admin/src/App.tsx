@@ -14,6 +14,7 @@ import { CommunityInterest } from './pages/CommunityInterest';
 import { ArtworkTypes } from './pages/ArtworkTypes';
 import { TagManagement } from './pages/TagManagement';
 import { SearchInsights } from './pages/SearchInsights';
+import { RecommendationEngine } from './pages/RecommendationEngine';
 import { useAuthStore } from './store/authStore';
 import type { ReactNode } from 'react';
 
@@ -50,6 +51,7 @@ export default function App() {
           <Route path="artwork-types" element={<ArtworkTypes />} />
           <Route path="tags" element={<TagManagement />} />
           <Route path="search-insights" element={<SearchInsights />} />
+          <Route path="recommendation-engine" element={<RecommendationEngine />} />
         </Route>
       </Routes>
     </Router>
