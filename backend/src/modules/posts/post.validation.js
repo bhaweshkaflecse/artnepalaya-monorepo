@@ -39,6 +39,18 @@ export const createPostSchema = z.object({
       z.array(z.string().toLowerCase()).max(15).optional()
     ),
 
+    // Artwork type categorization - convert form-data JSON string to array
+    artworkType: z.preprocess(
+      (val) => {
+        if (!val) return undefined;
+        if (typeof val === 'string') {
+          try { return JSON.parse(val); } catch (e) { return [val]; }
+        }
+        return val;
+      },
+      z.array(z.string()).max(5).optional()
+    ),
+
     // 3. Media validation: max 6 items total, max 5 images, max 1 video
     media: z.preprocess(
       (val) => {

@@ -558,20 +558,16 @@ router.get('/p/:postId', async (req, res) => {
       <!-- Android CTA -->
       <div class="store-buttons platform-section" id="cta-android">
         <a href="${escapeHtml(intentUri)}" class="open-app-btn">Open in App</a>
-        <a href="${escapeHtml(playStoreUrl)}" class="store-btn store-btn-play">Get on Google Play</a>
       </div>
 
       <!-- iOS CTA -->
       <div class="store-buttons platform-section" id="cta-ios">
         <a href="${escapeHtml(deepLink)}" class="open-app-btn">Open in App</a>
-        <span class="store-btn store-btn-apple store-btn-disabled">Coming Soon to App Store</span>
-        <p class="platform-ios-note">Art Nepalaya for iOS is coming soon!</p>
       </div>
 
       <!-- Desktop CTA -->
       <div class="store-buttons platform-section" id="cta-desktop">
         <a href="${escapeHtml(playStoreUrl)}" class="store-btn store-btn-play">Get on Google Play</a>
-        <span class="store-btn store-btn-apple store-btn-disabled">Coming Soon to App Store</span>
       </div>
     </div>
   </div>

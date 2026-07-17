@@ -6,6 +6,17 @@ import { notificationService } from './notification.service';
 
 const TAG = '[PushReg]';
 
+// Set notification handler IMMEDIATELY on module load (not inside a component).
+// This ensures foreground notifications are displayed even if the notification
+// arrives before the AppStack component mounts and calls setupNotificationListeners().
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
 /**
  * Sets up the Android notification channel.
  * Must be called before notifications are displayed on Android.
