@@ -23,6 +23,7 @@ const uploadBufferToCloudinary = (buffer, isVideo) => {
 export const createPost = async (req, res, next) => {
   try {
     console.log('[CREATE_POST] HIT - user:', req.user?.id, 'files:', req.files?.length || 0);
+    console.log('[CREATE_POST] req.body.artworkType:', JSON.stringify(req.body.artworkType), '| typeof:', typeof req.body.artworkType);
     if (req.files && req.files.length > 0) {
       req.files.forEach((f, i) => {
         console.log(`[CREATE_POST] File ${i}: fieldname=${f.fieldname}, originalname=${f.originalname}, mimetype=${f.mimetype}, size=${f.size}`);

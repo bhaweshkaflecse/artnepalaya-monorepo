@@ -36,6 +36,7 @@ export const createPost = async (userId, postData) => {
   }
 
   // BULLETPROOF ARTWORKTYPE FIX: Handle both Strings (from form-data) and Arrays
+  console.log('[CREATE_POST] postData.artworkType BEFORE parsing:', JSON.stringify(postData.artworkType), '| typeof:', typeof postData.artworkType, '| isArray:', Array.isArray(postData.artworkType));
   if (postData.artworkType) {
     let artworkTypeArray = [];
 
