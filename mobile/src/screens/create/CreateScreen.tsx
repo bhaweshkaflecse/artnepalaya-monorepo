@@ -311,7 +311,12 @@ export const CreateScreen = () => {
         if (artworkType.includes('Other') && customArtworkType.trim()) {
           typesToSend.push(customArtworkType.trim());
         }
-        formData.append('artworkType', JSON.stringify(typesToSend.filter((t) => t !== 'Other')));
+        const artworkTypeValue = JSON.stringify(typesToSend.filter((t) => t !== 'Other'));
+        console.log('[PUBLISH] artworkType state:', JSON.stringify(artworkType));
+        console.log('[PUBLISH] artworkType FormData value:', artworkTypeValue);
+        formData.append('artworkType', artworkTypeValue);
+      } else {
+        console.log('[PUBLISH] artworkType state is EMPTY - not appending');
       }
 
       formData.append('isHumanMade', (!isAIGenerated).toString());
