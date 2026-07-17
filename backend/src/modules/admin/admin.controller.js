@@ -11,6 +11,7 @@ import { User } from '../users/user.model.js';
 import { Post } from '../posts/post.model.js';
 import { Tag } from '../tags/tag.model.js';
 import { buildRecommendedFeed, buildExploreFeed } from '../posts/recommendation.service.js';
+import { resolveUserId } from '../users/user.service.js';
 
 export const getDashboardStats = async (req, res, next) => {
   try { res.status(200).json({ success: true, data: await adminService.getDashboardStats() }); } 
@@ -613,12 +614,18 @@ export const simulateRecommendation = async (req, res, next) => {
       // Guest mode: use explore feed with debug
       feedResult = await buildExploreFeed(null, null, limit, false, null, { debug: true });
     } else {
+      // Resolve username/email/ObjectId to a valid ObjectId
+      const resolvedId = await resolveUserId(userId);
+      if (!resolvedId) {
+        return res.status(404).json({ success: false, message: 'User not found for identifier: ' + userId });
+      }
+
       // User mode: use personalized recommended feed with debug
-      feedResult = await buildRecommendedFeed(userId, null, limit, false, { debug: true });
+      feedResult = await buildRecommendedFeed(resolvedId, null, limit, false, { debug: true });
 
       // If buildRecommendedFeed returns null (user has no preferences), fallback to explore
       if (feedResult === null) {
-        feedResult = await buildExploreFeed(userId, null, limit, false, null, { debug: true });
+        feedResult = await buildExploreFeed(resolvedId, null, limit, false, null, { debug: true });
         if (feedResult.debug) {
           feedResult.debug.fallbackReason = 'User has no interest preferences set';
         }

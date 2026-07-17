@@ -113,12 +113,12 @@ export const RecommendationEngine = () => {
       <div className="bg-white p-6 rounded-lg border border-gray-200">
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username or User ID</label>
             <input
               type="text"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              placeholder="Enter user ID (optional for guest mode)"
+              placeholder="Enter username, email or user ID..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
           </div>

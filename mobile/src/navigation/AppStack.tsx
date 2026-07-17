@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { MainTabs } from './MainTabs';
@@ -11,7 +12,7 @@ import { UserProfileScreen } from '../screens/profile/UserProfileScreen';
 import { CmsPageScreen } from '../screens/settings/CmsPageScreen';
 import { DevDiagnosticsScreen } from '../screens/settings/DevDiagnosticsScreen';
 import { CreateScreen } from '../screens/create/CreateScreen';
-import { setupNotificationListeners } from '../services/pushNotification.service';
+import { setupNotificationListeners, registerForPushNotifications } from '../services/pushNotification.service';
 import { connectSocket, disconnectSocket } from '../services/socket.service';
 import { ENV } from '../config/env';
 import { useAppSelector } from '../store';
@@ -36,6 +37,7 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 export const AppStack = () => {
   const navigation = useNavigation();
   const accessToken = useAppSelector(selectAccessToken);
+  const hasReregisteredPushToken = useRef(false);
 
   useEffect(() => {
     const cleanup = setupNotificationListeners((response) => {
@@ -48,6 +50,25 @@ export const AppStack = () => {
 
   // Connect/disconnect socket based on auth state (not token refreshes)
   const isAuthenticated = !!accessToken;
+
+  // Re-register push token when app returns to foreground (once per session)
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (
+        nextAppState === 'active' &&
+        isAuthenticated &&
+        !hasReregisteredPushToken.current
+      ) {
+        hasReregisteredPushToken.current = true;
+        console.log('[AppStack] App resumed - re-registering push token');
+        registerForPushNotifications(accessToken!);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [isAuthenticated, accessToken]);
 
   useEffect(() => {
     if (isAuthenticated && accessToken) {
