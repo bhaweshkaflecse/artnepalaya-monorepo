@@ -308,8 +308,6 @@ export const getExplore = async (userId, cursor, limit, artworkType, search, sho
     query.artworkType = { $regex: `^${escapedType}$`, $options: 'i' };
   }
 
-  console.log('[getExplore] Query:', JSON.stringify(query));
-
   // Text search on caption, tags (escape regex metacharacters to prevent injection)
   if (search) {
     const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -319,6 +317,9 @@ export const getExplore = async (userId, cursor, limit, artworkType, search, sho
       { tags: searchRegex }
     ];
   }
+
+  // Log the COMPLETE final query immediately before execution (all filters applied)
+  console.log('[getExplore] Final Mongo Query:', JSON.stringify(query));
 
   const posts = await Post.find(query)
     .sort({ _id: -1 })
