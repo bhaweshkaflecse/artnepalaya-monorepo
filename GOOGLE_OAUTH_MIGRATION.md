@@ -1,176 +1,97 @@
-# Google OAuth Migration: EAS Development Build
+# Google OAuth — Migration Complete
 
-## Overview
+**Status:** ✅ MIGRATION COMPLETE  
+**Last Updated:** July 2025
 
-This document explains the migration path from Expo Go proxy-based Google OAuth to native Google Sign-In via EAS Development Builds. The current implementation uses `expo-auth-session` with a web client ID, which works in Expo Go but has limitations in production.
+---
 
-## Current State (Expo Go)
+## Summary
 
-- Uses `expo-auth-session/providers/google` with `useIdTokenAuthRequest`
-- Only the **web client ID** (`EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`) is configured
-- Authentication flows through Expo's auth proxy (`auth.expo.io`)
-- Works for development and testing but is not suitable for production App Store / Play Store releases
+The Google OAuth implementation has been fully migrated from the Expo Go proxy-based flow (`expo-auth-session`) to native Google Sign-In (`@react-native-google-signin/google-signin`).
 
-### Limitations
+This document is retained as a historical reference.
 
-1. Relies on Expo's proxy server for the OAuth redirect
-2. Users see a web-based sign-in flow instead of the native Google prompt
-3. Cannot use native Google Sign-In features (One Tap, credential manager)
-4. The proxy flow may be deprecated in future Expo SDK versions
+---
 
-## Target State (EAS Development Build)
+## Previous State (Deprecated)
 
-- Uses `expo-dev-client` for custom development builds
-- Enables native Google Sign-In on both iOS and Android
-- Requires platform-specific client IDs from Google Cloud Console
-- Faster, more reliable, and production-ready
+- Used `expo-auth-session/providers/google` with `useIdTokenAuthRequest`
+- Only the web client ID was configured
+- Authentication flowed through Expo's auth proxy (`auth.expo.io`)
+- Limited to Expo Go development environment
 
-## Migration Steps
+## Current State (Production)
 
-### 1. Install `expo-dev-client`
+- Uses `@react-native-google-signin/google-signin` v12.2.1
+- Native Google Sign-In on Android (One Tap capable)
+- Requires Firebase project with `google-services.json`
+- SHA-1/SHA-256 fingerprints registered in Firebase Console
+- Backend verifies tokens against multiple audience client IDs
 
-Already added to `mobile/package.json`:
+### Configuration Files
 
-```json
-"expo-dev-client": "~3.3.0"
-```
+| File | Purpose |
+|------|---------|
+| `mobile/google-services.json` | Firebase configuration for Android |
+| `mobile/app.json` → `plugins` | Google Sign-In plugin configuration |
+| `mobile/android/app/build.gradle` | Google Services Gradle plugin |
+| `backend/.env` → `GOOGLE_CLIENT_ID` | Backend token verification |
+| `backend/.env` → `GOOGLE_ANDROID_CLIENT_ID` | Android audience verification |
 
-### 2. Create Google Cloud OAuth Credentials
-
-In the [Google Cloud Console](https://console.cloud.google.com/apis/credentials):
-
-- **Web Client ID** (already have): Used for the backend token verification
-- **iOS Client ID**: Create an OAuth 2.0 Client ID for iOS. Use your app's bundle identifier (e.g., `com.artnepalaya.mobile`)
-- **Android Client ID**: Create an OAuth 2.0 Client ID for Android. Use your app's package name and the SHA-1 certificate fingerprint from your keystore
-
-### 3. Update Environment Variables
-
-Add to your `.env` and EAS build secrets:
+### Auth Flow (Current)
 
 ```
-EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=<your-web-client-id>
-EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=<your-ios-client-id>
-EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=<your-android-client-id>
+Mobile: GoogleSignin.signIn()
+  → Native Google Sign-In prompt
+  → Returns { idToken }
+  → POST /api/v1/auth/google { idToken, deviceId }
+  → Backend verifies against web + Android client IDs
+  → Creates/finds user, generates JWT tokens
+  → Returns { user, accessToken, refreshToken, isNewUser }
 ```
 
-### 4. Update the Google Auth Hook
-
-In `mobile/src/screens/auth/LoginScreen.tsx`, update the hook configuration:
-
-```typescript
-const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-  clientId: GOOGLE_WEB_CLIENT_ID,
-  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-  androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-});
-```
-
-### 5. Configure `app.json` / `app.config.js`
-
-Add the Google Sign-In config plugin:
-
-```json
-{
-  "expo": {
-    "plugins": [
-      [
-        "expo-auth-session"
-      ]
-    ],
-    "ios": {
-      "bundleIdentifier": "com.artnepalaya.mobile",
-      "infoPlist": {
-        "CFBundleURLTypes": [
-          {
-            "CFBundleURLSchemes": ["com.googleusercontent.apps.<IOS_CLIENT_ID_PREFIX>"]
-          }
-        ]
-      }
-    },
-    "android": {
-      "package": "com.artnepalaya.mobile"
-    }
-  }
-}
-```
-
-### 6. Create EAS Build Profile
-
-In `eas.json`:
-
-```json
-{
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "simulator": true
-      }
-    },
-    "preview": {
-      "distribution": "internal"
-    },
-    "production": {}
-  }
-}
-```
-
-### 7. Build the Development Client
-
-```bash
-# Install EAS CLI
-npm install -g eas-cli
-
-# Login to Expo
-eas login
-
-# Build for iOS simulator
-eas build --profile development --platform ios
-
-# Build for Android emulator
-eas build --profile development --platform android
-```
-
-### 8. Run with Development Build
-
-```bash
-# Start the dev server
-npx expo start --dev-client
-```
-
-## Backend Considerations
-
-The backend (`POST /auth/google`) already verifies Google ID tokens using the web client ID. When using native sign-in:
-
-- The ID token format remains the same
-- The `aud` claim in the token will match the platform-specific client ID
-- Update the backend's Google token verification to accept all three client IDs:
+### Backend Verification (auth.service.js)
 
 ```javascript
-const CLIENT_IDS = [
-  process.env.GOOGLE_WEB_CLIENT_ID,
-  process.env.GOOGLE_IOS_CLIENT_ID,
-  process.env.GOOGLE_ANDROID_CLIENT_ID,
-];
+const audience = [env.GOOGLE_CLIENT_ID];
+if (env.GOOGLE_ANDROID_CLIENT_ID) audience.push(env.GOOGLE_ANDROID_CLIENT_ID);
+if (env.GOOGLE_IOS_CLIENT_ID) audience.push(env.GOOGLE_IOS_CLIENT_ID);
 
-const ticket = await client.verifyIdToken({
-  idToken,
-  audience: CLIENT_IDS,
-});
+const ticket = await googleClient.verifyIdToken({ idToken, audience });
 ```
 
-## Development Workflow
+---
 
-During the transition period:
+## Setup Guide for New Environments
 
-1. **Expo Go** still works with the web client ID only (current setup)
-2. **Dev Build** enables native flows with platform-specific IDs
-3. The `__DEV__` login button provides a fallback for local testing without Google credentials
+See `mobile/GOOGLE_SIGNIN_SETUP.md` for detailed SHA fingerprint and Firebase configuration instructions.
 
-## Timeline
+### Quick Setup
 
-1. **Phase 1 (Current)**: Web client ID with Expo Go proxy - functional for development
-2. **Phase 2**: Add `expo-dev-client`, create platform credentials, build development client
-3. **Phase 3**: Test native sign-in flow on physical devices
-4. **Phase 4**: Production build with EAS for App Store / Play Store submission
+1. Create Firebase project → Add Android app (package: `com.artnepalaya.mobile`)
+2. Download `google-services.json` → place at `mobile/google-services.json`
+3. Register SHA-1 and SHA-256 fingerprints from your signing keystore in Firebase
+4. Set `GOOGLE_CLIENT_ID` (web) and `GOOGLE_ANDROID_CLIENT_ID` in backend `.env`
+5. Configure OAuth Consent Screen in Google Cloud Console (app name, logo, URLs)
+6. Build with EAS: `eas build --profile preview --platform android`
+
+### Common Issues
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| "Sign-In Failed" on release APK | SHA fingerprint mismatch | Register EAS signing cert SHA in Firebase |
+| Google shows project ID instead of app name | OAuth Consent Screen not configured | Set app name/logo in Google Cloud Console |
+| Backend rejects token | Audience mismatch | Ensure GOOGLE_CLIENT_ID matches web client ID |
+
+---
+
+## Historical Migration Notes
+
+The migration was completed across these phases:
+1. Replaced `expo-auth-session` with `@react-native-google-signin/google-signin`
+2. Added `google-services.json` and Gradle plugin configuration
+3. Updated backend to verify multi-audience tokens
+4. Removed old `useIdTokenAuthRequest` hook and WebBrowser dependencies
+5. Added native Android project configuration (`expo prebuild`)
+
+The old `expo-auth-session` package remains in `package.json` as a transitive dependency but is no longer used directly by application code.

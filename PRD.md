@@ -1,9 +1,9 @@
 # Art Nepalaya - Product Requirements Document
 
-> **Version:** 2.0  
-> **Last Updated:** July 2025  
+> **Version:** 2.1  
+> **Last Updated:** July 2025 (Final Stabilization)  
 > **Platform:** Social Art Discovery for Nepali Artists  
-> **Status:** MVP Live (Android)
+> **Status:** MVP Live (Android) — Stabilization Complete
 
 ---
 
@@ -690,7 +690,16 @@ export const createPostSchema = z.object({
   body: z.object({
     caption: z.string().max(2200).optional(),
     tags: z.union([z.string(), z.array(z.string())]).optional(),
-    artworkType: z.union([z.string(), z.array(z.string())]).optional(),
+    artworkType: z.preprocess(
+      (val) => {
+        if (!val) return undefined;
+        if (typeof val === 'string') {
+          try { return JSON.parse(val); } catch (e) { return [val]; }
+        }
+        return val;
+      },
+      z.array(z.string()).max(5).optional()
+    ),
     isHumanMade: z.union([z.boolean(), z.string()]),
     isAIGenerated: z.union([z.boolean(), z.string()]).optional(),
     isOriginalContent: z.union([z.boolean(), z.string()]).optional(),
@@ -2472,7 +2481,7 @@ db.stats()
 |-------|----------|----------|--------|
 | No automated tests | High | Entire codebase | No regression detection, manual verification only |
 | `console.log` diagnostics in production | Medium | `post.service.js`, various | Noise in production logs, minor performance |
-| `artworkType` parsing investigation | Low | `post.service.js`, `post.validation.js` | Diagnostic logging added to trace form-data string parsing |
+| `artworkType` persistence fix | ✅ Resolved | `post.validation.js` | Root cause: `createPostSchema` didn't define artworkType → Zod stripped it. Fixed by adding z.preprocess. |
 | No CI/CD pipeline | High | - | Manual deployment process, no automated checks |
 | Socket.IO CORS set to `*` | Medium | `realtime/socketServer.js` | Should restrict to known origins in production |
 | OTP delivery not implemented | Medium | `auth.service.js` | OTP only logged to console (no SMS provider integrated) |

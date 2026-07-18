@@ -1,302 +1,294 @@
-# ArtNepalaya Monorepo
+# Art Nepalaya — Monorepo
 
-A unified repository containing the complete ArtNepalaya platform: a social art discovery platform for Nepali artists and art lovers.
+Nepal's first social art discovery platform connecting artists, art lovers, galleries, and creative businesses.
+
+> **Status:** MVP Live (Android)  
+> **Production:** [artnepalaya.com](https://artnepalaya.com) | [admin.artnepalaya.com](https://admin.artnepalaya.com) | [api.artnepalaya.com](https://api.artnepalaya.com)  
+> **Share Pages:** [app.artnepalaya.com](https://app.artnepalaya.com)
+
+---
 
 ## Repository Structure
 
 ```
 artnepalaya-monorepo/
-├── backend/          # Node.js Express API (ES Modules)
-│   ├── src/          # Application source code
-│   ├── docker-compose.yml      # Local development orchestration
-│   ├── docker-compose.prod.yml # Production deployment
-│   ├── Dockerfile              # Development container
-│   ├── Dockerfile.prod         # Production container (PM2)
-│   └── nginx/                  # Reverse proxy configs
-│       ├── nginx.conf          # Development (HTTP only)
-│       └── nginx.prod.conf     # Production (HTTPS + redirect)
-├── admin/            # Vite React Admin Panel (TypeScript)
-│   ├── src/          # React source code
-│   ├── Dockerfile    # Multi-stage build (build + nginx)
-│   └── nginx.conf    # SPA routing config
-├── mobile/           # Expo React Native App (TypeScript)
-│   └── src/          # App source code
-└── README.md
+├── backend/              # Node.js Express API (ES Modules)
+│   ├── src/
+│   │   ├── modules/      # Domain modules (auth, posts, users, admin, notifications, etc.)
+│   │   ├── middlewares/  # Auth, upload, validation, security
+│   │   ├── shared/       # Utils (cache, push), services (pushService)
+│   │   ├── realtime/     # Socket.IO (emitter, events, socketServer)
+│   │   ├── config/       # Environment, Cloudinary
+│   │   └── server.js     # Entry point
+│   ├── nginx/            # Reverse proxy configs (dev + prod)
+│   ├── docker-compose.yml        # Local development
+│   ├── docker-compose.prod.yml   # Production deployment
+│   └── Dockerfile.prod           # Production container (PM2 cluster)
+├── admin/                # Vite React Admin Panel (TypeScript + Tailwind)
+│   └── src/pages/        # Dashboard, Posts, Users, Moderation, Featured,
+│                         # ArtworkTypes, PushNotifications, RecommendationEngine, etc.
+├── mobile/               # Expo React Native App (SDK 50, TypeScript)
+│   ├── src/
+│   │   ├── screens/      # Auth, Home, Explore, Create, Profile, etc.
+│   │   ├── services/     # API, push, notifications, socket, config
+│   │   ├── store/        # Redux Toolkit (auth, feed, app, user, notification)
+│   │   └── navigation/   # React Navigation (AppStack, MainTabs, AuthStack)
+│   ├── android/          # Native Android project (prebuild)
+│   └── assets/           # Icons, splash, notification icon, Nepal flag
+├── PRD.md                # Comprehensive Product Requirements Document
+├── ENGINEERING_HANDOFF.md
+├── RELEASE_CHECKLIST.md
+└── README.md             # This file
 ```
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Mobile | Expo SDK 50, React Native 0.73.6, Redux Toolkit, Socket.IO Client |
+| Backend | Node.js 22, Express, Mongoose (MongoDB), Redis, Socket.IO, Cloudinary |
+| Admin | Vite, React, TypeScript, Tailwind CSS, Zustand |
+| Database | MongoDB (primary), Redis (caching + sessions) |
+| Media | Cloudinary (images + video hosting with on-the-fly transforms) |
+| Auth | Native Google Sign-In (`@react-native-google-signin/google-signin`) |
+| Push | Expo Push Notifications + Firebase Cloud Messaging (FCM) |
+| Real-time | Socket.IO for notifications and feed updates |
+| Deployment | Docker Compose on Ncell Cloud (Ubuntu 24.04), Cloudflare DNS |
+| Mobile Builds | EAS Build (preview APK + production AAB) |
+
+## Production URLs
+
+| Domain | Purpose |
+|--------|---------|
+| `artnepalaya.com` | Marketing website (cPanel) |
+| `api.artnepalaya.com` | Backend API + Socket.IO |
+| `admin.artnepalaya.com` | Admin Panel |
+| `app.artnepalaya.com` | Share landing pages + deep links + Android App Links |
 
 ## Prerequisites
 
-- Node.js 20+ (22 for production)
+- Node.js 22+
 - Docker and Docker Compose
-- Expo CLI (`npm install -g expo-cli`) for mobile development
-- Android Studio or Xcode for mobile emulation
+- EAS CLI (`npm install -g eas-cli`) for mobile builds
+- Android Studio (for local development builds)
 
-## Quick Start (Docker - Recommended)
-
-The fastest way to run the full stack locally:
+## Quick Start (Local Development)
 
 ```bash
-# 1. Clone the repository
+# 1. Clone
 git clone https://github.com/bhaweshkaflecse/artnepalaya-monorepo.git
 cd artnepalaya-monorepo
 
-# 2. Set up backend environment
+# 2. Backend
 cd backend
 cp .env.example .env
-# Edit .env if you need to change any defaults (optional for local dev)
-
-# 3. Start all services (MongoDB, PostgreSQL, Redis, Backend, Admin, Nginx)
 docker-compose up -d --build
 
-# 4. Seed the database with test data
+# 3. Seed database
 docker exec art_backend npm run seed:all:clear
 
-# 5. Access the application
-# Admin Panel: http://localhost (through Nginx proxy)
-# API:         http://localhost/api/v1/health
-```
+# 4. Access
+# API:    http://localhost:8080/api/v1/health
+# Admin:  http://localhost (via nginx proxy)
 
-## Environment Setup
-
-Each application has its own environment configuration:
-
-### Backend (`backend/`)
-
-| Variable | Description | Default (Dev) |
-|----------|-------------|---------------|
-| `PORT` | Server port | `8080` |
-| `NODE_ENV` | Environment | `development` |
-| `CORS_ORIGIN` | Allowed origins (comma-separated) | `http://localhost:5173,http://localhost:3000,http://localhost:80` |
-| `MONGO_URI` | MongoDB connection string | `mongodb://root:password@mongodb:27017/artnepalaya?authSource=admin` |
-| `POSTGRES_URI` | PostgreSQL connection string | `postgresql://postgres:password@postgresql:5432/artnepalaya` |
-| `REDIS_URL` | Redis connection string | `redis://redis:6379` |
-| `JWT_ACCESS_SECRET` | JWT signing key (min 32 chars) | placeholder |
-| `JWT_REFRESH_SECRET` | JWT refresh key (min 32 chars) | placeholder |
-| `GOOGLE_CLIENT_ID` | Google OAuth client ID | placeholder |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | placeholder |
-| `CLOUDINARY_API_KEY` | Cloudinary API key | placeholder |
-| `CLOUDINARY_API_SECRET` | Cloudinary API secret | placeholder |
-| `MONGO_INITDB_ROOT_USERNAME` | MongoDB root user | `root` |
-| `MONGO_INITDB_ROOT_PASSWORD` | MongoDB root password | `password` |
-| `POSTGRES_USER` | PostgreSQL user | `postgres` |
-| `POSTGRES_PASSWORD` | PostgreSQL password | `password` |
-| `POSTGRES_DB` | PostgreSQL database name | `artnepalaya` |
-
-### Admin Panel (`admin/`)
-
-| Variable | Description | Default (Dev) |
-|----------|-------------|---------------|
-| `VITE_API_URL` | Backend API URL | `http://localhost:80/api/v1` |
-
-### Mobile App (`mobile/`)
-
-| Variable | Description | Default (Dev) |
-|----------|-------------|---------------|
-| `EXPO_PUBLIC_API_URL` | Backend API URL | `http://10.0.2.2:8080/api/v1` |
-| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google OAuth web client ID | placeholder |
-| `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` | Google OAuth Android client ID | placeholder |
-| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | Google OAuth iOS client ID | placeholder |
-
-### Setting Up Environment Files
-
-```bash
-# Backend
-cd backend
-cp .env.example .env          # For Docker Compose local dev
-
-# Admin (already has .env.development checked in)
-cd admin
-# .env.development is pre-configured for local Docker dev
-
-# Mobile
-cd mobile
-cp .env.example .env          # For Expo development
-```
-
-## Running Without Docker
-
-### Backend (standalone)
-
-```bash
-cd backend
-cp .env.example .env
-
-# Update hostnames from Docker service names to localhost:
-# MONGO_URI=mongodb://root:password@localhost:27017/artnepalaya?authSource=admin
-# POSTGRES_URI=postgresql://postgres:password@localhost:5432/artnepalaya
-# REDIS_URL=redis://localhost:6380
-
-npm install
-npm run dev
-```
-
-> Note: You must have MongoDB, PostgreSQL, and Redis running locally.
-
-### Admin Panel (standalone)
-
-```bash
-cd admin
-npm install
-npm run dev
-# Opens at http://localhost:5173
-```
-
-### Mobile App
-
-```bash
+# 5. Mobile (separate terminal)
 cd mobile
 cp .env.example .env
 npm install
 npx expo start
 ```
 
-- **Android Emulator**: Uses `10.0.2.2` to reach host machine (already configured in .env.example)
-- **iOS Simulator**: Change `EXPO_PUBLIC_API_URL` to `http://localhost:8080/api/v1`
-- **Physical Device**: Change to your computer's LAN IP (e.g., `http://192.168.1.x:8080/api/v1`)
+## Environment Variables
 
-## Database Seeding
+### Backend (`backend/.env`)
 
-The mega-seeder creates 56 users, 110 posts, reports, featured posts, CMS pages, and app configuration:
+| Variable | Description |
+|----------|-------------|
+| `PORT` | Server port (default: 8080) |
+| `NODE_ENV` | `development` or `production` |
+| `CORS_ORIGIN` | Comma-separated allowed origins |
+| `MONGO_URI` | MongoDB connection string |
+| `REDIS_URL` | Redis connection string |
+| `JWT_ACCESS_SECRET` | JWT signing key (min 32 chars) |
+| `JWT_REFRESH_SECRET` | JWT refresh key (min 32 chars) |
+| `GOOGLE_CLIENT_ID` | Google OAuth web client ID |
+| `GOOGLE_ANDROID_CLIENT_ID` | Google OAuth Android client ID |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret |
 
-```bash
-# Via Docker
-docker exec art_backend npm run seed:all:clear
+### Mobile (`mobile/.env`)
 
-# Or standalone
-cd backend
-npm run seed:all:clear
-```
+| Variable | Description |
+|----------|-------------|
+| `EXPO_PUBLIC_API_URL` | Backend API URL (e.g., `https://api.artnepalaya.com/api/v1`) |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google OAuth web client ID |
 
-### Default Admin Credentials
+### Admin (`admin/.env.production`)
 
-After seeding:
-- **Email**: `admin@artnepalaya.com`
-- **Password**: `admin123`
+| Variable | Description |
+|----------|-------------|
+| `VITE_API_URL` | Backend API URL (e.g., `https://api.artnepalaya.com/api/v1`) |
 
-Use these credentials to log into the admin panel at `http://localhost`.
-
-## Google OAuth Setup
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project or select an existing one
-3. Navigate to APIs & Services > Credentials
-4. Create an OAuth 2.0 Client ID:
-   - **Web application**: Used by backend token verification
-   - **Android**: For mobile app (requires SHA-1 fingerprint)
-   - **iOS**: For mobile app (requires bundle identifier)
-5. Set the client IDs in your environment files:
-   - `backend/.env` - Set `GOOGLE_CLIENT_ID` (web client ID)
-   - `mobile/.env` - Set all three `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` vars
-
-### Auth Flow
+## Authentication Flow
 
 ```
 Mobile App
-  -> User taps "Sign in with Google"
-  -> expo-auth-session opens Google consent screen
-  -> Receives Google ID token
-  -> POST /api/v1/auth/google { idToken, deviceId }
-  -> Backend verifies with Google, creates/finds user
-  -> Returns { user, accessToken, refreshToken }
-  -> Mobile stores tokens in SecureStore
-  -> Redux state updated, navigation switches to MainTabs
+  → User taps "Continue with Google"
+  → Native Google Sign-In (@react-native-google-signin)
+  → Receives Google ID token
+  → POST /api/v1/auth/google { idToken, deviceId }
+  → Backend verifies with Google OAuth, creates/finds user
+  → Returns { user, accessToken, refreshToken, isNewUser }
+  → Tokens stored in SecureStore (safe wrappers)
+  → If isNewUser → shows 4-step onboarding (Role, About You, Interests, Mature Content)
+  → Push token registered via POST /users/me/push-token
 ```
 
-## Production Deployment (VPS)
+## Key Features
+
+### Mobile App
+- Feed with multi-signal recommendation engine (13 signals, configurable weights)
+- Explore with server-side filtering by artwork type + search
+- Post creation with multi-media upload (5 images + 1 video)
+- Artwork type categorization (admin-managed, dynamic)
+- Profile with follow system, metrics, post grid
+- Push notifications (FCM + Expo Push Service)
+- Deep linking (Android App Links + custom scheme)
+- Share pages with Open Graph previews
+- Guest mode with limited access
+- Real-time notifications via Socket.IO
+
+### Admin Panel
+- Dashboard analytics
+- User management (verify, ban, suspend)
+- Post moderation + soft delete
+- Featured content management
+- Artwork type management (CRUD + sort order)
+- Push notification broadcasting
+- Recommendation Engine inspector (feed simulation, score breakdowns)
+- CMS pages, global popups, auth media management
+- Tag management, search insights
+
+### Backend
+- JWT authentication with refresh token rotation
+- Multi-signal feed ranking engine (pluggable signal registry)
+- Redis caching with wildcard invalidation
+- Cloudinary media upload with on-the-fly optimization
+- Content moderation (NSFW filtering, soft delete)
+- Real-time events (Socket.IO)
+- Grouped notification system with push cooldown
+- Rate limiting, XSS sanitization, CORS
+
+## Production Deployment
+
+See `RELEASE_CHECKLIST.md` for the full deployment guide.
 
 ```bash
-cd backend
-
-# 1. Create production environment file
-cp .env.production .env
-# Edit .env - replace ALL "CHANGE_ME" placeholders with real values
-
-# 2. Set up SSL certificates
-mkdir -p nginx/certs
-# Option A: Use Certbot
-certbot certonly --standalone -d artnepalaya.com -d admin.artnepalaya.com
-cp /etc/letsencrypt/live/artnepalaya.com/fullchain.pem nginx/certs/
-cp /etc/letsencrypt/live/artnepalaya.com/privkey.pem nginx/certs/
-
-# Option B: Place your own certs
-cp your-cert.pem nginx/certs/fullchain.pem
-cp your-key.pem nginx/certs/privkey.pem
-
-# 3. Deploy
+# On production server (Ncell Cloud)
+cd artnepalaya-monorepo/backend
 docker-compose -f docker-compose.prod.yml up -d --build
-
-# 4. Seed database (first time only)
-docker exec art_backend npm run seed:all:clear
 ```
 
 ### Production Architecture
 
 ```
-Internet -> Nginx (port 80/443)
-              ├── /api/*  -> Backend (port 8080, PM2 cluster mode)
-              └── /*      -> Admin Panel (static files via nginx)
+Internet → Cloudflare DNS
+  ├── artnepalaya.com      → Marketing (cPanel, separate server)
+  ├── api.artnepalaya.com  → Nginx → Backend (PM2 cluster) + Socket.IO
+  ├── admin.artnepalaya.com → Nginx → Admin (static SPA)
+  └── app.artnepalaya.com  → Nginx → Backend (share routes)
 
-Backend -> MongoDB (internal network only)
-        -> PostgreSQL (internal network only)
-        -> Redis (internal network only)
+Backend → MongoDB (internal)
+       → Redis (internal)
+       → Cloudinary (external CDN)
+       → Expo Push Service (external)
 ```
 
-## Docker Services
+## Mobile Builds (EAS)
 
-| Service | Container | Internal Port | External Port (Dev) |
-|---------|-----------|---------------|---------------------|
-| `proxy` | art_nginx_proxy | 80, 443 | 80, 443 |
-| `backend` | art_backend | 8080 | (via proxy) |
-| `admin` | art_admin | 80 | (via proxy) |
-| `mongodb` | art_mongodb | 27017 | 27017 |
-| `postgresql` | art_postgresql | 5432 | 5432 |
-| `redis` | art_redis | 6379 | 6380 |
+```bash
+cd mobile
 
-> Redis is mapped to port 6380 externally to prevent conflicts with a local Redis instance on Windows.
+# Preview APK (for testing)
+eas build --profile preview --platform android
 
-## API Endpoints
+# Production AAB (for Play Store)
+eas build --profile production --platform android
+```
 
-### Public
-- `GET /health` - Health check
-- `POST /api/v1/auth/google` - Google OAuth login
-- `POST /api/v1/auth/refresh` - Refresh access token
-- `POST /api/v1/auth/admin-login` - Admin panel login
+See `mobile/PUSH_NOTIFICATION_SETUP.md` and `mobile/GOOGLE_SIGNIN_SETUP.md` for Firebase/OAuth configuration.
 
-### Protected (requires JWT)
-- `GET /api/v1/posts/feed` - Get post feed
-- `POST /api/v1/posts/:id/likes` - Like a post
-- `POST /api/v1/reports` - Report content
-- `GET /api/v1/users/profile` - Get user profile
+## Database Seeding
 
-### Admin
-- `GET /api/v1/admin/dashboard` - Dashboard analytics
-- `GET /api/v1/admin/users` - User management
-- `PUT /api/v1/admin/featured` - Manage featured posts
+```bash
+docker exec art_backend npm run seed:all:clear
+```
 
-## Known Development Notes
+Creates: ~56 users, ~110 posts, reports, featured posts, CMS pages, app configuration.
 
-- The `console.log` for OTP in `auth.service.js` is intentional for development testing (OTPs are logged to console since SMS sending is not configured)
-- The `console.log` statements in `server.js` and `cloudinary.js` are server startup diagnostics and are appropriate for production logging
-- The seeder scripts use `console.log` for progress reporting during execution
+**Admin credentials:** `admin@artnepalaya.com` / `admin123`
+
+## API Overview
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/auth/google` | Public | Google OAuth login |
+| POST | `/auth/refresh` | Public | Refresh JWT tokens |
+| GET | `/posts/feed` | Optional | Home feed (recommendation engine) |
+| GET | `/posts/explore` | Optional | Explore with artwork type/search filters |
+| POST | `/posts` | Required | Create post (multipart upload) |
+| GET | `/users/:id` | Public | Public profile (accepts username or ObjectId) |
+| POST | `/users/me/push-token` | Required | Register push notification token |
+| GET | `/config/artwork-types` | Public | Active artwork types (admin-managed) |
+| GET | `/config/featured` | Optional | Featured posts |
+| GET | `/notifications` | Required | User notifications (grouped) |
+| POST | `/admin/notifications/broadcast` | Admin | Send push to all users |
+| GET | `/admin/recommendation/simulate` | Admin | Feed simulation with score breakdown |
+
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| `PRD.md` | Comprehensive product & technical reference (3000+ lines) |
+| `ENGINEERING_HANDOFF.md` | Context for new development sessions |
+| `RELEASE_CHECKLIST.md` | Production deployment checklist |
+| `GOOGLE_OAUTH_MIGRATION.md` | OAuth setup reference (migration complete) |
+| `mobile/PUSH_NOTIFICATION_SETUP.md` | FCM + Expo push setup guide |
+| `mobile/GOOGLE_SIGNIN_SETUP.md` | Google Sign-In SHA fingerprint guide |
+| `mobile/EAS_SETUP.md` | EAS Build configuration |
 
 ## Troubleshooting
 
-### Backend won't connect to databases
-- Ensure Docker containers are running: `docker ps`
-- Check that hostnames in `.env` match Docker Compose service names (`mongodb`, `postgresql`, `redis`)
-- For standalone (non-Docker) development, use `localhost` instead of service names
+### Backend won't start
+- Check Docker: `docker ps` and `docker logs art_backend --tail 50`
+- Verify `.env` has all required variables (Zod validates on startup)
+- Ensure MongoDB and Redis containers are healthy
 
-### Admin panel shows blank page after refresh
-- The admin nginx config (`admin/nginx.conf`) includes `try_files $uri $uri/ /index.html` for SPA routing
-- If running without Docker, ensure your dev server handles client-side routing
-
-### Mobile app cannot reach API
+### Mobile can't reach API
 - Android Emulator: Use `http://10.0.2.2:8080/api/v1`
-- iOS Simulator: Use `http://localhost:8080/api/v1`
-- Physical device: Use your machine's LAN IP address
-- Ensure the backend is running and accessible on port 8080
+- Physical device: Use your machine's LAN IP or production URL
+- Check CORS_ORIGIN includes the requesting origin
 
-### Google Sign-In not working
-- Ensure all three client IDs are configured (web, Android, iOS)
-- The web client ID must also be set in the backend for token verification
-- expo-auth-session requires a proper redirect URI configuration
+### Google Sign-In fails
+- Verify SHA-1/SHA-256 fingerprints are registered in Firebase Console
+- Ensure `google-services.json` matches the Android package name
+- Check `GOOGLE_CLIENT_ID` in backend matches the web client ID
+
+### Push notifications not arriving
+- Verify FCM server key uploaded to Expo Dashboard
+- Check `google-services.json` is at `mobile/google-services.json`
+- Ensure notification channel exists (`default` with MAX importance)
+- Re-login to force token re-registration
+
+## Contributing
+
+1. Branch from `fix/final-stabilization` (current development branch)
+2. Make changes with clear commit messages
+3. Update relevant documentation (PRD.md, this README, etc.)
+4. Test on real device before marking as complete
+5. Push to feature branch and create PR against main
+
+## License
+
+Private — All rights reserved.

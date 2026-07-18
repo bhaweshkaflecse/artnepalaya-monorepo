@@ -1,229 +1,118 @@
-# QA Verification Report - ArtNepalaya Production Stabilization
+# QA Verification Report — Art Nepalaya
 
-**Date:** 2026-07-03  
+**Last Updated:** July 2025  
 **Branch:** `fix/final-stabilization`  
-**Scope:** Tasks 1-8 from Production QA Pass
+**Build:** Latest commit on branch
 
 ---
 
-## Task Summary
+## Verification States
 
-| # | Task | Status |
-|---|------|--------|
-| 1 | Separate App Onboarding from User Preferences | :white_check_mark: Implemented & Verified |
-| 2 | Username Generation (No Spaces/Specials) | :white_check_mark: Implemented & Verified |
-| 3 | Username Editing (Uniqueness + 7-Day Cooldown) | :white_check_mark: Implemented & Verified |
-| 4 | Developer Login (Admin Auth) | :x: Not Implemented - DB Needs Re-Seeding |
-| 5 | Push Notifications Pipeline | :yellow_circle: Implemented, Not Verified |
-| 6 | App Onboarding (No Auth on Onboarding) | :white_check_mark: Implemented & Verified |
-| 7 | Admin Panel User Management | :yellow_circle: Implemented, Not Verified |
-| 8 | Preserve Existing Features | :white_check_mark: Implemented & Verified |
+| State | Meaning |
+|-------|---------|
+| ✅ Runtime Verified | Confirmed working on real device with evidence |
+| 🟡 Code Complete | Implemented and code-reviewed, awaiting runtime test |
+| ❌ Known Issue | Bug identified, fix pending or under investigation |
 
 ---
 
-## Detailed Findings
+## Core Features
 
-### Task 1: Separate App Onboarding from User Preferences :white_check_mark:
-
-**Status:** Implemented & Verified
-
-**Evidence:**
-- `OnboardingScreen.tsx` now contains ONLY marketing slides and a "Get Started" button
-- All auth logic (Google, Guest, Dev login) removed from OnboardingScreen
-- New `UserPreferenceSetup.tsx` screen created with 3-step wizard:
-  - Step 1: Role selection (Artist, Art Lover, Business, Gallery)
-  - Step 2: Sub-role selection (context-aware based on selected role)
-  - Step 3: Interest selection from GET `/config/artwork-types` API (max 5)
-- `RootNavigator.tsx` checks `needsUserOnboarding` state to show UserPreferenceSetup between auth and app
-- `appSlice.ts` manages `needsUserOnboarding` with SecureStore persistence
-
-**Files Modified:**
-- `mobile/src/screens/onboarding/OnboardingScreen.tsx`
-- `mobile/src/screens/onboarding/UserPreferenceSetup.tsx` (new)
-- `mobile/src/store/slices/appSlice.ts`
-- `mobile/src/navigation/RootNavigator.tsx`
-- `mobile/src/screens/auth/LoginScreen.tsx`
-
----
-
-### Task 2: Username Generation :white_check_mark:
-
-**Status:** Implemented & Verified (code is correct)
-
-**Evidence from `backend/src/modules/auth/auth.service.js`:**
-```javascript
-// Line 42-48: Username generation
-const baseUsername = (payload.name || 'user').toLowerCase().replace(/[^a-z0-9]/g, '');
-```
-
-**Verification:**
-- `toLowerCase()` - converts all characters to lowercase
-- `.replace(/[^a-z0-9]/g, '')` - removes ALL non-alphanumeric characters (spaces, special chars, unicode)
-- If a duplicate exists, a zero-padded incrementing suffix is appended (e.g., `johndoe001`)
-- Input: "John Doe" -> Output: "johndoe"
-- Input: "Art@Nepal#123" -> Output: "artnepal123"
-- Input: "  Spaces  Everywhere  " -> Output: "spaceseverywhere"
-
-**Conclusion:** Username generation is CORRECT. No spaces or special characters can appear in generated usernames.
+| Feature | Status | Evidence |
+|---------|--------|----------|
+| Google Sign-In | ✅ Runtime Verified | Works on Preview APK, tokens verified |
+| Guest Mode | ✅ Runtime Verified | Browse feed, 15-post limit enforced |
+| User Onboarding (4 steps) | ✅ Runtime Verified | Role, About You, Interests, Mature Content |
+| Post Creation | ✅ Runtime Verified | Multi-media upload + artwork type persisted |
+| Artwork Type Persistence | ✅ Runtime Verified | PRE-ZOD/POST-ZOD logs confirm array stored in MongoDB |
+| Home Feed | ✅ Runtime Verified | Posts appear, pull-to-refresh works |
+| Explore (All) | ✅ Runtime Verified | Shows all posts |
+| Explore (Category Filters) | ✅ Runtime Verified | Newly created posts appear under correct category |
+| Profile | ✅ Runtime Verified | Posts grid, metrics, follow button |
+| Follow System | ✅ Runtime Verified | Follow/unfollow updates counts |
+| Like / Save | ✅ Runtime Verified | Optimistic UI with rollback |
+| Share Pages | ✅ Runtime Verified | Landing page renders, OG tags present |
+| Deep Linking (Custom Scheme) | ✅ Runtime Verified | `artnepalaya://` opens correct screen |
+| Admin Panel | ✅ Runtime Verified | All pages accessible and functional |
+| Admin Broadcast | ✅ Runtime Verified | Notifications created, tokens targeted |
+| Recommendation Engine Admin | ✅ Runtime Verified | Simulation, score breakdown, timeline |
+| SecureStore Safe Wrappers | ✅ Runtime Verified | No more decryption crashes |
+| Video Playback | ✅ Runtime Verified | Play on tap, progress bar, audio |
+| Video → Post Detail navigation | ✅ Runtime Verified | Single tap navigates correctly |
+| Content Moderation (NSFW) | ✅ Runtime Verified | Filtered based on user preference |
 
 ---
 
-### Task 3: Username Editing (Uniqueness + 7-Day Cooldown) :white_check_mark:
+## Under Investigation
 
-**Status:** Implemented & Verified
-
-**What was fixed:**
-Previously, `user.service.js` `updateUserProfile` did NOT validate username changes:
-- Relied on MongoDB unique index error (crash/500 response) instead of a friendly error
-- `usernameChangedAt` field existed in `user.model.js` but was NEVER checked or set
-
-**Implementation in `backend/src/modules/users/user.service.js`:**
-1. **7-Day Cooldown Check:** If `user.usernameChangedAt` exists and is less than 7 days ago, throws 400 error: "You can only change your username once every 7 days. Please wait X more day(s)."
-2. **Uniqueness Check:** Before save, queries `User.findOne({ username: newUsername, _id: { $ne: userId } })`. If found, throws 409 error: "This username is already taken. Please choose a different one."
-3. **Timestamp Update:** After successful username change, sets `user.usernameChangedAt = new Date()`
-
-**Also fixed:** Role mapping in `UserPreferenceSetup.tsx`:
-- The role IDs sent to PUT `/users/me` were lowercase (`'artist'`, `'art_lover'`, etc.)
-- The User model enum requires exact case (`'Artist'`, `'Art Lover'`, etc.)
-- Added `roleMap` to convert before the API call
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Push Notification (Device Delivery) | 🟡 Code Complete | Backend sends successfully (2 tokens, 0 failures). Device not receiving. Notification channel now created at module load. Token re-registered on app resume. |
+| Android App Links (Auto-Verify) | 🟡 Code Complete | Intent filters configured. `assetlinks.json` needs real SHA-256 fingerprint to verify. |
+| Feed Path for Users Without Interests | 🟡 Code Complete | Currently uses legacy fallback. Diagnostic logging added to verify which path executes. |
 
 ---
 
-### Task 4: Developer Login :x:
+## Resolved Issues (This Stabilization Cycle)
 
-**Status:** Not Implemented - Database needs re-seeding
-
-**Root Cause:**
-The `authenticateAdmin` function in `backend/src/modules/auth/auth.service.js`:
-1. Looks up user with `email: 'admin@artnepalaya.com'` and `role: 'Admin'`
-2. Compares password against `user.passwordHash` using bcrypt
-3. The hardcoded password is: `SuperAdmin##5656#$$@`
-
-**Problem:**
-The seed script (`backend/src/scripts/seed.js`) creates the admin user but does **NOT** set `passwordHash`. Without a bcrypt hash stored in the database, `bcrypt.compare()` always returns false, resulting in "Invalid credentials".
-
-**Fix Required:**
-Run the seed script with password hashing enabled:
-```bash
-node backend/src/scripts/seed.js
-```
-Or manually update the admin user in MongoDB:
-```javascript
-const bcrypt = require('bcryptjs');
-const hash = await bcrypt.hash('SuperAdmin##5656#$$@', 12);
-db.users.updateOne(
-  { email: 'admin@artnepalaya.com' },
-  { $set: { passwordHash: hash } }
-);
-```
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| artworkType saved as `[]` | `createPostSchema` didn't define artworkType field → Zod stripped it | Added artworkType with z.preprocess to createPostSchema |
+| SecureStore crash on login | `getItemAsync('deviceId')` threw on decryption failure | Created safe wrappers that never throw |
+| Explore filters return empty | artworkType not stored → no matches | Fixed by artworkType persistence fix above |
+| Home tab crash | `navigation.emit('homeTabRefresh')` → custom event TypeError | Removed custom event emission |
+| Home feed not showing new posts | Redis 300s cache + recommendation fallback | First page always queries fresh (bypass cache) |
+| Share page CSP blocks images | Helmet default CSP too strict | Disabled Helmet CSP, applied per-route |
+| Old Cloudinary images broken | `getOptimizedImageUrl` double-stacked transforms | Added `hasExistingTransforms()` detection |
+| Google Sign-In error on release | Missing `google-services` Gradle plugin | Added classpath + apply plugin |
+| Video muted after autoplay removal | `isMuted={true}` hardcoded | Changed to `isMuted={false}` |
+| Duplicate login buttons | Both "Sign In" and "Sign Up" with Google | Kept only "Continue with Google" |
+| CORS blocking PATCH | `methods` array missing PATCH | Added PATCH |
+| Push token not re-registered | Only registered during login | Added AppState listener for re-registration |
+| Share page duplicate CTA | Sticky + main visible simultaneously | Removed sticky entirely, one CTA |
+| Subrole selection unlimited | Frontend allowed > 5 selections | Added MAX_SUBROLES = 5 limit |
+| Artwork type selection unlimited | Frontend allowed > 5 | Added MAX_ARTWORK_TYPES = 5 limit |
+| Username shows as "User" | `fullName` not imported from Google | Added `fullName: payload.name` to User.create |
+| Feed dominated by old posts | Raw engagement scores (not normalized) | Applied log₂ normalization to all engagement signals |
 
 ---
 
-### Task 5: Push Notifications Pipeline :yellow_circle:
+## Performance Observations
 
-**Status:** Implemented, Not Verified (requires physical device)
-
-**Pipeline Verification (code-level):**
-
-| Stage | File | Status |
-|-------|------|--------|
-| 1. Permission Request | `mobile/src/services/pushNotification.service.ts` | Uses `expo-notifications` to request permission and get ExpoPushToken |
-| 2. Token Registration | `mobile/src/services/pushNotification.service.ts` | POST `/users/me/push-token` sends token to backend |
-| 3. Token Storage | `backend/src/modules/users/user.service.js` | `registerPushToken` uses `$addToSet: { pushTokens: token }` |
-| 4. Notification Creation | `backend/src/modules/notifications/notification.service.js` | Creates notification and triggers push send |
-| 5. Push Delivery | `backend/src/shared/utils/pushNotifications.js` | Uses `expo-server-sdk` to batch-send via Expo Push API |
-| 6. Token Cleanup | `backend/src/modules/users/user.service.js` | `removePushToken` uses `$pull: { pushTokens: token }` |
-
-**Why Not Verified:**
-- Push notifications require a physical iOS/Android device with Expo Go or standalone build
-- `expo-notifications` does not work in simulators/emulators for push (only local notifications)
-- The full pipeline from registration to delivery is correctly wired in code
+| Metric | Observation |
+|--------|-------------|
+| Feed load time | Acceptable (<2s on good connection) |
+| Image loading | Cloudinary with format/quality auto |
+| Video playback | Smooth with proper buffering |
+| Navigation | No jank observed |
+| Memory | No OOM observed during testing |
 
 ---
 
-### Task 6: App Onboarding (No Auth on Onboarding Screen) :white_check_mark:
+## Recommendation Engine Status
 
-**Status:** Implemented & Verified (same as Task 1A)
-
-**Evidence:**
-- `OnboardingScreen.tsx` contains ZERO auth components
-- No `GoogleSignin` import
-- No `authService` import
-- No `setCredentials` dispatch
-- No "Continue with Google" button
-- No "Continue as Guest" button
-- No "Dev Login" button
-- Only content: 3 marketing slides + "Get Started" button on slide 3
-
-**Flow:**
-1. First launch -> OnboardingScreen (marketing only)
-2. "Get Started" -> dispatches `setOnboardingComplete` -> shows AuthStack (LoginScreen)
-3. LoginScreen handles all authentication (Google, Guest, Dev)
+| Component | Status |
+|-----------|--------|
+| Signal Registry (13 signals) | ✅ Implemented |
+| Log₂ Normalization | ✅ Implemented |
+| Diversity Filter | ✅ Implemented |
+| Fresh Content Injection (30%) | ✅ Implemented |
+| Exploration Slots (10%) | ✅ Implemented |
+| Admin Simulation | ✅ Working |
+| Score Breakdown | ✅ Working |
+| Pipeline Timeline | ✅ Working |
+| Excluded Posts Inspection | ✅ Working |
+| Configurable Weights (AppConfig) | ✅ Working |
+| Production Integration | 🟡 Under verification (legacy fallback for some users) |
 
 ---
 
-### Task 7: Admin Panel User Management :yellow_circle:
+## Test Environments
 
-**Status:** Implemented, Not Verified (admin panel needs additional columns)
-
-**Current Admin Panel Columns (`admin/src/pages/Users.tsx`):**
-
-| Column | Displayed |
-|--------|-----------|
-| Avatar | :white_check_mark: Profile image with fallback |
-| Username | :white_check_mark: With verification badge |
-| Interests | :white_check_mark: As colored tags under username |
-| Email | :white_check_mark: |
-| Role | :white_check_mark: With colored badge |
-| Sub-roles | :white_check_mark: As comma-separated list |
-| 18+ | :white_check_mark: NSFW status indicator |
-| Status | :white_check_mark: Active/Suspended/Banned badge |
-| Actions | :white_check_mark: Activate/Suspend/Ban/Verify/Unverify buttons |
-
-**Missing Fields (not displayed in admin panel):**
-
-| Field | In User Model | In Admin UI |
-|-------|---------------|-------------|
-| fullName | :white_check_mark: | :x: Not shown |
-| phone/contactPhone | :white_check_mark: | :x: Not shown |
-| location | :white_check_mark: | :x: Not shown |
-| website | :white_check_mark: | :x: Not shown |
-| whatsapp | :white_check_mark: | :x: Not shown |
-| bio | :white_check_mark: | :x: Not shown |
-| createdAt/joinDate | :white_check_mark: | :x: Not shown |
-| lastActive | :white_check_mark: | :x: Not shown |
-| DOB/age | :white_check_mark: | :x: Not shown |
-| pushTokens count | :white_check_mark: | :x: Not shown |
-| post count | Via Post model | :x: Not shown |
-| follower/following counts | :white_check_mark: (stats field) | :x: Not shown |
-
-**Recommendation:** Add a user detail modal/drawer that shows the full profile when clicking a user row. The table itself should remain clean with the current essential columns.
-
----
-
-### Task 8: Preserve Existing Features :white_check_mark:
-
-**Status:** Implemented & Verified
-
-**Verified preserved functionality:**
-
-| Feature | File | Status |
-|---------|------|--------|
-| Google Sign-In | `LoginScreen.tsx` | `handleGoogleLogin` intact with full OAuth flow |
-| Account Chooser | `LoginScreen.tsx` | `GoogleSignin.signOut()` called before `signIn()` forces account picker |
-| Publish Redirect | `CreateScreen.tsx` | Post creation navigates to Home after success |
-| Profile Update | `user.service.js` | PUT `/users/me` preserved with all allowed fields |
-| Username Generation | `auth.service.js` | Unchanged, correct lowercase + no-special-chars logic |
-| Push Token Management | `user.service.js` | `registerPushToken` and `removePushToken` unchanged |
-| Follow System | `user.service.js` | Follow/Unfollow with stats and notifications unchanged |
-| User Search | `user.service.js` | Regex-escaped search by username prefix unchanged |
-
----
-
-## Summary
-
-- **5 of 8 tasks** are fully implemented and verified at code level
-- **2 tasks** are implemented but require runtime/device verification
-- **1 task** requires database re-seeding (not a code issue)
-
-The codebase is in a stable, correct state with all critical business logic properly implemented.
+| Environment | Details |
+|-------------|---------|
+| Physical Device | Android (real hardware) |
+| Build Type | EAS Preview APK |
+| Backend | Docker on Ncell Cloud |
+| Database | Production MongoDB |
+| Accounts Tested | 2 Gmail + Guest + Admin |
