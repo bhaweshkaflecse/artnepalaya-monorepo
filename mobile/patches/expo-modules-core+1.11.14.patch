@@ -1,0 +1,15 @@
+diff --git a/android/src/main/java/expo/modules/adapters/react/permissions/PermissionsService.kt b/android/src/main/java/expo/modules/adapters/react/permissions/PermissionsService.kt
+index 1234567..abcdefg 100644
+--- a/android/src/main/java/expo/modules/adapters/react/permissions/PermissionsService.kt
++++ b/android/src/main/java/expo/modules/adapters/react/permissions/PermissionsService.kt
+@@ -163,7 +163,7 @@ class PermissionsService(
+   private fun isPermissionPresentInManifest(permission: String): Boolean {
+     return try {
+       val packageInfo = context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS)
+-      val requestedPermissions = packageInfo.requestedPermissions
+-      return requestedPermissions.contains(permission)
++      val requestedPermissions = packageInfo.requestedPermissions
++      return requestedPermissions?.contains(permission) ?: false
+     } catch (e: PackageManager.NameNotFoundException) {
+       false
+     }
