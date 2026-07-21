@@ -142,6 +142,22 @@ const userSchema = new mongoose.Schema(
       enum: ['artist', 'gallery', 'business', null],
       default: null,
     },
+    deletionRequested: {
+      type: Boolean,
+      default: false,
+    },
+    deletionRequestedAt: {
+      type: Date,
+      default: null,
+    },
+    scheduledDeletionAt: {
+      type: Date,
+      default: null,
+    },
+    deletionReason: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

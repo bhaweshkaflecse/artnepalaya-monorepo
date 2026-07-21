@@ -9,6 +9,7 @@ import {
   Switch,
   Alert,
   Modal,
+  TextInput,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -16,9 +17,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { safeDeleteItemAsync } from '../../utils/secureStore';
 import { lightColors } from '../../theme/colors';
 import { userService } from '../../services/user.service';
+import { api } from '../../services/api';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { logout, selectIsGuest } from '../../store/slices/authSlice';
 import { fetchProfile } from '../../store/slices/userSlice';
+import { disconnectSocket } from '../../services/socket.service';
 
 type SettingsNavProp = NativeStackNavigationProp<{
   CmsPage: { slug: string; title: string };
@@ -164,6 +167,75 @@ export const SettingsScreen = () => {
             <Feather name="chevron-right" size={18} color={lightColors.textSecondary} />
           </TouchableOpacity>
         ))}
+
+        {/* Account Section - Delete Account */}
+        {!isGuest && (
+          <>
+            <Text style={styles.sectionTitle}>Account</Text>
+            <TouchableOpacity
+              style={styles.deleteAccountRow}
+              onPress={() => {
+                Alert.alert(
+                  'Delete Account',
+                  'This will permanently delete your account after 30 days, including:\n\n• All your posts and artwork\n• Your likes and saves\n• Your followers and following\n• Your profile and personal data\n\nYou can cancel within 30 days by signing back in.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Continue',
+                      style: 'destructive',
+                      onPress: () => {
+                        Alert.prompt(
+                          'Confirm Deletion',
+                          'Type DELETE to confirm account deletion:',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            {
+                              text: 'Delete My Account',
+                              style: 'destructive',
+                              onPress: async (text) => {
+                                if (text?.trim() !== 'DELETE') {
+                                  Alert.alert('Error', 'You must type DELETE to confirm.');
+                                  return;
+                                }
+                                try {
+                                  await api.delete('/users/me');
+                                  await safeDeleteItemAsync('accessToken');
+                                  await safeDeleteItemAsync('refreshToken');
+                                  await safeDeleteItemAsync('userData');
+                                  await safeDeleteItemAsync('guestUsername');
+                                  await safeDeleteItemAsync('guestDisplayName');
+                                  await safeDeleteItemAsync('needsUserOnboarding');
+                                  disconnectSocket();
+                                  dispatch(logout());
+                                  Alert.alert(
+                                    'Account Scheduled for Deletion',
+                                    'Your account will be permanently deleted in 30 days. Sign back in anytime within this period to cancel.'
+                                  );
+                                } catch (err: any) {
+                                  const message =
+                                    err?.response?.data?.error?.message ||
+                                    err?.message ||
+                                    'Failed to delete account. Please try again.';
+                                  Alert.alert('Error', message);
+                                }
+                              },
+                            },
+                          ],
+                          'plain-text',
+                          '',
+                          'default'
+                        );
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              <Feather name="trash-2" size={18} color="#DC2626" />
+              <Text style={styles.deleteAccountText}>Delete Account</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
         {/* Logout Section */}
         <View style={styles.logoutSection}>
@@ -355,5 +427,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 24,
     marginBottom: 16,
+  },
+  deleteAccountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    gap: 10,
+  },
+  deleteAccountText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#DC2626',
   },
 });

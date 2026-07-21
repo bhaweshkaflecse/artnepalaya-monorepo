@@ -393,6 +393,38 @@ export const updateNotificationPreferences = async (userId, preferences) => {
   return user.notificationPreferences;
 };
 
+// === Account Deletion ===
+export const requestAccountDeletion = async (userId, reason) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw Object.assign(new Error('User not found'), { status: 404 });
+  }
+
+  user.deletionRequested = true;
+  user.deletionRequestedAt = new Date();
+  user.scheduledDeletionAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  if (reason) user.deletionReason = reason;
+  user.pushTokens = [];
+
+  await user.save();
+  return user.toObject();
+};
+
+export const cancelAccountDeletion = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw Object.assign(new Error('User not found'), { status: 404 });
+  }
+
+  user.deletionRequested = false;
+  user.deletionRequestedAt = null;
+  user.scheduledDeletionAt = null;
+  user.deletionReason = null;
+
+  await user.save();
+  return user.toObject();
+};
+
 // === User Search ===
 export const searchUsers = async (query, limit = 20) => {
   const safeQuery = escapeRegex(query);

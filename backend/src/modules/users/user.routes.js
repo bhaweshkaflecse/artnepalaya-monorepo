@@ -11,6 +11,7 @@ const router = Router();
 // === Personal Profile Routes (require auth) ===
 router.get('/me', authGuard, controller.getMe);
 router.put('/me', authGuard, validate(validation.updateProfileSchema), controller.updateMe);
+router.delete('/me', authGuard, controller.deleteMyAccount);
 router.get('/me/saved', authGuard, validate(validation.paginationSchema), controller.getSavedPosts);
 
 // === Avatar Routes (require auth) ===

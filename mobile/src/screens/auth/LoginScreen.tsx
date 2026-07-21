@@ -150,13 +150,18 @@ export const LoginScreen = () => {
       const deviceId = await safeGetOrCreateDeviceId();
 
       const authResponse = await authService.googleLogin(idToken, deviceId);
-      const { user, accessToken, refreshToken, isNewUser } = authResponse.data;
+      const { user, accessToken, refreshToken, isNewUser, isReactivated } = authResponse.data;
 
       await safeSetItemAsync('accessToken', accessToken);
       await safeSetItemAsync('refreshToken', refreshToken);
       await safeSetItemAsync('userData', JSON.stringify(user));
 
       dispatch(setCredentials({ user, accessToken, refreshToken }));
+
+      // If this is a reactivated account, show welcome-back alert
+      if (isReactivated) {
+        Alert.alert('Welcome back!', 'Your account deletion request has been cancelled. All your data is safe.');
+      }
 
       // If this is a new user, set needsUserOnboarding so they see preference setup
       if (isNewUser) {

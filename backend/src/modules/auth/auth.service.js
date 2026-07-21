@@ -36,6 +36,16 @@ export const authenticateWithGoogle = async (idToken, deviceId) => {
   
   let user = await User.findOne({ email: payload.email });
   let isNewUser = false;
+  let isReactivated = false;
+
+  if (user && user.deletionRequested) {
+    user.deletionRequested = false;
+    user.deletionRequestedAt = null;
+    user.scheduledDeletionAt = null;
+    user.deletionReason = null;
+    await user.save();
+    isReactivated = true;
+  }
 
   if (!user) {
     // Generate URL-safe lowercase username from display name
@@ -61,7 +71,7 @@ export const authenticateWithGoogle = async (idToken, deviceId) => {
   const tokens = await generateTokens(user._id, user.role, deviceId);
   const userData = user.toObject();
   userData.id = userData._id.toString();
-  return { user: userData, ...tokens, isNewUser };
+  return { user: userData, ...tokens, isNewUser, isReactivated };
 };
 
 export const sendOtp = async (phoneNumber) => {

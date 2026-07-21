@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { v2 as cloudinary } from 'cloudinary';
 import * as userService from './user.service.js';
 import { Post } from '../posts/post.model.js';
+import { redisClient } from '../../server.js';
 
 // Helper: Uploads buffer to Cloudinary (same pattern as post.controller.js)
 const uploadBufferToCloudinary = (buffer) => {
@@ -275,4 +276,20 @@ export const removeAvatar = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+// === Account Deletion ===
+export const deleteMyAccount = async (req, res, next) => {
+  try {
+    const { reason } = req.body || {};
+    const user = await userService.requestAccountDeletion(req.user.id, reason);
+    // Clear all refresh tokens from Redis
+    const keys = await redisClient.keys(`auth:refresh:${req.user.id}:*`);
+    if (keys.length > 0) await redisClient.del(keys);
+    res.status(200).json({ 
+      success: true, 
+      message: 'Account scheduled for deletion',
+      data: { scheduledDeletionAt: user.scheduledDeletionAt }
+    });
+  } catch (err) { next(err); }
 };

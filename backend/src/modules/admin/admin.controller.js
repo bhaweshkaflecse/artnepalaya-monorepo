@@ -12,6 +12,9 @@ import { Post } from '../posts/post.model.js';
 import { Tag } from '../tags/tag.model.js';
 import { buildRecommendedFeed, buildExploreFeed } from '../posts/recommendation.service.js';
 import { resolveUserId } from '../users/user.service.js';
+import * as userService from '../users/user.service.js';
+import { Like, Save } from '../posts/post-interaction.model.js';
+import { Follow } from '../users/follow.model.js';
 
 export const getDashboardStats = async (req, res, next) => {
   try { res.status(200).json({ success: true, data: await adminService.getDashboardStats() }); } 
@@ -638,5 +641,50 @@ export const simulateRecommendation = async (req, res, next) => {
       meta: feedResult.meta,
       debug: feedResult.debug || null,
     });
+  } catch (err) { next(err); }
+};
+
+
+// --- Account Deletion Requests ---
+
+export const getDeletionRequests = async (req, res, next) => {
+  try {
+    const users = await User.find({ deletionRequested: true })
+      .select('username email avatarUrl deletionRequestedAt scheduledDeletionAt deletionReason')
+      .sort({ deletionRequestedAt: -1 })
+      .lean();
+    res.status(200).json({ success: true, data: users });
+  } catch (err) { next(err); }
+};
+
+export const cancelDeletionRequest = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const user = await userService.cancelAccountDeletion(userId);
+    res.status(200).json({ success: true, message: 'Deletion request cancelled', data: user });
+  } catch (err) { next(err); }
+};
+
+export const forceDeleteAccount = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'User not found' } });
+    }
+
+    // Delete user's posts
+    await Post.deleteMany({ authorId: user._id });
+    // Delete likes/saves by this user
+    await Like.deleteMany({ userId: user._id });
+    await Save.deleteMany({ userId: user._id });
+    // Delete follow relationships
+    await Follow.deleteMany({ $or: [{ followerId: user._id }, { followingId: user._id }] });
+    // Delete notifications
+    await NotificationGroup.deleteMany({ recipientId: user._id });
+    // Delete the user document
+    await User.findByIdAndDelete(user._id);
+
+    res.status(200).json({ success: true, message: 'Account permanently deleted' });
   } catch (err) { next(err); }
 };

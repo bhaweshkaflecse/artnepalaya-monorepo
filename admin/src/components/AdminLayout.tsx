@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, Users, ShieldAlert, Award, Image, LogOut, Bell, MessageSquare, Heart, Palette, Tag, Search, Cpu } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, ShieldAlert, Award, Image, LogOut, Bell, MessageSquare, Heart, Palette, Tag, Search, Cpu, Trash2 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 export const AdminLayout = () => {
@@ -13,6 +13,7 @@ export const AdminLayout = () => {
     { path: '/posts', label: 'Posts Management', icon: FileText },
     { path: '/users', label: 'User Management', icon: Users },
     { path: '/moderation', label: 'Moderation & Reports', icon: ShieldAlert },
+    { path: '/deletion-requests', label: 'Deletion Requests', icon: Trash2 },
     { path: '/featured', label: 'Featured Content', icon: Award },
     { path: '/artwork-types', label: 'Artwork Types', icon: Palette },
     { path: '/tags', label: 'Tag Management', icon: Tag },

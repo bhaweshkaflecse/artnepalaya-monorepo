@@ -15,6 +15,7 @@ import { ArtworkTypes } from './pages/ArtworkTypes';
 import { TagManagement } from './pages/TagManagement';
 import { SearchInsights } from './pages/SearchInsights';
 import { RecommendationEngine } from './pages/RecommendationEngine';
+import { DeletionRequests } from './pages/DeletionRequests';
 import { useAuthStore } from './store/authStore';
 import type { ReactNode } from 'react';
 
@@ -42,6 +43,7 @@ export default function App() {
           <Route path="posts" element={<Posts />} />
           <Route path="users" element={<Users />} />
           <Route path="moderation" element={<Moderation />} />
+          <Route path="deletion-requests" element={<DeletionRequests />} />
           <Route path="featured" element={<Featured />} />
           <Route path="auth-media" element={<AuthMedia />} />
           <Route path="push-notifications" element={<PushNotifications />} />
