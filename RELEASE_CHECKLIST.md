@@ -212,3 +212,18 @@ docker-compose -f docker-compose.prod.yml up -d --build
 - `assetlinks.json` SHA-256 needs manual update per signing cert
 - iOS not yet supported (Android-first MVP)
 - Expo SDK 50 alpha — monitor for stability
+
+
+
+---
+
+## 13. Privacy Policy Update
+
+After deploying account deletion, update the Privacy Policy via Admin → CMS → privacy-policy to include:
+
+- Users can request account deletion from Settings → Account → Delete Account
+- Accounts enter a 30-day recovery period after deletion request
+- Signing in during the recovery period automatically cancels the deletion
+- After 30 days, the account and all associated data are permanently deleted
+- Permanently deleted data includes: profile, posts, likes, saves, followers, notifications, uploaded media
+- This action is irreversible after the 30-day grace period

@@ -430,7 +430,8 @@ export const searchUsers = async (query, limit = 20) => {
   const safeQuery = escapeRegex(query);
   const users = await User.find({
     username: { $regex: '^' + safeQuery, $options: 'i' },
-    status: 'active'
+    status: 'active',
+    deletionRequested: { $ne: true }
   })
     .select('_id username avatarUrl role isVerified verifiedType')
     .limit(limit)

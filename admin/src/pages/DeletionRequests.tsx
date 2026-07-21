@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../services/api';
-import { Trash2, XCircle, AlertTriangle } from 'lucide-react';
+import { Trash2, XCircle, AlertTriangle, Search, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface DeletionRequest {
   _id: string;
@@ -10,12 +10,21 @@ interface DeletionRequest {
   deletionRequestedAt: string;
   scheduledDeletionAt: string;
   deletionReason?: string;
+  status?: string;
 }
+
+type FilterStatus = 'all' | 'pending' | 'cancelled' | 'completed';
+type SortField = 'deletionRequestedAt' | 'scheduledDeletionAt';
+type SortDir = 'asc' | 'desc';
 
 export const DeletionRequests = () => {
   const [requests, setRequests] = useState<DeletionRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+  const [sortField, setSortField] = useState<SortField>('deletionRequestedAt');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   const fetchRequests = async () => {
     try {
@@ -74,6 +83,65 @@ export const DeletionRequests = () => {
     });
   };
 
+  // Client-side filtering and sorting
+  const filteredRequests = useMemo(() => {
+    let result = [...requests];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (r) =>
+          r.username.toLowerCase().includes(q) ||
+          r.email.toLowerCase().includes(q)
+      );
+    }
+
+    // Status filter
+    if (filterStatus === 'pending') {
+      result = result.filter((r) => getDaysRemaining(r.scheduledDeletionAt) > 0);
+    } else if (filterStatus === 'completed') {
+      result = result.filter((r) => getDaysRemaining(r.scheduledDeletionAt) === 0);
+    } else if (filterStatus === 'cancelled') {
+      result = result.filter((r) => r.status === 'cancelled');
+    }
+
+    // Sorting
+    result.sort((a, b) => {
+      const aVal = new Date(a[sortField]).getTime();
+      const bVal = new Date(b[sortField]).getTime();
+      return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+
+    return result;
+  }, [requests, searchQuery, filterStatus, sortField, sortDir]);
+
+  // Summary calculations
+  const pendingCount = requests.filter((r) => getDaysRemaining(r.scheduledDeletionAt) > 0).length;
+  const nearestDeletion = useMemo(() => {
+    const pending = requests.filter((r) => getDaysRemaining(r.scheduledDeletionAt) > 0);
+    if (pending.length === 0) return null;
+    const nearest = pending.reduce((min, r) => {
+      const days = getDaysRemaining(r.scheduledDeletionAt);
+      return days < min ? days : min;
+    }, Infinity);
+    return nearest;
+  }, [requests]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDir('desc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return null;
+    return sortDir === 'asc' ? <ChevronUp size={14} className="inline ml-1" /> : <ChevronDown size={14} className="inline ml-1" />;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -96,7 +164,45 @@ export const DeletionRequests = () => {
         </span>
       </div>
 
-      {requests.length === 0 ? (
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border border-gray-100 p-4">
+          <p className="text-sm text-gray-500">Pending Deletions</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{pendingCount}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 p-4">
+          <p className="text-sm text-gray-500">Nearest Deletion</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">
+            {nearestDeletion !== null ? `${nearestDeletion} day${nearestDeletion === 1 ? '' : 's'}` : '—'}
+          </p>
+        </div>
+      </div>
+
+      {/* Search and Filter Controls */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by username or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
+          className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="all">All</option>
+          <option value="pending">Pending</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+
+      {filteredRequests.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
           <AlertTriangle className="mx-auto mb-4 text-gray-300" size={48} />
           <p className="text-gray-500 text-lg">No pending deletion requests</p>
@@ -108,15 +214,27 @@ export const DeletionRequests = () => {
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Request Date</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Scheduled Deletion</th>
+                <th
+                  className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700"
+                  onClick={() => handleSort('deletionRequestedAt')}
+                >
+                  Request Date
+                  <SortIcon field="deletionRequestedAt" />
+                </th>
+                <th
+                  className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:text-gray-700"
+                  onClick={() => handleSort('scheduledDeletionAt')}
+                >
+                  Scheduled Deletion
+                  <SortIcon field="scheduledDeletionAt" />
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Days Remaining</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Reason</th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {requests.map((req) => {
+              {filteredRequests.map((req) => {
                 const daysRemaining = getDaysRemaining(req.scheduledDeletionAt);
                 const isExpired = daysRemaining === 0;
                 return (
@@ -152,7 +270,7 @@ export const DeletionRequests = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500 max-w-[200px] truncate">
-                      {req.deletionReason || '—'}
+                      {req.deletionReason || '\u2014'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
