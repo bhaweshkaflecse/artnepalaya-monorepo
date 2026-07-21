@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../../navigation/AppStack';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -32,6 +32,9 @@ export const HomeScreen = () => {
     useAppSelector((state) => state.feed);
   const { isGuest, guestPostsViewed } = useAppSelector((state) => state.auth);
   const newPostsAvailable = useAppSelector((state) => state.feed.newPostsAvailable);
+
+  const flatListRef = useRef<FlatList>(null);
+  useScrollToTop(flatListRef);
 
   const viewedPostIds = useRef<Set<string>>(new Set()).current;
   const [modalDismissed, setModalDismissed] = useState(false);
@@ -63,6 +66,15 @@ export const HomeScreen = () => {
       fetchUnreadCount();
     }, [fetchUnreadCount])
   );
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress', (e: any) => {
+      if (navigation.isFocused()) {
+        handleRefresh();
+      }
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const handleRefresh = () => {
     dispatch(fetchFeed());
@@ -169,6 +181,7 @@ export const HomeScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
       <FlatList
+        ref={flatListRef}
         data={feedPosts}
         keyExtractor={(item) => item._id}
         renderItem={renderItem}

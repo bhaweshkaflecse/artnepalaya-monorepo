@@ -319,16 +319,6 @@ export const UserProfileScreen = () => {
                 <Text style={styles.contactInfoText}>{profile.website}</Text>
               </TouchableOpacity>
             )}
-            {!!(profile as any)?.whatsapp && (
-              <TouchableOpacity
-                style={styles.contactInfoRow}
-                activeOpacity={0.7}
-                onLongPress={() => { Clipboard.setStringAsync((profile as any).whatsapp); Alert.alert('Copied', 'WhatsApp copied to clipboard'); }}
-              >
-                <Feather name="message-circle" size={14} color={lightColors.textSecondary} />
-                <Text style={styles.contactInfoText}>{(profile as any).whatsapp}</Text>
-              </TouchableOpacity>
-            )}
             {!!(profile as any)?.contactPhone && (
               <TouchableOpacity
                 style={styles.contactInfoRow}

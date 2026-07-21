@@ -104,7 +104,7 @@ export const updateUserProfile = async (userId, updateData) => {
   }
 
   // Define exactly what the user is allowed to change (mapped to our Zod schema)
-  const allowedUpdates = ['username', 'fullName', 'avatarUrl', 'dob', 'role', 'subRoles', 'interests', 'bio', 'location', 'website', 'whatsapp', 'contactPhone', 'nsfwBlurEnabled', 'showMatureContent'];
+  const allowedUpdates = ['username', 'fullName', 'avatarUrl', 'dob', 'role', 'subRoles', 'interests', 'bio', 'location', 'website', 'contactPhone', 'nsfwBlurEnabled', 'showMatureContent'];
   
   // Track if username is actually changing
   const isUsernameChanging = updateData.username && updateData.username !== user.username;

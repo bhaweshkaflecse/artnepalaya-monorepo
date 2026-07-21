@@ -148,7 +148,6 @@ export const EditProfileScreen = () => {
   const [bio, setBio] = useState((profile as any)?.bio || '');
   const [location, setLocation] = useState((profile as any)?.location || '');
   const [website, setWebsite] = useState((profile as any)?.website || '');
-  const [whatsapp, setWhatsapp] = useState((profile as any)?.whatsapp || '');
   const [contactPhone, setContactPhone] = useState((profile as any)?.contactPhone || '');
   const [selectedRole, setSelectedRole] = useState(displayUser?.role || 'Art Lover');
   const [selectedInterests, setSelectedInterests] = useState<string[]>(
@@ -263,20 +262,6 @@ export const EditProfileScreen = () => {
       }
     }
 
-    // Validate whatsapp - check for blocked domains and phone format
-    const whatsappVal = whatsapp.trim();
-    if (whatsappVal) {
-      const blockedPlatform = getBlockedPlatform(whatsappVal);
-      if (blockedPlatform) {
-        setContactError(`${blockedPlatform} profile links are not supported.`);
-        return false;
-      }
-      if (!isValidPhoneNumber(whatsappVal)) {
-        setContactError('Please enter a valid WhatsApp number.');
-        return false;
-      }
-    }
-
     // Validate contactPhone - must be phone number only
     const phoneVal = contactPhone.trim();
     if (phoneVal) {
@@ -324,7 +309,6 @@ export const EditProfileScreen = () => {
         bio: bio.trim(),
         location: location.trim() || null,
         website: website.trim() || null,
-        whatsapp: whatsapp.trim() || null,
         contactPhone: contactPhone.trim() || null,
         interests: selectedInterests,
         subRoles: selectedSubRoles,
@@ -496,19 +480,9 @@ export const EditProfileScreen = () => {
           />
           <TextInput
             style={[styles.input, { marginTop: 10 }]}
-            value={whatsapp}
-            onChangeText={(text) => { setWhatsapp(text); setContactError(''); }}
-            placeholder="+97798XXXXXXXX or 9801234567"
-            placeholderTextColor={lightColors.textSecondary}
-            autoCapitalize="none"
-            keyboardType="phone-pad"
-            maxLength={200}
-          />
-          <TextInput
-            style={[styles.input, { marginTop: 10 }]}
             value={contactPhone}
             onChangeText={(text) => { setContactPhone(text); setContactError(''); }}
-            placeholder="Contact phone number"
+            placeholder="Phone number"
             placeholderTextColor={lightColors.textSecondary}
             keyboardType="phone-pad"
             maxLength={50}
@@ -517,7 +491,7 @@ export const EditProfileScreen = () => {
             <Text style={styles.contactErrorText}>{contactError}</Text>
           )}
           <Text style={styles.contactHelperText}>
-            Only Website, WhatsApp Number and Phone Number are currently supported. Social media profile links are not accepted at this time.
+            Only Website and Phone Number are currently supported. Social media profile links are not accepted at this time.
           </Text>
         </View>
 
