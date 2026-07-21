@@ -431,11 +431,14 @@ export const getExplore = async (userId, cursor, limit, artworkType, search, sho
 // === QUERIES ===
 export const getPostLikes = async (postId) => {
   const likes = await Like.find({ postId })
-    .populate('userId', 'username avatarUrl fullName')
+    .populate('userId', 'username avatarUrl fullName deletionRequested')
     .sort({ createdAt: -1 })
     .lean();
 
-  return likes.map(like => like.userId);
+  // Filter out users who have requested account deletion
+  return likes
+    .filter(like => like.userId && !like.userId.deletionRequested)
+    .map(like => like.userId);
 };
 
 // === INTERACTIONS ===

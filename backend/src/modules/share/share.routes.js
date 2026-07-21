@@ -45,10 +45,18 @@ router.get('/p/:postId', async (req, res) => {
     }
 
     const post = await Post.findById(postId)
-      .populate('authorId', 'username avatarUrl fullName')
+      .populate('authorId', 'username avatarUrl fullName deletionRequested')
       .lean();
 
     if (!post) {
+      return res.status(404).send(buildGenericPage(
+        'Artwork Not Found',
+        'This artwork may have been removed or is no longer available.',
+        null
+      ));
+    }
+
+    if (post.authorId?.deletionRequested) {
       return res.status(404).send(buildGenericPage(
         'Artwork Not Found',
         'This artwork may have been removed or is no longer available.',

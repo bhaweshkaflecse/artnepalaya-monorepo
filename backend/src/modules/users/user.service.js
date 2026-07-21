@@ -307,15 +307,18 @@ export const getFollowers = async (userId, page, limit) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('followerId', 'username avatarUrl fullName')
+      .populate('followerId', 'username avatarUrl fullName deletionRequested')
       .lean(),
     Follow.countDocuments({ followingId: userId })
   ]);
 
   const totalPages = Math.ceil(totalItems / limit);
 
+  // Filter out users who have requested account deletion
+  const filtered = follows.filter(f => f.followerId && !f.followerId.deletionRequested).map(f => f.followerId);
+
   return {
-    data: follows.map(f => f.followerId),
+    data: filtered,
     meta: {
       currentPage: page,
       limit,
@@ -336,15 +339,18 @@ export const getFollowing = async (userId, page, limit) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('followingId', 'username avatarUrl fullName')
+      .populate('followingId', 'username avatarUrl fullName deletionRequested')
       .lean(),
     Follow.countDocuments({ followerId: userId })
   ]);
 
   const totalPages = Math.ceil(totalItems / limit);
 
+  // Filter out users who have requested account deletion
+  const filtered = follows.filter(f => f.followingId && !f.followingId.deletionRequested).map(f => f.followingId);
+
   return {
-    data: follows.map(f => f.followingId),
+    data: filtered,
     meta: {
       currentPage: page,
       limit,

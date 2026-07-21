@@ -100,7 +100,7 @@ router.get('/featured', optionalAuth, async (req, res, next) => {
         path: 'postId',
         populate: {
           path: 'authorId',
-          select: '_id username avatarUrl status'
+          select: '_id username avatarUrl status deletionRequested'
         }
       })
       .lean();
@@ -117,7 +117,7 @@ router.get('/featured', optionalAuth, async (req, res, next) => {
     }
 
     // Filter out posts from banned/suspended authors
-    data = data.filter((post) => post.authorId && post.authorId.status === 'active');
+    data = data.filter((post) => post.authorId && post.authorId.status === 'active' && !post.authorId.deletionRequested);
 
     res.status(200).json({ success: true, data });
   } catch (err) {
