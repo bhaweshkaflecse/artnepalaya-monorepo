@@ -105,7 +105,7 @@ export const ensureMinActiveSuperAdmins = async (targetUserId) => {
   if (isTargetActiveProtected && activeProtectedAdmins.length <= minRequired) {
     throw Object.assign(
       new Error(`Cannot perform this action. Minimum ${minRequired} active protected Super Admin(s) must remain.`),
-      { status: 403 }
+      { status: 403, code: 'LAST_SUPER_ADMIN_PROTECTED' }
     );
   }
   

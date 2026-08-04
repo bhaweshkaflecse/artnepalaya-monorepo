@@ -44,6 +44,7 @@ export const Users = () => {
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
 
   const fetchUsers = useCallback(async (pageNum: number, search: string, signal?: AbortSignal) => {
     setLoading(true);
@@ -58,6 +59,7 @@ export const Users = () => {
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'CanceledError') return;
       if (signal?.aborted) return;
+      console.error('Failed to fetch users:', err);
       setError('Failed to load users. Please try again.');
     } finally {
       if (!signal?.aborted) {
@@ -98,13 +100,29 @@ export const Users = () => {
       setUsers((prev) =>
         prev.map((u) => (u._id === userId ? { ...u, status } : u))
       );
-    } catch (err: unknown) {
-      const axiosError = err as { response?: { data?: { error?: string } } };
-      setError(axiosError.response?.data?.error || 'Failed to update user status. Please try again.');
-    } finally {
-      setActionLoading(null);
       setConfirmAction(null);
       setMasterPassword('');
+    } catch (err: unknown) {
+      console.error('Failed to update status:', err);
+      const axiosError = err as { response?: { status?: number, data?: { error?: { message?: string } | string } } };
+      const apiError = axiosError.response?.data?.error;
+      const errorMessage = typeof apiError === 'object' ? apiError?.message : (typeof apiError === 'string' ? apiError : null);
+      
+      if (!axiosError.response) {
+        if (err instanceof Error && err.message.toLowerCase().includes('timeout')) {
+          setError('Request timed out. Please try again.');
+        } else {
+          setError('Unable to contact server. Please try again.');
+        }
+      } else if (axiosError.response.status && axiosError.response.status >= 500) {
+        setError('Something went wrong. Please try again.');
+      } else {
+        setError(errorMessage || 'Failed to update user status. Please try again.');
+      }
+      
+      setTimeout(() => passwordInputRef.current?.focus(), 10);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -116,11 +134,12 @@ export const Users = () => {
       setUsers((prev) =>
         prev.map((u) => (u._id === userId ? { ...u, isVerified: true, verifiedType } : u))
       );
-    } catch {
+      setVerifyModal(null);
+    } catch (err: unknown) {
+      console.error('Failed to verify user:', err);
       setError('Failed to verify user. Please try again.');
     } finally {
       setActionLoading(null);
-      setVerifyModal(null);
     }
   };
 
@@ -132,7 +151,8 @@ export const Users = () => {
       setUsers((prev) =>
         prev.map((u) => (u._id === userId ? { ...u, isVerified: false, verifiedType: null } : u))
       );
-    } catch {
+    } catch (err: unknown) {
+      console.error('Failed to unverify user:', err);
       setError('Failed to unverify user. Please try again.');
     } finally {
       setActionLoading(null);
@@ -383,12 +403,18 @@ export const Users = () => {
                   Master Password Required
                 </label>
                 <input
+                  ref={passwordInputRef}
                   type="password"
                   value={masterPassword}
                   onChange={(e) => setMasterPassword(e.target.value)}
                   placeholder="Enter Master Password"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
                 />
+              </div>
+            )}
+            {error && (
+              <div className="mb-4 text-sm text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
+                {error}
               </div>
             )}
             <div className="flex space-x-3 justify-end">
@@ -429,6 +455,11 @@ export const Users = () => {
               <option value="gallery">Gallery</option>
               <option value="business">Business</option>
             </select>
+            {error && (
+              <div className="mb-4 text-sm text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
+                {error}
+              </div>
+            )}
             <div className="flex space-x-3 justify-end">
               <button
                 onClick={() => setVerifyModal(null)}

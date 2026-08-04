@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { api } from '../services/api';
 import { Trash2, XCircle, AlertTriangle, Search, ChevronUp, ChevronDown } from 'lucide-react';
 
@@ -35,6 +35,7 @@ export const DeletionRequests = () => {
   } | null>(null);
   const [masterPassword, setMasterPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
 
   const fetchRequests = async () => {
     try {
@@ -74,14 +75,29 @@ export const DeletionRequests = () => {
         data: { masterPassword: pwd }
       });
       setRequests((prev) => prev.filter((r) => r._id !== userId));
-    } catch (err: unknown) {
-      console.error('Failed to force delete:', err);
-      const axiosError = err as { response?: { data?: { error?: string } } };
-      setError(axiosError.response?.data?.error || 'Failed to delete account.');
-    } finally {
-      setActionLoading(null);
       setConfirmAction(null);
       setMasterPassword('');
+    } catch (err: unknown) {
+      console.error('Failed to force delete:', err);
+      const axiosError = err as { response?: { status?: number, data?: { error?: { message?: string } | string } } };
+      const apiError = axiosError.response?.data?.error;
+      const errorMessage = typeof apiError === 'object' ? apiError?.message : (typeof apiError === 'string' ? apiError : null);
+      
+      if (!axiosError.response) {
+        if (err instanceof Error && err.message.toLowerCase().includes('timeout')) {
+          setError('Request timed out. Please try again.');
+        } else {
+          setError('Unable to contact server. Please try again.');
+        }
+      } else if (axiosError.response.status && axiosError.response.status >= 500) {
+        setError('Something went wrong. Please try again.');
+      } else {
+        setError(errorMessage || 'Failed to delete account.');
+      }
+      
+      setTimeout(() => passwordInputRef.current?.focus(), 10);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -337,6 +353,7 @@ export const DeletionRequests = () => {
                   Master Password Required
                 </label>
                 <input
+                  ref={passwordInputRef}
                   type="password"
                   value={masterPassword}
                   onChange={(e) => setMasterPassword(e.target.value)}

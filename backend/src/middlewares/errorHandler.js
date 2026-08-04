@@ -18,9 +18,10 @@ export const globalErrorHandler = (err, req, res, next) => {
   // 3. Custom Error Objects (e.g., Object.assign(new Error(), { status: 404 }))
   if (err.status) {
     const codeMap = { 400: 'BAD_REQUEST', 401: 'UNAUTHORIZED', 403: 'FORBIDDEN', 404: 'NOT_FOUND', 409: 'CONFLICT' };
+    const errorCode = (typeof err.code === 'string' && err.code) ? err.code : (codeMap[err.status] || 'INTERNAL_SERVER_ERROR');
     return res.status(err.status).json({
       success: false, 
-      error: { code: codeMap[err.status] || 'ERROR', message: err.message }
+      error: { code: errorCode, message: err.message }
     });
   }
 
