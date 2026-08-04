@@ -1,7 +1,7 @@
 import { env } from '../../config/env.js';
 import { SuperAdminAuditLog } from './superAdminAuditLog.model.js';
 import { User } from '../users/user.model.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
 // In-memory store for rate limiting master password failures
