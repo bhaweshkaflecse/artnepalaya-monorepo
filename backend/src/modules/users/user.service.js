@@ -109,6 +109,18 @@ export const updateUserProfile = async (userId, updateData) => {
   // Track if username is actually changing
   const isUsernameChanging = updateData.username && updateData.username !== user.username;
 
+  // Protect Super Admins from role changes (demotion) and credential changes
+  if (
+    (updateData.role && updateData.role !== user.role) ||
+    (updateData.email && updateData.email !== user.email) ||
+    updateData.password || updateData.passwordHash
+  ) {
+    const superAdminService = await import('../admin/superAdmin.service.js');
+    if (superAdminService.isProtectedSuperAdmin(user)) {
+      throw Object.assign(new Error('Role, email, and password changes for protected Super Admins are not allowed.'), { status: 403 });
+    }
+  }
+
   allowedUpdates.forEach((field) => {
     if (updateData[field] !== undefined) {
       user[field] = updateData[field];
@@ -404,6 +416,11 @@ export const requestAccountDeletion = async (userId, reason) => {
   const user = await User.findById(userId);
   if (!user) {
     throw Object.assign(new Error('User not found'), { status: 404 });
+  }
+
+  const superAdminService = await import('../admin/superAdmin.service.js');
+  if (superAdminService.isProtectedSuperAdmin(user)) {
+    throw Object.assign(new Error('Protected Super Admins cannot request account deletion.'), { status: 403 });
   }
 
   user.deletionRequested = true;

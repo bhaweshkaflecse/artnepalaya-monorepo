@@ -217,6 +217,17 @@ export const LoginScreen = () => {
         });
         console.error('[GoogleAuth] Full error object:', JSON.stringify(error, null, 2));
         console.error('[GoogleAuth] WebClientId configured:', GOOGLE_WEB_CLIENT_ID ? 'yes (set)' : 'NO - missing!');
+        
+        let userMessage = 'An unexpected error occurred during sign-in.';
+        if (error.code === statusCodes.SIGN_IN_REQUIRED) {
+            userMessage = 'Sign-in is required. Please try again.';
+        } else if (error.message?.includes('DEVELOPER_ERROR') || error.code === '10' || error.code === 10) {
+            userMessage = 'Google Sign-In is misconfigured on this device. (DEVELOPER_ERROR: likely a signing certificate SHA-1 mismatch or invalid OAuth client ID). Please contact support.';
+        } else if (error.code) {
+            userMessage = `Sign-In Error: ${error.code} - ${error.message}`;
+        }
+        
+        Alert.alert('Sign-In Failed', userMessage);
       }
       setIsLoading(false);
     }

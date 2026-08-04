@@ -14,6 +14,7 @@ interface UserData {
   status: string;
   avatarUrl?: string;
   interests?: string[];
+  isProtectedAdmin?: boolean;
 }
 
 interface Meta {
@@ -33,7 +34,9 @@ export const Users = () => {
     userId: string;
     status: string;
     username: string;
+    isProtectedAdmin?: boolean;
   } | null>(null);
+  const [masterPassword, setMasterPassword] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [verifyModal, setVerifyModal] = useState<{ userId: string; username: string } | null>(null);
@@ -87,19 +90,21 @@ export const Users = () => {
     };
   }, [page, searchQuery, fetchUsers]);
 
-  const handleStatusChange = async (userId: string, status: string) => {
+  const handleStatusChange = async (userId: string, status: string, pwd?: string) => {
     setActionLoading(userId);
     setError(null);
     try {
-      await api.put(`/admin/users/${userId}/status`, { status });
+      await api.put(`/admin/users/${userId}/status`, { status, masterPassword: pwd });
       setUsers((prev) =>
         prev.map((u) => (u._id === userId ? { ...u, status } : u))
       );
-    } catch {
-      setError('Failed to update user status. Please try again.');
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { error?: string } } };
+      setError(axiosError.response?.data?.error || 'Failed to update user status. Please try again.');
     } finally {
       setActionLoading(null);
       setConfirmAction(null);
+      setMasterPassword('');
     }
   };
 
@@ -229,7 +234,7 @@ export const Users = () => {
                     {user.interests && user.interests.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {user.interests.map((interest) => (
-                          <span
+                           <span
                             key={interest}
                             className="inline-block px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-medium rounded-full"
                           >
@@ -271,6 +276,7 @@ export const Users = () => {
                               userId: user._id,
                               status: 'active',
                               username: user.username,
+                              isProtectedAdmin: user.isProtectedAdmin,
                             })
                           }
                           disabled={actionLoading === user._id}
@@ -286,6 +292,7 @@ export const Users = () => {
                               userId: user._id,
                               status: 'suspended',
                               username: user.username,
+                              isProtectedAdmin: user.isProtectedAdmin,
                             })
                           }
                           disabled={actionLoading === user._id}
@@ -301,6 +308,7 @@ export const Users = () => {
                               userId: user._id,
                               status: 'banned',
                               username: user.username,
+                              isProtectedAdmin: user.isProtectedAdmin,
                             })
                           }
                           disabled={actionLoading === user._id}
@@ -369,18 +377,33 @@ export const Users = () => {
               <span className="font-medium text-gray-700">{confirmAction.username}</span> to{' '}
               <span className="font-medium capitalize text-gray-700">{confirmAction.status}</span>?
             </p>
+            {confirmAction.isProtectedAdmin && (
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Master Password Required
+                </label>
+                <input
+                  type="password"
+                  value={masterPassword}
+                  onChange={(e) => setMasterPassword(e.target.value)}
+                  placeholder="Enter Master Password"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
+                />
+              </div>
+            )}
             <div className="flex space-x-3 justify-end">
               <button
-                onClick={() => setConfirmAction(null)}
+                onClick={() => { setConfirmAction(null); setMasterPassword(''); }}
                 className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() =>
-                  handleStatusChange(confirmAction.userId, confirmAction.status)
+                  handleStatusChange(confirmAction.userId, confirmAction.status, masterPassword)
                 }
-                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+                disabled={confirmAction.isProtectedAdmin && !masterPassword}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
               >
                 Confirm
               </button>

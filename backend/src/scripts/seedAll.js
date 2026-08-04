@@ -372,7 +372,7 @@ async function seedAll() {
       console.warn('\x1b[33m⚠ WARNING: Using default admin password. Set SEED_ADMIN_PASSWORD env var for production.\x1b[0m');
     }
     const adminUser = await User.findOneAndUpdate(
-      { email: 'admin@artnepalaya.com' },
+      { email: 'admin@artnepalaya.com', seedSource: 'seedAll' },
       {
         $set: {
           username: 'SuperAdmin',
@@ -382,10 +382,11 @@ async function seedAll() {
           passwordHash: bcryptjs.hashSync(adminPassword, 10),
           avatarUrl: generateAvatarUrl('SuperAdmin'),
           stats: { followers: 0, following: 0 },
-          isAdult: true
+          isAdult: true,
+          seedSource: 'seedAll'
         }
       },
-      { upsert: true, new: true, runValidators: true }
+      { upsert: true, new: true, runValidators: true, strict: false }
     );
     console.log(`Admin created: ${adminUser.email} (${adminUser._id})`);
 
@@ -397,9 +398,9 @@ async function seedAll() {
     const artists = [];
     for (const data of artistData) {
       const user = await User.findOneAndUpdate(
-        { email: data.email },
-        { $set: data },
-        { upsert: true, new: true, runValidators: true }
+        { email: data.email, seedSource: 'seedAll' },
+        { $set: { ...data, seedSource: 'seedAll' } },
+        { upsert: true, new: true, runValidators: true, strict: false }
       );
       artists.push(user);
     }
@@ -413,9 +414,9 @@ async function seedAll() {
     const galleries = [];
     for (const data of galleryData) {
       const user = await User.findOneAndUpdate(
-        { email: data.email },
-        { $set: data },
-        { upsert: true, new: true, runValidators: true }
+        { email: data.email, seedSource: 'seedAll' },
+        { $set: { ...data, seedSource: 'seedAll' } },
+        { upsert: true, new: true, runValidators: true, strict: false }
       );
       galleries.push(user);
     }
@@ -429,9 +430,9 @@ async function seedAll() {
     const businesses = [];
     for (const data of businessData) {
       const user = await User.findOneAndUpdate(
-        { email: data.email },
-        { $set: data },
-        { upsert: true, new: true, runValidators: true }
+        { email: data.email, seedSource: 'seedAll' },
+        { $set: { ...data, seedSource: 'seedAll' } },
+        { upsert: true, new: true, runValidators: true, strict: false }
       );
       businesses.push(user);
     }
@@ -445,9 +446,9 @@ async function seedAll() {
     const artLovers = [];
     for (const data of artLoverData) {
       const user = await User.findOneAndUpdate(
-        { email: data.email },
-        { $set: data },
-        { upsert: true, new: true, runValidators: true }
+        { email: data.email, seedSource: 'seedAll' },
+        { $set: { ...data, seedSource: 'seedAll' } },
+        { upsert: true, new: true, runValidators: true, strict: false }
       );
       artLovers.push(user);
     }
@@ -460,7 +461,15 @@ async function seedAll() {
     // ----------------------------------------------------------
     console.log('\n--- Creating 110 Posts ---');
     const postData = generatePosts(artists, galleries);
-    const createdPosts = await Post.insertMany(postData);
+    const createdPosts = [];
+    for (const post of postData) {
+      const p = await Post.findOneAndUpdate(
+        { authorId: post.authorId, caption: post.caption, seedSource: 'seedAll' },
+        { $set: { ...post, seedSource: 'seedAll' } },
+        { upsert: true, new: true, strict: false }
+      );
+      createdPosts.push(p);
+    }
     console.log(`${createdPosts.length} posts created.`);
 
     // ----------------------------------------------------------
@@ -468,7 +477,15 @@ async function seedAll() {
     // ----------------------------------------------------------
     console.log('\n--- Creating 25 Reports ---');
     const reportData = generateReports(allUsers, createdPosts, adminUser._id);
-    const createdReports = await Report.insertMany(reportData);
+    const createdReports = [];
+    for (const report of reportData) {
+      const r = await Report.findOneAndUpdate(
+        { reporterId: report.reporterId, targetType: report.targetType, targetId: report.targetId, reason: report.reason, seedSource: 'seedAll' },
+        { $set: { ...report, seedSource: 'seedAll' } },
+        { upsert: true, new: true, strict: false }
+      );
+      createdReports.push(r);
+    }
     console.log(`${createdReports.length} reports created.`);
 
     // ----------------------------------------------------------
@@ -489,9 +506,9 @@ async function seedAll() {
 
     for (const post of featuredCandidates) {
       await FeaturedPost.findOneAndUpdate(
-        { postId: post._id },
-        { $set: { postId: post._id, featuredBy: adminUser._id } },
-        { upsert: true, new: true }
+        { postId: post._id, seedSource: 'seedAll' },
+        { $set: { postId: post._id, featuredBy: adminUser._id, seedSource: 'seedAll' } },
+        { upsert: true, new: true, strict: false }
       );
     }
     console.log(`${featuredCandidates.length} featured posts created.`);
@@ -501,7 +518,7 @@ async function seedAll() {
     // ----------------------------------------------------------
     console.log('\n--- Creating AppConfig ---');
     await AppConfig.findOneAndUpdate(
-      { key: 'auth_background_media' },
+      { key: 'auth_background_media', seedSource: 'seedAll' },
       {
         $set: {
           key: 'auth_background_media',
@@ -512,10 +529,11 @@ async function seedAll() {
             { url: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=1080', type: 'image' },
             { url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1080', type: 'image' }
           ],
-          updatedBy: adminUser._id
+          updatedBy: adminUser._id,
+          seedSource: 'seedAll'
         }
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true, strict: false }
     );
     console.log('AppConfig auth_background_media created (5 images).');
 
@@ -523,7 +541,7 @@ async function seedAll() {
     // 9b. Create AppConfig: notification_config
     // ----------------------------------------------------------
     await AppConfig.findOneAndUpdate(
-      { key: 'notification_config' },
+      { key: 'notification_config', seedSource: 'seedAll' },
       {
         $set: {
           key: 'notification_config',
@@ -546,10 +564,11 @@ async function seedAll() {
               showNamesAndOthers: 20
             }
           },
-          updatedBy: adminUser._id
+          updatedBy: adminUser._id,
+          seedSource: 'seedAll'
         }
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true, strict: false }
     );
     console.log('AppConfig notification_config created.');
 
@@ -582,7 +601,26 @@ async function seedAll() {
       { senderId: null, recipientId: artLovers[1]._id, postId: null, type: 'System', message: 'Welcome to ArtNepalaya! Complete your profile to get personalized recommendations.', isRead: true },
       { senderId: null, recipientId: galleries[2]._id, postId: null, type: 'System', message: 'Your gallery listing has been approved and is now visible to the community.', isRead: false }
     ];
-    const createdNotifications = await Notification.insertMany(notifications);
+    const createdNotifications = [];
+    for (const notif of notifications) {
+      // Find uniquely by sender, recipient, type, and optionally post/message
+      const query = {
+        recipientId: notif.recipientId,
+        type: notif.type
+      };
+      if (notif.senderId) query.senderId = notif.senderId;
+      if (notif.postId) query.postId = notif.postId;
+      if (notif.message) query.message = notif.message;
+
+      query.seedSource = 'seedAll';
+
+      const n = await Notification.findOneAndUpdate(
+        query,
+        { $set: { ...notif, seedSource: 'seedAll' } },
+        { upsert: true, new: true, strict: false }
+      );
+      createdNotifications.push(n);
+    }
     console.log(`${createdNotifications.length} notifications created.`);
 
     // ----------------------------------------------------------
@@ -624,9 +662,9 @@ async function seedAll() {
 
     for (const page of cmsPages) {
       await CmsPage.findOneAndUpdate(
-        { slug: page.slug },
-        { $set: { ...page, updatedBy: adminUser._id } },
-        { upsert: true, new: true }
+        { slug: page.slug, seedSource: 'seedAll' },
+        { $set: { ...page, updatedBy: adminUser._id, seedSource: 'seedAll' } },
+        { upsert: true, new: true, strict: false }
       );
     }
     console.log(`${cmsPages.length} CMS pages created.`);
@@ -636,7 +674,7 @@ async function seedAll() {
     // ----------------------------------------------------------
     console.log('\n--- Creating Global Popup ---');
     await GlobalPopup.findOneAndUpdate(
-      {},
+      { seedSource: 'seedAll' },
       {
         $set: {
           heading: 'Welcome to ArtNepalaya Beta!',
@@ -645,10 +683,11 @@ async function seedAll() {
           ctaText: 'Take Survey',
           ctaLink: 'https://forms.example.com/beta-feedback',
           isActive: true,
-          updatedBy: adminUser._id
+          updatedBy: adminUser._id,
+          seedSource: 'seedAll'
         }
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true, strict: false }
     );
     console.log('Global Popup created (Active).');
 

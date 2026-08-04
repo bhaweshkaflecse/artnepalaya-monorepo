@@ -7,6 +7,7 @@ import { Like, Save } from '../posts/post-interaction.model.js';
 import { Notification } from '../notifications/notification.model.js';
 import { v2 as cloudinary } from 'cloudinary';
 import { invalidateCache } from '../../shared/utils/cache.js';
+import * as superAdminService from './superAdmin.service.js';
 
 /**
  * Escapes special regex characters in a string so it can be safely
@@ -38,12 +39,43 @@ export const getUsers = async (page, limit, search) => {
     User.find(filter).select('-__v -googleId').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
     User.countDocuments(filter)
   ]);
-  return { data: users, meta: { currentPage: page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
+  
+  const mappedUsers = users.map(user => ({
+    ...user,
+    isProtectedAdmin: superAdminService.isProtectedSuperAdmin(user)
+  }));
+  
+  return { data: mappedUsers, meta: { currentPage: page, limit, totalItems, totalPages: Math.ceil(totalItems / limit) } };
 };
 
-export const updateUserStatus = async (userId, status) => {
+export const updateUserStatus = async (userId, status, actorId, ipAddress, userAgent, masterPassword) => {
+  const targetUser = await User.findById(userId).lean();
+  if (!targetUser) throw Object.assign(new Error('User not found'), { status: 404 });
+
+  if (superAdminService.isProtectedSuperAdmin(targetUser)) {
+    try {
+      await superAdminService.verifyMasterPasswordAndRateLimit(masterPassword, ipAddress, actorId);
+      if (status === 'banned' || status === 'suspended') {
+        await superAdminService.ensureMinActiveSuperAdmins(userId);
+      }
+    } catch (err) {
+      await superAdminService.logSuperAdminAction({
+        actorId, targetId: userId, targetEmail: targetUser.email,
+        action: `update_status_${status}`, reason: err.message, ipAddress, userAgent, success: false
+      });
+      throw err;
+    }
+  }
+
   const user = await User.findByIdAndUpdate(userId, { $set: { status } }, { new: true }).lean();
-  if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
+  
+  if (superAdminService.isProtectedSuperAdmin(targetUser)) {
+    await superAdminService.logSuperAdminAction({
+      actorId, targetId: userId, targetEmail: targetUser.email,
+      action: `update_status_${status}`, reason: 'Status changed via Admin panel', ipAddress, userAgent, success: true
+    });
+  }
+
   invalidateCache('feed:*').catch(err => console.error('Feed cache invalidation failed:', err));
   return user;
 };

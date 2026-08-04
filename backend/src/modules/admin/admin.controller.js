@@ -1,4 +1,5 @@
 import * as adminService from './admin.service.js';
+import * as superAdminService from './superAdmin.service.js';
 import { AppConfig } from './appConfig.model.js';
 import { CmsPage } from './cmsPage.model.js';
 import { GlobalPopup } from './globalPopup.model.js';
@@ -27,7 +28,17 @@ export const getUsers = async (req, res, next) => {
 };
 
 export const updateUserStatus = async (req, res, next) => {
-  try { await adminService.updateUserStatus(req.params.userId, req.body.status); res.status(200).json({ success: true, message: "User status updated" }); } 
+  try {
+    await adminService.updateUserStatus(
+      req.params.userId,
+      req.body.status,
+      req.user.id,
+      req.ip,
+      req.get('user-agent'),
+      req.body.masterPassword
+    );
+    res.status(200).json({ success: true, message: "User status updated" });
+  } 
   catch (err) { next(err); }
 };
 
@@ -650,10 +661,16 @@ export const simulateRecommendation = async (req, res, next) => {
 export const getDeletionRequests = async (req, res, next) => {
   try {
     const users = await User.find({ deletionRequested: true })
-      .select('username email avatarUrl deletionRequestedAt scheduledDeletionAt deletionReason')
+      .select('username email avatarUrl deletionRequestedAt scheduledDeletionAt deletionReason role')
       .sort({ deletionRequestedAt: -1 })
       .lean();
-    res.status(200).json({ success: true, data: users });
+      
+    const mappedUsers = users.map(user => ({
+      ...user,
+      isProtectedAdmin: superAdminService.isProtectedSuperAdmin(user)
+    }));
+
+    res.status(200).json({ success: true, data: mappedUsers });
   } catch (err) { next(err); }
 };
 
@@ -668,9 +685,23 @@ export const cancelDeletionRequest = async (req, res, next) => {
 export const forceDeleteAccount = async (req, res, next) => {
   try {
     const { userId } = req.params;
+    const { masterPassword } = req.body;
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'User not found' } });
+    }
+
+    if (superAdminService.isProtectedSuperAdmin(user)) {
+      try {
+        await superAdminService.verifyMasterPasswordAndRateLimit(masterPassword, req.ip, req.user.id);
+        await superAdminService.ensureMinActiveSuperAdmins(userId);
+      } catch (err) {
+        await superAdminService.logSuperAdminAction({
+          actorId: req.user.id, targetId: user._id, targetEmail: user.email,
+          action: 'force_delete_account', reason: err.message, ipAddress: req.ip, userAgent: req.get('user-agent'), success: false
+        });
+        throw err;
+      }
     }
 
     // Delete user's posts
@@ -684,6 +715,13 @@ export const forceDeleteAccount = async (req, res, next) => {
     await NotificationGroup.deleteMany({ recipientId: user._id });
     // Delete the user document
     await User.findByIdAndDelete(user._id);
+
+    if (superAdminService.isProtectedSuperAdmin(user)) {
+      await superAdminService.logSuperAdminAction({
+        actorId: req.user.id, targetId: user._id, targetEmail: user.email,
+        action: 'force_delete_account', reason: 'Force deleted via Admin panel', ipAddress: req.ip, userAgent: req.get('user-agent'), success: true
+      });
+    }
 
     res.status(200).json({ success: true, message: 'Account permanently deleted' });
   } catch (err) { next(err); }

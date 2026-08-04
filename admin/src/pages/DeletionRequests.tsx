@@ -11,6 +11,8 @@ interface DeletionRequest {
   scheduledDeletionAt: string;
   deletionReason?: string;
   status?: string;
+  role?: string;
+  isProtectedAdmin?: boolean;
 }
 
 type FilterStatus = 'all' | 'pending' | 'cancelled' | 'completed';
@@ -25,6 +27,14 @@ export const DeletionRequests = () => {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [sortField, setSortField] = useState<SortField>('deletionRequestedAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  
+  const [confirmAction, setConfirmAction] = useState<{
+    userId: string;
+    username: string;
+    isProtectedAdmin?: boolean;
+  } | null>(null);
+  const [masterPassword, setMasterPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const fetchRequests = async () => {
     try {
@@ -56,18 +66,31 @@ export const DeletionRequests = () => {
     }
   };
 
-  const handleForceDelete = async (userId: string, username: string) => {
-    if (!confirm(`PERMANENTLY delete user "${username}" and ALL their data? This cannot be undone!`)) return;
+  const executeForceDelete = async (userId: string, pwd?: string) => {
     try {
       setActionLoading(userId);
-      await api.delete(`/admin/deletion-requests/${userId}/force`);
+      setError(null);
+      await api.delete(`/admin/deletion-requests/${userId}/force`, {
+        data: { masterPassword: pwd }
+      });
       setRequests((prev) => prev.filter((r) => r._id !== userId));
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to force delete:', err);
-      alert('Failed to delete account.');
+      const axiosError = err as { response?: { data?: { error?: string } } };
+      setError(axiosError.response?.data?.error || 'Failed to delete account.');
     } finally {
       setActionLoading(null);
+      setConfirmAction(null);
+      setMasterPassword('');
     }
+  };
+
+  const handleForceDeleteClick = (req: DeletionRequest) => {
+    setConfirmAction({
+      userId: req._id,
+      username: req.username,
+      isProtectedAdmin: req.isProtectedAdmin,
+    });
   };
 
   const getDaysRemaining = (scheduledDate: string) => {
@@ -283,7 +306,7 @@ export const DeletionRequests = () => {
                           Cancel
                         </button>
                         <button
-                          onClick={() => handleForceDelete(req._id, req.username)}
+                          onClick={() => handleForceDeleteClick(req)}
                           disabled={actionLoading === req._id}
                           className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                         >
@@ -297,6 +320,52 @@ export const DeletionRequests = () => {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {confirmAction && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-lg">
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">Confirm Force Delete</h3>
+            <p className="text-sm text-gray-500 mb-5">
+              PERMANENTLY delete user{' '}
+              <span className="font-medium text-gray-700">{confirmAction.username}</span> and ALL their data? This cannot be undone!
+            </p>
+            {confirmAction.isProtectedAdmin && (
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Master Password Required
+                </label>
+                <input
+                  type="password"
+                  value={masterPassword}
+                  onChange={(e) => setMasterPassword(e.target.value)}
+                  placeholder="Enter Master Password"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
+                />
+              </div>
+            )}
+            {error && (
+              <div className="mb-4 text-sm text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
+                {error}
+              </div>
+            )}
+            <div className="flex space-x-3 justify-end">
+              <button
+                onClick={() => { setConfirmAction(null); setMasterPassword(''); setError(null); }}
+                className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => executeForceDelete(confirmAction.userId, masterPassword)}
+                disabled={confirmAction.isProtectedAdmin && !masterPassword}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                Force Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
