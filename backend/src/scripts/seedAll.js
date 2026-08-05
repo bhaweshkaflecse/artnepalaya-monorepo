@@ -364,31 +364,40 @@ async function seedAll() {
     }
 
     // ----------------------------------------------------------
-    // 1. Create Admin User
+    // 1. Create Super Admins
     // ----------------------------------------------------------
-    console.log('\n--- Creating Admin User ---');
-    const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'admin123';
-    if (!process.env.SEED_ADMIN_PASSWORD) {
-      console.warn('\x1b[33m⚠ WARNING: Using default admin password. Set SEED_ADMIN_PASSWORD env var for production.\x1b[0m');
+    console.log('\n--- Creating Super Admins ---');
+    const adminEmails = ['admin@artnepalaya.com', 'founder@artnepalaya.com'];
+    const adminUsers = [];
+    
+    for (const email of adminEmails) {
+      const username = email.split('@')[0];
+      const isFounder = username === 'founder';
+      const defaultPassword = 'SuperAdmin##5656#$$@'; // Only used on brand-new account creation
+      
+      const adminUser = await User.findOneAndUpdate(
+        { email },
+        {
+          $set: {
+            username: isFounder ? 'FounderAdmin' : 'SuperAdmin',
+            fullName: isFounder ? 'Platform Founder' : 'System Administrator',
+            role: 'Admin',
+            avatarUrl: generateAvatarUrl(isFounder ? 'FounderAdmin' : 'SuperAdmin'),
+            isAdult: true,
+            seedSource: 'seedAll'
+          },
+          $setOnInsert: {
+            status: 'active',
+            passwordHash: bcryptjs.hashSync(defaultPassword, 10),
+            stats: { followers: 0, following: 0 }
+          }
+        },
+        { upsert: true, new: true, runValidators: true, strict: false }
+      );
+      adminUsers.push(adminUser);
+      console.log(`Admin ensured: ${adminUser.email} (${adminUser._id})`);
     }
-    const adminUser = await User.findOneAndUpdate(
-      { email: 'admin@artnepalaya.com', seedSource: 'seedAll' },
-      {
-        $set: {
-          username: 'SuperAdmin',
-          fullName: 'System Administrator',
-          role: 'Admin',
-          status: 'active',
-          passwordHash: bcryptjs.hashSync(adminPassword, 10),
-          avatarUrl: generateAvatarUrl('SuperAdmin'),
-          stats: { followers: 0, following: 0 },
-          isAdult: true,
-          seedSource: 'seedAll'
-        }
-      },
-      { upsert: true, new: true, runValidators: true, strict: false }
-    );
-    console.log(`Admin created: ${adminUser.email} (${adminUser._id})`);
+    const adminUser = adminUsers[0]; // Reference for downstream seeded data
 
     // ----------------------------------------------------------
     // 2. Create Artists (20)
@@ -397,9 +406,13 @@ async function seedAll() {
     const artistData = buildArtistUsers();
     const artists = [];
     for (const data of artistData) {
+      const { status, stats, ...staticData } = data;
       const user = await User.findOneAndUpdate(
-        { email: data.email, seedSource: 'seedAll' },
-        { $set: { ...data, seedSource: 'seedAll' } },
+        { email: data.email },
+        { 
+          $set: { ...staticData, seedSource: 'seedAll' },
+          $setOnInsert: { status, stats }
+        },
         { upsert: true, new: true, runValidators: true, strict: false }
       );
       artists.push(user);
@@ -413,9 +426,13 @@ async function seedAll() {
     const galleryData = buildGalleryUsers();
     const galleries = [];
     for (const data of galleryData) {
+      const { status, stats, ...staticData } = data;
       const user = await User.findOneAndUpdate(
-        { email: data.email, seedSource: 'seedAll' },
-        { $set: { ...data, seedSource: 'seedAll' } },
+        { email: data.email },
+        { 
+          $set: { ...staticData, seedSource: 'seedAll' },
+          $setOnInsert: { status, stats }
+        },
         { upsert: true, new: true, runValidators: true, strict: false }
       );
       galleries.push(user);
@@ -429,9 +446,13 @@ async function seedAll() {
     const businessData = buildBusinessUsers();
     const businesses = [];
     for (const data of businessData) {
+      const { status, stats, ...staticData } = data;
       const user = await User.findOneAndUpdate(
-        { email: data.email, seedSource: 'seedAll' },
-        { $set: { ...data, seedSource: 'seedAll' } },
+        { email: data.email },
+        { 
+          $set: { ...staticData, seedSource: 'seedAll' },
+          $setOnInsert: { status, stats }
+        },
         { upsert: true, new: true, runValidators: true, strict: false }
       );
       businesses.push(user);
@@ -445,9 +466,13 @@ async function seedAll() {
     const artLoverData = buildArtLoverUsers();
     const artLovers = [];
     for (const data of artLoverData) {
+      const { status, stats, ...staticData } = data;
       const user = await User.findOneAndUpdate(
-        { email: data.email, seedSource: 'seedAll' },
-        { $set: { ...data, seedSource: 'seedAll' } },
+        { email: data.email },
+        { 
+          $set: { ...staticData, seedSource: 'seedAll' },
+          $setOnInsert: { status, stats }
+        },
         { upsert: true, new: true, runValidators: true, strict: false }
       );
       artLovers.push(user);
@@ -463,9 +488,13 @@ async function seedAll() {
     const postData = generatePosts(artists, galleries);
     const createdPosts = [];
     for (const post of postData) {
+      const { likesCount, savesCount, isNsfw, ...staticPostData } = post;
       const p = await Post.findOneAndUpdate(
-        { authorId: post.authorId, caption: post.caption, seedSource: 'seedAll' },
-        { $set: { ...post, seedSource: 'seedAll' } },
+        { authorId: post.authorId, caption: post.caption },
+        { 
+          $set: { ...staticPostData, seedSource: 'seedAll' },
+          $setOnInsert: { likesCount, savesCount, isNsfw }
+        },
         { upsert: true, new: true, strict: false }
       );
       createdPosts.push(p);
@@ -479,9 +508,13 @@ async function seedAll() {
     const reportData = generateReports(allUsers, createdPosts, adminUser._id);
     const createdReports = [];
     for (const report of reportData) {
+      const { status, resolvedBy, ...staticReportData } = report;
       const r = await Report.findOneAndUpdate(
-        { reporterId: report.reporterId, targetType: report.targetType, targetId: report.targetId, reason: report.reason, seedSource: 'seedAll' },
-        { $set: { ...report, seedSource: 'seedAll' } },
+        { reporterId: report.reporterId, targetType: report.targetType, targetId: report.targetId, reason: report.reason },
+        { 
+          $set: { ...staticReportData, seedSource: 'seedAll' },
+          $setOnInsert: { status, resolvedBy }
+        },
         { upsert: true, new: true, strict: false }
       );
       createdReports.push(r);
@@ -506,7 +539,7 @@ async function seedAll() {
 
     for (const post of featuredCandidates) {
       await FeaturedPost.findOneAndUpdate(
-        { postId: post._id, seedSource: 'seedAll' },
+        { postId: post._id },
         { $set: { postId: post._id, featuredBy: adminUser._id, seedSource: 'seedAll' } },
         { upsert: true, new: true, strict: false }
       );
@@ -518,7 +551,7 @@ async function seedAll() {
     // ----------------------------------------------------------
     console.log('\n--- Creating AppConfig ---');
     await AppConfig.findOneAndUpdate(
-      { key: 'auth_background_media', seedSource: 'seedAll' },
+      { key: 'auth_background_media' },
       {
         $set: {
           key: 'auth_background_media',
@@ -541,7 +574,7 @@ async function seedAll() {
     // 9b. Create AppConfig: notification_config
     // ----------------------------------------------------------
     await AppConfig.findOneAndUpdate(
-      { key: 'notification_config', seedSource: 'seedAll' },
+      { key: 'notification_config' },
       {
         $set: {
           key: 'notification_config',
@@ -612,11 +645,13 @@ async function seedAll() {
       if (notif.postId) query.postId = notif.postId;
       if (notif.message) query.message = notif.message;
 
-      query.seedSource = 'seedAll';
-
+      const { isRead, ...staticNotifData } = notif;
       const n = await Notification.findOneAndUpdate(
         query,
-        { $set: { ...notif, seedSource: 'seedAll' } },
+        { 
+          $set: { ...staticNotifData, seedSource: 'seedAll' },
+          $setOnInsert: { isRead }
+        },
         { upsert: true, new: true, strict: false }
       );
       createdNotifications.push(n);
@@ -662,7 +697,7 @@ async function seedAll() {
 
     for (const page of cmsPages) {
       await CmsPage.findOneAndUpdate(
-        { slug: page.slug, seedSource: 'seedAll' },
+        { slug: page.slug },
         { $set: { ...page, updatedBy: adminUser._id, seedSource: 'seedAll' } },
         { upsert: true, new: true, strict: false }
       );
@@ -674,7 +709,7 @@ async function seedAll() {
     // ----------------------------------------------------------
     console.log('\n--- Creating Global Popup ---');
     await GlobalPopup.findOneAndUpdate(
-      { seedSource: 'seedAll' },
+      {},
       {
         $set: {
           heading: 'Welcome to ArtNepalaya Beta!',
@@ -682,9 +717,11 @@ async function seedAll() {
           body: 'We are thrilled to have you as part of our beta community. Your feedback helps us build the best platform for Nepali artists. Take a moment to share your thoughts!',
           ctaText: 'Take Survey',
           ctaLink: 'https://forms.example.com/beta-feedback',
-          isActive: true,
           updatedBy: adminUser._id,
           seedSource: 'seedAll'
+        },
+        $setOnInsert: {
+          isActive: true
         }
       },
       { upsert: true, new: true, strict: false }
