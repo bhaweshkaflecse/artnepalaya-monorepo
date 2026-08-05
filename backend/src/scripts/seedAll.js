@@ -367,28 +367,38 @@ async function seedAll() {
     // 1. Create Super Admins
     // ----------------------------------------------------------
     console.log('\n--- Creating Super Admins ---');
-    const adminEmails = ['admin@artnepalaya.com', 'founder@artnepalaya.com'];
+    const adminConfigs = [
+      {
+        email: 'admin@artnepalaya.com',
+        username: 'SuperAdmin',
+        fullName: 'System Administrator',
+        defaultPassword: 'AdMin#@*886494@@'
+      },
+      {
+        email: 'founder@artnepalaya.com',
+        username: 'FounderAdmin',
+        fullName: 'Platform Founder',
+        defaultPassword: 'fOunDEr#@*886494@@'
+      }
+    ];
+
     const adminUsers = [];
     
-    for (const email of adminEmails) {
-      const username = email.split('@')[0];
-      const isFounder = username === 'founder';
-      const defaultPassword = 'SuperAdmin##5656#$$@'; // Only used on brand-new account creation
-      
+    for (const config of adminConfigs) {
       const adminUser = await User.findOneAndUpdate(
-        { email },
+        { email: config.email },
         {
           $set: {
-            username: isFounder ? 'FounderAdmin' : 'SuperAdmin',
-            fullName: isFounder ? 'Platform Founder' : 'System Administrator',
+            username: config.username,
+            fullName: config.fullName,
             role: 'Admin',
-            avatarUrl: generateAvatarUrl(isFounder ? 'FounderAdmin' : 'SuperAdmin'),
+            avatarUrl: generateAvatarUrl(config.username),
             isAdult: true,
             seedSource: 'seedAll'
           },
           $setOnInsert: {
             status: 'active',
-            passwordHash: bcryptjs.hashSync(defaultPassword, 10),
+            passwordHash: bcryptjs.hashSync(config.defaultPassword, 10),
             stats: { followers: 0, following: 0 }
           }
         },
