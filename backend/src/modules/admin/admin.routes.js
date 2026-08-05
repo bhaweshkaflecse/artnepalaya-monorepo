@@ -84,6 +84,6 @@ router.get('/recommendation/simulate', controller.simulateRecommendation);
 // Account Deletion Requests
 router.get('/deletion-requests', controller.getDeletionRequests);
 router.put('/deletion-requests/:userId/cancel', controller.cancelDeletionRequest);
-router.delete('/deletion-requests/:userId/force', controller.forceDeleteAccount);
+router.delete('/deletion-requests/:userId/force', validate(validation.forceDeleteAccountSchema), controller.forceDeleteAccount);
 
 export default router;

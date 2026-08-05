@@ -12,9 +12,16 @@ export const queryPaginationSchema = z.object({
 
 export const updateUserStatusSchema = z.object({
   params: z.object({ userId: z.string().regex(objectIdRegex) }),
-  body: z.object({ status: z.enum(['active', 'suspended', 'banned']) })
+  body: z.object({ 
+    status: z.enum(['active', 'suspended', 'banned']),
+    masterPassword: z.string().optional()
+  })
 });
 
 export const reportIdParamsSchema = z.object({ params: z.object({ reportId: z.string().regex(objectIdRegex) }) });
+export const forceDeleteAccountSchema = z.object({
+  params: z.object({ userId: z.string().regex(objectIdRegex) }),
+  body: z.object({ masterPassword: z.string().optional() }).optional()
+});
 export const postIdParamsSchema = z.object({ params: z.object({ postId: z.string().regex(objectIdRegex) }) });
 export const featurePostSchema = z.object({ body: z.object({ postId: z.string().regex(objectIdRegex) }) });
